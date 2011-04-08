@@ -74,7 +74,7 @@ object *arguments;
 
     case 1:
       {
-        char* p = readline("");
+        char* p = readline(charPtr(arguments[0]));
         add_history(p);
         returnedObject = newStString(
             p);

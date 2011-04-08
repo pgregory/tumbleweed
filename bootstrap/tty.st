@@ -56,9 +56,7 @@ Methods Class 'all'
 ]
 Methods Smalltalk 'all'
 	getPrompt: aString
-		stdout printNoReturn: aString.
-		"^ stdin getString"
-    ^ <151>
+    ^ <151 aString>
 |
 	inquire: aString	| response |
 		response <- self getPrompt: aString.
@@ -100,7 +98,7 @@ Methods Smalltalk 'doit'
 Methods Scheduler 'get commands'
 	initialize	| string |
 		<2>.
-		string <- smalltalk getPrompt: '>	'.
+		string <- smalltalk getPrompt: '> '.
 		string isNil
 			ifTrue: [ notdone <- false ]
 			ifFalse: [ (string size > 0)
