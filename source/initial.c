@@ -11,6 +11,8 @@
 #include "memory.h"
 #include "names.h"
 
+extern noreturn initFFISymbols();	/* FFI symbols */
+
 int initial = 1;	/* making initial image */
 
 /* lightspeed C not using argc/argv features */
@@ -41,6 +43,7 @@ char **argv;
 	makeInitialImage();
 
 	initCommonSymbols();
+  initFFISymbols();
 
 	for (i = 1; i < argc; i++) {
 		fprintf(stderr,"%s:\n", argv[i]);

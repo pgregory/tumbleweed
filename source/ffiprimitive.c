@@ -37,6 +37,119 @@ typedef union FFI_DataType_U {
 
 static FFI_Lib* gLibraries = NULL;
 
+typedef enum FFI_Symbols_E {
+  FFI_CHAR,
+  FFI_STRING,
+  FFI_STRING_OUT,
+  FFI_SYMBOL,
+  FFI_SYMBOL_OUT,
+  FFI_INT,
+  FFI_UINT,
+  FFI_LONG,
+  FFI_ULONG,
+  FFI_DOUBLE,
+  FFI_LONGDOUBLE,
+  FFI_VOID,
+  FFI_WCHAR,
+  FFI_WSTRING,
+  FFI_WSTRING_OUT,
+  FFI_COBJECT,
+  FFI_SMALLTALK,
+} FFI_Symbols;
+
+
+static char* ffiStrs[] = {
+  "char", 
+  "string", 
+  "stringOut", 
+  "symbol",
+  "symbolOut",
+  "int",
+  "uInt",
+  "long",
+  "uLong",
+  "double",
+  "longDouble",
+  "void",
+  "wchar",
+  "wstring",
+  "wstringOut",
+  "cObject",
+  "smalltalk"
+};
+static int ffiNumStrs = sizeof(ffiStrs)/sizeof(ffiStrs[0]);
+static object *ffiSyms;
+static void* ffiLSTTypes[] = {
+  &ffi_type_uchar, 
+  &ffi_type_pointer, 
+  &ffi_type_pointer, 
+  &ffi_type_pointer,
+  &ffi_type_pointer,
+  &ffi_type_sint16,
+  &ffi_type_uint16,
+  &ffi_type_sint32,
+  &ffi_type_uint32,
+  &ffi_type_double,
+  &ffi_type_longdouble,
+  &ffi_type_void,
+  &ffi_type_uint16,
+  &ffi_type_pointer,
+  &ffi_type_pointer,
+  &ffi_type_pointer,
+  &ffi_type_pointer
+};
+
+void initFFISymbols()
+{
+  ffiSyms = calloc(ffiNumStrs, sizeof(object));
+  int i;
+  for(i = 0; i < ffiNumStrs; ++i)
+    ffiSyms[i] = newSymbol(ffiStrs[i]);
+}
+
+void cleanupFFISymbols()
+{
+  if(NULL != ffiSyms)
+    free(ffiSyms);
+}
+
+
+int mapType(object symbol)
+{
+  int i;
+  for(i = 0; i < ffiNumStrs; ++i)
+  {
+    if(ffiSyms[i] == symbol)
+      return i;
+  }
+  return FFI_VOID;
+}
+
+void valueOut(int argMap, object value, FFI_DataType* data)
+{
+  switch(argMap)
+  {
+    case FFI_STRING:
+      data->charPtr = charPtr(value);
+      break;
+  }
+}
+
+
+object valueIn(int retMap, FFI_DataType* data)
+{
+  switch(retMap)
+  {
+    case FFI_INT:
+      return newInteger(data->integer);
+      break;
+
+    case FFI_VOID:
+      return nilobj;
+      break;
+  }
+}
+
 static int addLibrary(FFI_LibraryHandle handle)
 {
   if(NULL == gLibraries)
@@ -155,6 +268,7 @@ object ffiPrimitive(int number, object* arguments)
         int lib_id = intValue(arguments[0]);
         int func_id = intValue(arguments[1]);
         object rtype = arguments[2];
+        int retMap = mapType(rtype);
         int cargTypes = sizeField(arguments[3]);
         int cargs = sizeField(arguments[4]);
 
@@ -174,25 +288,22 @@ object ffiPrimitive(int number, object* arguments)
             for(i = 0; i < cargTypes; ++i)
             {
               object argType = basicAt(arguments[3], i+1);
-              // \todo: Need to cache the type symbol object id's, and turn this into a switch.
-              if(argType == globalKey("string"))
-              {
-                args[i] = &ffi_type_pointer;
-                values[i] = &dataValues[i].charPtr;
-                dataValues[i].charPtr = charPtr(basicAt(arguments[4], i+1));
-              }
+              int argMap = mapType(argType);
+              args[i] = ffiLSTTypes[argMap];
+              values[i] = &dataValues[i].charPtr;
+
+              valueOut(argMap, basicAt(arguments[4], i+1), &dataValues[i]);
             }
 
-            // \todo: Similar to above, need to cache the type symbols.
-            if(rtype == globalKey("void"))
-            {
-              ret = &ffi_type_void;
-            }
+            ret = ffiLSTTypes[retMap]; 
+            ffi_type retVal;
+            void* retData = &retVal;
 
             ffi_cif cif;
             if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargs, ret, args) == FFI_OK)
             {
-              ffi_call(&cif, lib->functions[func_id], NULL, values);
+              ffi_call(&cif, lib->functions[func_id], retData, values);
+              returnedObject = valueIn(retMap, retData);
             }
           }
         }

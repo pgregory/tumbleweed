@@ -15,6 +15,7 @@
 int initial = 0;	/* not making initial image */
 
 extern int objectCount();
+extern noreturn initFFISymbols();	/* FFI symbols */
 
 # ifdef NOARGC
 main()
@@ -62,6 +63,7 @@ if (fp == NULL) {
 	}
 imageRead(fp);
 initCommonSymbols();
+initFFISymbols();
 
 firstProcess = globalSymbol("systemProcess");
 if (firstProcess == nilobj) {
