@@ -129,8 +129,36 @@ void valueOut(int argMap, object value, FFI_DataType* data)
 {
   switch(argMap)
   {
+    case FFI_CHAR:
+      break;
     case FFI_STRING:
+    case FFI_STRING_OUT:
+    case FFI_SYMBOL:
+    case FFI_SYMBOL_OUT:
       data->charPtr = charPtr(value);
+      break;
+    case FFI_INT:
+    case FFI_UINT:
+    case FFI_LONG:
+    case FFI_ULONG:
+      if(isInteger(value))
+        data->integer = intValue(value);
+      break;
+    case FFI_DOUBLE:
+    case FFI_LONGDOUBLE:
+      data->_float = floatValue(value);
+      break;
+    case FFI_VOID:
+      break;
+    case FFI_WCHAR:
+      break;
+    case FFI_WSTRING:
+      break;
+    case FFI_WSTRING_OUT:
+      break;
+    case FFI_COBJECT:
+      break;
+    case FFI_SMALLTALK:
       break;
   }
 }
