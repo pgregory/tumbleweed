@@ -13,6 +13,11 @@ Methods MetaFFI 'all'
     newObj init.
     newObj open: aString.
     ^newObj
+|
+  test
+    | ffi |
+    ffi <- FFI new: 'simple1'.
+    ffi call: 'my_print' returning: #int taking: #(string) as: #('Hello from Smalltalk')
 ]
 *
 Methods FFI 'all'

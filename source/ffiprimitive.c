@@ -14,10 +14,16 @@
 #include <dlfcn.h>
 #include <assert.h>
 #include <ffi.h>
+#include <limits.h>
 
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+
+#if defined(__APPLE__)
+#define SO_EXT  "dylib"
+#define MAX_PATH  PATH_MAX
+#endif
 
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
@@ -242,12 +248,14 @@ static FFI_Lib* getLibrary(int id)
 object ffiPrimitive(int number, object* arguments)
 {	
   object returnedObject = nilobj;
+  char libName[MAX_PATH];
 
   switch(number - 180) {
     case 0: /* dlopen */
       {
         char* p = charPtr(arguments[0]);
-        void* handle = dlopen(p, RTLD_LAZY);
+        sprintf(libName, "%s.%s", p, SO_EXT);
+        void* handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
         {
           int id = addLibrary(handle);
