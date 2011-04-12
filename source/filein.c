@@ -51,17 +51,28 @@ char *name;
 	readDeclaration reads a declaration of a class
 */
 static readClassDeclaration()
-{	object classObj, super, vars;
+{	
+  object classObj, metaClassObj, super, vars;
 	int i, size, instanceTop;
+  // todo: fixed length variables array!
 	object instanceVariables[15];
+  // todo: horrible fixed length arrays!
+  char metaClassName[100];
 
 	if (nextToken() != nameconst)
 		sysError("bad file format","no name in declaration");
 	classObj = findClass(tokenString);
 	size = 0;
+  // todo: sprintf eradication!
+  sprintf(metaClassName, "Meta%s", tokenString);
+  metaClassObj = findClass(metaClassName);
+  setClass(classObj, metaClassObj);
 	if (nextToken() == nameconst) {	/* read superclass name */
 		super = findClass(tokenString);
 		basicAtPut(classObj, superClassInClass, super);
+    basicAtPut(metaClassObj, superClassInClass, getClass(super));
+//    printf("RAWCLASS %s %s %s\n", charPtr(basicAt(metaClassObj, nameInClass)), charPtr(basicAt(getClass(metaClassObj), nameInClass)), charPtr(basicAt(basicAt(metaClassObj, superClassInClass), nameInClass)));
+//    printf("RAWCLASS %s %s %s\n", charPtr(basicAt(classObj, nameInClass)), charPtr(basicAt(getClass(classObj), nameInClass)), charPtr(basicAt(basicAt(classObj, superClassInClass), nameInClass)));
 		size = intValue(basicAt(super, sizeInClass));
 		ignore nextToken();
 		}
@@ -79,6 +90,11 @@ static readClassDeclaration()
 		basicAtPut(classObj, variablesInClass, vars);
 		}
 	basicAtPut(classObj, sizeInClass, newInteger(size));
+
+  basicAtPut(metaClassObj, methodsInClass, newDictionary(39));
+  basicAtPut(classObj, methodsInClass, newDictionary(39));
+
+  object methodsClass = getClass(basicAt(classObj, methodsInClass));
 }
 
 /*

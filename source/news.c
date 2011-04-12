@@ -75,7 +75,7 @@ int value;
 
 object newClass(name)
 char *name;
-{	object newObj, nameObj;
+{	object newObj, nameObj, methTable;
 
 	newObj = allocObject(classSize);
 	setClass(newObj, globalSymbol("Class"));
@@ -83,6 +83,8 @@ char *name;
 	/* now make name */
 	nameObj = newSymbol(name);
 	basicAtPut(newObj, nameInClass, nameObj);
+  methTable = newDictionary(39);
+  basicAtPut(newObj, methodsInClass, methTable);
 
 	/* now put in global symbols table */
 	nameTableInsert(symbols, strHash(name), nameObj, newObj);

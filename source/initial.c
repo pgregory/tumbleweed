@@ -101,7 +101,8 @@ char *text;
 */
  makeInitialImage()
 {	object hashTable;
-	object symbolObj, symbolClass, classClass;
+	object symbolObj, symbolClass, classClass, metaClassClass;
+  object objectClass, metaObjectClass;
 
 	/* first create the table, without class links */
 	symbols = allocObject(1);
@@ -115,7 +116,15 @@ char *text;
 	setClass(symbolObj, symbolClass);
 	classClass = newClass("Class");
 	setClass(symbolClass, classClass);
-	setClass(classClass, classClass);
+  metaClassClass = newClass("MetaClass");
+	setClass(classClass, metaClassClass);
+  objectClass = newClass("Object");
+  metaObjectClass = newClass("MetaObject");
+  setClass(objectClass, metaObjectClass);
+  setClass(metaObjectClass, classClass);
+
+  basicAtPut(metaClassClass, superClassInClass, metaObjectClass);
+  basicAtPut(metaObjectClass, superClassInClass, classClass);
 
 	/* now fix up classes for symbol table */
 	/* and make a couple common classes, just to hold their places */
@@ -126,6 +135,8 @@ char *text;
 	setClass(nilobj, newClass("UndefinedObject"));
 	ignore newClass("String");
 	nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
+
+  basicAtPut(objectClass, methodsInClass, newDictionary(39));
 
 	/* finally at least make true and false to be distinct */
 	trueobj = newSymbol("true");

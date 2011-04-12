@@ -81,14 +81,9 @@ Methods Boolean 'all'
 ]
 Methods Class 'creation'
 	new		| newObject |
-		newObject <- self new: instanceSize.
-		^ (self == Class)
-			ifTrue: [ newObject initialize ]
-			ifFalse: [ newObject new ]
-|
-	new: size	" hack out block the right size and class "
-		"create a new block, set its class"
-		^ < 22 < 58 size > self >
+		newObject <- < 22 < 58 instanceSize > self >.
+    newObject new.
+    ^newObject
 |
 	addSubClass: aSymbol instanceVariableNames: aString	| newClass |
 		newClass <- Class new; name: aSymbol; superClass: self;

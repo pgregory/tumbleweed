@@ -15,6 +15,15 @@ Class    Interval Collection lower upper step
 Class    List Collection links
 Class       Set List
 *
+Methods MetaArray 'all'
+	new: size	" hack out block the right size and class "
+		"create a new block, set its class"
+		^ < 22 < 58 size > self >
+]
+Methods MetaByteArray 'all'
+  new: size
+		^ < 22 < 58 size > self >
+]
 Methods Array 'all'
 	< coll
 		(coll isKindOf: Array)
@@ -514,7 +523,7 @@ Methods String 'all'
 			ifFalse: [ ^ false ]
 |
 	asByteArray	| newArray i |
-		newArray <- ByteArray new size: self size.
+		newArray <- ByteArray new: self size.
 		i <- 0.
 		self do: [:x | i <- i + 1. newArray at: i put: x asInteger].
 		^ newArray

@@ -65,12 +65,17 @@ static boolean findMethod(methodClassLocation)
   method = nilobj;
   methodClass = *methodClassLocation;
 
+
   for (; methodClass != nilobj; methodClass = 
       basicAt(methodClass, superClassInClass)) {
+//    printf("Looking for %s on %s\n", charPtr(messageToSend), charPtr(basicAt(methodClass, nameInClass)));
     methodTable = basicAt(methodClass, methodsInClass);
     method = hashEachElement(methodTable, messageToSend, messTest);
     if (method != nilobj)
+    {
+//      printf("...found\n");
       break;
+    }
   }
 
   if (method == nilobj) {		/* it wasn't found */
@@ -283,6 +288,7 @@ doFindMessage:
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
           methodClass = methodCache[i].cacheClass;
+//          printf("Cached method for %s on %s\n", charPtr(messageToSend), charPtr(basicAt(methodClass, nameInClass)));
         }
         else {
           methodCache[i].lookupClass = methodClass;
@@ -296,6 +302,7 @@ doFindMessage:
               basicAtPut(argarray, j+1, returnedObject);
               decr(returnedObject);
             }
+//            printf("Failed to find %s (%s)\n", charPtr(messageToSend), charPtr(basicAt(methodClass, nameInClass)));
             ipush(basicAt(argarray, 1)); /* push receiver back */
             ipush(messageToSend);
             messageToSend = newSymbol("message:notRecognizedWithArguments:");
