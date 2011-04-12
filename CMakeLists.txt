@@ -75,5 +75,6 @@ add_executable(tw ${tw_srcs} systemImage)
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})
 
+add_subdirectory(ffi_test)
 
 

@@ -1,3 +1,6 @@
+*
+* Foreign Frame Interface wrapper object
+*
 Class FFI Object libraryId name functions
 *
 Methods MetaFFI 'all'
