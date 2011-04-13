@@ -45,6 +45,7 @@ set(image_srcs
   bootstrap/queen.st
   bootstrap/test.st
   bootstrap/tty.st
+  bootstrap/iup.st
 )
 
 find_package(LibFFI REQUIRED)

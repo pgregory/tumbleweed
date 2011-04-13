@@ -42,12 +42,17 @@ typedef union FFI_DataType_U {
   char* charPtr;
   int   integer;
   float _float;
+  struct {
+    void* pointer;
+    int integer;
+  } outInteger;
 } FFI_DataType;
 
 static FFI_Lib* gLibraries = NULL;
 
 typedef enum FFI_Symbols_E {
   FFI_CHAR,
+  FFI_CHAR_OUT,
   FFI_STRING,
   FFI_STRING_OUT,
   FFI_SYMBOL,
@@ -68,44 +73,46 @@ typedef enum FFI_Symbols_E {
 
 
 static char* ffiStrs[] = {
-  "char", 
-  "string", 
-  "stringOut", 
-  "symbol",
-  "symbolOut",
-  "int",
-  "uInt",
-  "long",
-  "uLong",
-  "double",
-  "longDouble",
-  "void",
-  "wchar",
-  "wstring",
-  "wstringOut",
-  "cObject",
-  "smalltalk"
+  "char",               // FFI_CHAR,       
+  "charOut",            // FFI_CHAR_OUT,
+  "string",             // FFI_STRING,
+  "stringOut",          // FFI_STRING_OUT,
+  "symbol",             // FFI_SYMBOL,
+  "symbolOut",          // FFI_SYMBOL_OUT,
+  "int",                // FFI_INT,
+  "uInt",               // FFI_UINT,
+  "long",               // FFI_LONG,
+  "uLong",              // FFI_ULONG,
+  "double",             // FFI_DOUBLE,
+  "longDouble",         // FFI_LONGDOUBLE,
+  "void",               // FFI_VOID,
+  "wchar",              // FFI_WCHAR,
+  "wstring",            // FFI_WSTRING,
+  "wstringOut",         // FFI_WSTRING_OUT
+  "cObject",            // FFI_COBJECT,
+  "smalltalk"           // FFI_SMALLTALK,
 };
 static int ffiNumStrs = sizeof(ffiStrs)/sizeof(ffiStrs[0]);
 static object *ffiSyms;
 static void* ffiLSTTypes[] = {
-  &ffi_type_uchar, 
-  &ffi_type_pointer, 
-  &ffi_type_pointer, 
-  &ffi_type_pointer,
-  &ffi_type_pointer,
-  &ffi_type_sint16,
-  &ffi_type_uint16,
-  &ffi_type_sint32,
-  &ffi_type_uint32,
-  &ffi_type_double,
-  &ffi_type_longdouble,
-  &ffi_type_void,
-  &ffi_type_uint16,
-  &ffi_type_pointer,
-  &ffi_type_pointer,
-  &ffi_type_pointer,
-  &ffi_type_pointer
+  &ffi_type_uchar,      // FFI_CHAR,
+  &ffi_type_pointer,    // FFI_CHAR_OUT,
+  &ffi_type_pointer,    // FFI_STRING,
+  &ffi_type_pointer,    // FFI_STRING_OUT,
+  &ffi_type_pointer,    // FFI_SYMBOL,
+  &ffi_type_pointer,    // FFI_SYMBOL_OUT,
+  &ffi_type_sint16,     // FFI_INT,
+  &ffi_type_uint16,     // FFI_UINT,
+  &ffi_type_sint32,     // FFI_LONG,
+  &ffi_type_uint32,     // FFI_ULONG,
+  &ffi_type_double,     // FFI_DOUBLE,
+  &ffi_type_longdouble, // FFI_LONGDOUBLE,
+  &ffi_type_void,       // FFI_VOID,
+  &ffi_type_uint16,     // FFI_WCHAR,
+  &ffi_type_pointer,    // FFI_WSTRING,
+  &ffi_type_pointer,    // FFI_WSTRING_OUT
+  &ffi_type_pointer,    // FFI_COBJECT,
+  &ffi_type_pointer     // FFI_SMALLTALK,
 };
 
 void initFFISymbols()
@@ -134,28 +141,47 @@ int mapType(object symbol)
   return FFI_VOID;
 }
 
-void valueOut(int argMap, object value, FFI_DataType* data)
+void* valueOut(int argMap, object value, FFI_DataType* data)
 {
+  void* ptr;
+  object realValue;
+
+  object sclass = globalSymbol("Symbol");
+  object vclass = getClass(value);
+  if(vclass == sclass)
+    realValue = globalSymbol(charPtr(value));
+  else
+    realValue = value;
   switch(argMap)
   {
+    case FFI_CHAR_OUT:
+      data->outInteger.pointer = &data->outInteger.integer;
+      data->outInteger.integer = intValue(realValue);
+      ptr = &data->outInteger.pointer;
+      break;
     case FFI_CHAR:
+      data->integer = intValue(realValue);
+      ptr = &data->integer;
       break;
     case FFI_STRING:
     case FFI_STRING_OUT:
     case FFI_SYMBOL:
     case FFI_SYMBOL_OUT:
-      data->charPtr = charPtr(value);
+      data->charPtr = charPtr(realValue);
+      ptr = &data->charPtr;
       break;
     case FFI_INT:
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      if(isInteger(value))
-        data->integer = intValue(value);
+      if(isInteger(realValue))
+        data->integer = intValue(realValue);
+      ptr = &data->integer;
       break;
     case FFI_DOUBLE:
     case FFI_LONGDOUBLE:
-      data->_float = floatValue(value);
+      data->_float = floatValue(realValue);
+      ptr = &data->_float;
       break;
     case FFI_VOID:
       break;
@@ -170,6 +196,7 @@ void valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_SMALLTALK:
       break;
   }
+  return ptr;
 }
 
 
@@ -177,6 +204,18 @@ object valueIn(int retMap, FFI_DataType* data)
 {
   switch(retMap)
   {
+    case FFI_CHAR_OUT:
+      return newInteger(data->outInteger.integer);
+      break;
+
+    case FFI_CHAR:
+      return newChar(data->integer);
+      break;
+
+    case FFI_STRING:
+      return newStString(data->charPtr);
+      break;
+
     case FFI_INT:
       return newInteger(data->integer);
       break;
@@ -310,6 +349,7 @@ object ffiPrimitive(int number, object* arguments)
         int retMap = mapType(rtype);
         int cargTypes = sizeField(arguments[3]);
         int cargs = sizeField(arguments[4]);
+        int cOutArgs = 0;
 
         assert(cargTypes == cargs);
 
@@ -318,22 +358,26 @@ object ffiPrimitive(int number, object* arguments)
         {
           if(func_id < lib->numFunctions)
           {
-            ffi_type** args = calloc(cargTypes, sizeof(ffi_type));
-            void** values = calloc(cargs, sizeof(void*));
-            FFI_DataType* dataValues = calloc(cargs, sizeof(FFI_DataType));
-            ffi_type* ret;
-
-            int i;
-            for(i = 0; i < cargTypes; ++i)
+            ffi_type** args = NULL;
+            void** values = NULL;
+            FFI_DataType* dataValues = NULL; 
+            if(cargs > 0)
             {
-              object argType = basicAt(arguments[3], i+1);
-              int argMap = mapType(argType);
-              args[i] = ffiLSTTypes[argMap];
-              values[i] = &dataValues[i].charPtr;
+              args = calloc(cargTypes, sizeof(ffi_type));
+              values = calloc(cargs, sizeof(void*));
+              dataValues = calloc(cargs, sizeof(FFI_DataType));
 
-              valueOut(argMap, basicAt(arguments[4], i+1), &dataValues[i]);
+              int i;
+              for(i = 0; i < cargTypes; ++i)
+              {
+                object argType = basicAt(arguments[3], i+1);
+                int argMap = mapType(argType);
+                args[i] = ffiLSTTypes[argMap];
+                values[i] = valueOut(argMap, basicAt(arguments[4], i+1), &dataValues[i]);
+              }
             }
 
+            ffi_type* ret;
             ret = ffiLSTTypes[retMap]; 
             ffi_type retVal;
             void* retData = &retVal;
@@ -341,8 +385,28 @@ object ffiPrimitive(int number, object* arguments)
             ffi_cif cif;
             if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargs, ret, args) == FFI_OK)
             {
+              returnedObject = newArray(cargs + 1);
+
               ffi_call(&cif, lib->functions[func_id], retData, values);
-              returnedObject = valueIn(retMap, retData);
+              basicAtPut(returnedObject, 1, valueIn(retMap, retData));
+            }
+            // Now fill in the rest of the result array with the arguments
+            // thus getting any 'out' values back to the system in a controlled 
+            // way.
+            // Note: All arguments are passed back, irrespective of if they 
+            // are out or not, they will just be unchanged if not. This makes it
+            // simpler to index them on the other end.
+            if(cargs > 0)
+            {
+              int i;
+              for(i = 0; i < cargs; ++i)
+              {
+                object argType = basicAt(arguments[3], i+1);
+                int argMap = mapType(argType);
+                // Get a new value out of the arguments array.
+                object newVal = valueIn(argMap, values[i]);
+                basicAtPut(returnedObject, i+2, newVal); 
+              }
             }
           }
         }

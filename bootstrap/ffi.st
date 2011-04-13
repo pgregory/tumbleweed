@@ -45,7 +45,15 @@ Methods FFI 'all'
     ^ <180 name>
 |
   call: aString returning: aSymbol taking: argTypes as: arguments
-    | fid |
-    fid <- <181 handle aString>.
-    ^ <182 handle fid aSymbol argTypes arguments>
+    | fid ret |
+    ^ (handle >= 0)
+        ifFalse: [ nil ]
+        ifTrue: [ 
+          fid <- <181 handle aString>.
+          (fid >= 0)
+            ifTrue: 
+              [ <182 handle fid aSymbol argTypes arguments> ]
+            ifFalse: 
+              [ nil ]
+        ]
 ]
