@@ -48,6 +48,31 @@ static object findClass(char* name)
 	return newobj;
 }
 
+static object findClassWithMeta(char* name, object metaObj)
+{	
+  object newObj, nameObj, methTable;
+  int size;
+
+	newObj = globalSymbol(name);
+	if (newObj == nilobj)
+  {
+    size = intValue(basicAt(metaObj, sizeInClass));
+    newObj = allocObject(size);
+    setClass(newObj, metaObj);
+
+    /* now make name */
+    nameObj = newSymbol(name);
+    basicAtPut(newObj, nameInClass, nameObj);
+    methTable = newDictionary(39);
+    basicAtPut(newObj, methodsInClass, methTable);
+    basicAtPut(newObj, sizeInClass, newInteger(size));
+
+    /* now put in global symbols table */
+    nameTableInsert(symbols, strHash(name), nameObj, newObj);
+  }
+	return newObj;
+}
+
 /*
  * Create raw class
  */
@@ -57,8 +82,8 @@ static object createRawClass(char* class, char* metaclass, char* superclass)
   object classObj, superObj, metaObj;
 	int i, size, instanceTop;
 
-	classObj = findClass(class);
   metaObj = findClass(metaclass);
+	classObj = findClassWithMeta(class, metaObj);
   setClass(classObj, metaObj);
 
   //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);

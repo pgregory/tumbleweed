@@ -85,6 +85,7 @@ object newClass(char* name)
 	basicAtPut(newObj, nameInClass, nameObj);
   methTable = newDictionary(39);
   basicAtPut(newObj, methodsInClass, methTable);
+  basicAtPut(newObj, sizeInClass, newInteger(classSize));
 
 	/* now put in global symbols table */
 	nameTableInsert(symbols, strHash(name), nameObj, newObj);

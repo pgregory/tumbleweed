@@ -1,4 +1,4 @@
-* RawClass MetaIUP Class MetaObject again theInstance damn
+RawClass MetaIUP Class MetaObject theInstance 
 Class IUP Object iup
 *
 Methods MetaIUP 'all'
@@ -6,10 +6,7 @@ Methods MetaIUP 'all'
     ^ self instance.
 |
   instance
-    stderr print: 'Hello'.
-    theInstance <- 1.
-    stderr print: ('theInstance', theInstance class printString).
-    "theInstance isNil ifTrue: [ theInstance <- super new. theInstance init ]."
+    theInstance isNil ifTrue: [ theInstance <- super new. theInstance init ].
     ^ theInstance
 |
   test
@@ -22,11 +19,13 @@ Methods MetaIUP 'all'
 *
 Methods IUP 'all'
   init
-    stderr print: 'Initializing the IUP object'
-    iup <- FFI new: 'iup'
+    iup <- FFI new: 'iup'.
     iup call: 'IupOpen' returning: #int taking: #(int int) as: #(0 0).
     ^self
 |
   IupGetColorRed: r Green: g Blue: b
     ^ iup call: 'IupGetColor' returning: #int taking: #(int int charOut charOut charOut) as: #(10 10 r g b).
+|
+  IupMessage: m title: t
+    ^ iup call: 'IupMessage' returning: #void taking: #(string string) as: #(t m).
 ]
