@@ -73,9 +73,9 @@ int value;
 	return(newobj);
 }
 
-object newClass(name)
-char *name;
-{	object newObj, nameObj, methTable;
+object newClass(char* name)
+{	
+  object newObj, nameObj, methTable;
 
 	newObj = allocObject(classSize);
 	setClass(newObj, globalSymbol("Class"));

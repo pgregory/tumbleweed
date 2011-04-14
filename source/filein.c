@@ -34,16 +34,17 @@ static char textBuffer[TextBufferSize];
 	in addition, it makes sure it has a size, by setting
 	the size to zero if it is nil.
 */
-static object findClass(name)
-char *name;
-{	object newobj;
+static object findClass(char* name)
+{	
+  object newobj;
 
 	newobj = globalSymbol(name);
 	if (newobj == nilobj)
 		newobj = newClass(name);
-	if (basicAt(newobj, sizeInClass) == nilobj) {
+	if (basicAt(newobj, sizeInClass) == nilobj) 
+  {
 		basicAtPut(newobj, sizeInClass, newInteger(0));
-		}
+  }
 	return newobj;
 }
 
@@ -110,7 +111,7 @@ static readRawClassDeclaration()
 
   // Get the current class size, we'll build on this as 
   // we add instance variables.
-  size = basicAt(classObj, sizeInClass);
+  size = intValue(basicAt(classObj, sizeInClass));
 
 	if (token == nameconst) 
   {		/* read instance var names */
@@ -169,12 +170,16 @@ static readClassDeclaration()
   classObj = createRawClass(className, metaClassName, superName);
   setClass(classObj, metaObj);
 
-  free(className);
-  free(superName);
+  size = intValue(basicAt(metaObj, sizeInClass));
+  instanceVariables[0] = newSymbol("theInstance");
+  vars = newArray(1);
+  basicAtPut(vars, 1, instanceVariables[0]);
+  basicAtPut(metaObj, variablesInClass, vars);
+	basicAtPut(metaObj, sizeInClass, newInteger(size+1));
 
   // Get the current class size, we'll build on this as 
   // we add instance variables.
-  size = basicAt(classObj, sizeInClass);
+  size = intValue(basicAt(classObj, sizeInClass));
 
 	if (token == nameconst) 
   {		/* read instance var names */
@@ -194,6 +199,9 @@ static readClassDeclaration()
   }
 	basicAtPut(classObj, sizeInClass, newInteger(size));
   basicAtPut(classObj, methodsInClass, newDictionary(39));
+
+  free(className);
+  free(superName);
 }
 
 /*
