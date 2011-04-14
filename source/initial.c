@@ -35,7 +35,8 @@ main(argc, argv)
 int argc;
 char **argv;
 # endif
-{ 	char methbuf[100];
+{ 	
+  char methbuf[MAX_PATH];
 	int i;
 
 	initMemoryManager();

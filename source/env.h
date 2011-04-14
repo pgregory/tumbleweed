@@ -15,6 +15,8 @@
 	at the beginning of the file, as shown below
 */
 
+#include <limits.h>
+
 typedef unsigned char byte;
 
 # define byteToInt(b) (b)
@@ -83,3 +85,12 @@ prototypes aren't available */
 # define FUNC
 
 # endif
+
+
+#if defined(__APPLE__)
+#define SO_EXT  "so"
+#define MAX_PATH  PATH_MAX
+#elif defined(__CYGWIN__)
+#define SO_EXT  "dll"
+#define MAX_PATH  PATH_MAX
+#endif

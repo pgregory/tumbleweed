@@ -48,53 +48,152 @@ char *name;
 }
 
 /*
+ * Create raw class
+ */
+
+static object createRawClass(char* class, char* metaclass, char* superclass)
+{
+  object classObj, superObj, metaObj;
+	int i, size, instanceTop;
+
+	classObj = findClass(class);
+  metaObj = findClass(metaclass);
+  setClass(classObj, metaObj);
+
+  //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
+
+	size = 0;
+  superObj = nilobj;
+  if(NULL != superclass)
+  {
+    superObj = findClass(superclass);
+    basicAtPut(classObj, superClassInClass, superObj);
+    size = intValue(basicAt(superObj, sizeInClass));
+  }
+
+  // Set the size up to now.
+	basicAtPut(classObj, sizeInClass, newInteger(size));
+
+  return classObj;
+}
+
+/*
+	readRawDeclaration reads a declaration of a class
+*/
+static readRawClassDeclaration()
+{	
+  object classObj, vars;
+  char* className, *metaName, *superName;
+	int i, size, instanceTop;
+  // todo: fixed length variables array!
+	object instanceVariables[15];
+
+	if (nextToken() != nameconst)
+		sysError("bad file format","no name in declaration");
+  className = strdup(tokenString);
+	size = 0;
+	if (nextToken() == nameconst) 
+  {	/* read metaclass name */
+		metaName = strdup(tokenString);
+		ignore nextToken();
+  }
+	if (token == nameconst) 
+  {	/* read superclass name */
+		superName = strdup(tokenString);
+		ignore nextToken();
+  }
+
+  classObj = createRawClass(className, metaName, superName);
+  free(className);
+  free(metaName);
+  free(superName);
+
+  // Get the current class size, we'll build on this as 
+  // we add instance variables.
+  size = basicAt(classObj, sizeInClass);
+
+	if (token == nameconst) 
+  {		/* read instance var names */
+		instanceTop = 0;
+		while (token == nameconst) 
+    {
+			instanceVariables[instanceTop++] = newSymbol(tokenString);
+			size++;
+			ignore nextToken();
+    }
+		vars = newArray(instanceTop);
+		for (i = 0; i < instanceTop; i++) 
+    {
+			basicAtPut(vars, i+1, instanceVariables[i]);
+    }
+		basicAtPut(classObj, variablesInClass, vars);
+  }
+	basicAtPut(classObj, sizeInClass, newInteger(size));
+  basicAtPut(classObj, methodsInClass, newDictionary(39));
+
+  object methodsClass = getClass(basicAt(classObj, methodsInClass));
+}
+
+/*
 	readDeclaration reads a declaration of a class
 */
 static readClassDeclaration()
 {	
-  object classObj, metaClassObj, super, vars;
+  object classObj, metaObj, vars;
+  char* className, *superName;
 	int i, size, instanceTop;
   // todo: fixed length variables array!
 	object instanceVariables[15];
   // todo: horrible fixed length arrays!
   char metaClassName[100];
+  char metaSuperClassName[100];
+
+  className = superName = NULL;
 
 	if (nextToken() != nameconst)
 		sysError("bad file format","no name in declaration");
-	classObj = findClass(tokenString);
-	size = 0;
-  // todo: sprintf eradication!
-  sprintf(metaClassName, "Meta%s", tokenString);
-  metaClassObj = findClass(metaClassName);
-  setClass(classObj, metaClassObj);
-	if (nextToken() == nameconst) {	/* read superclass name */
-		super = findClass(tokenString);
-		basicAtPut(classObj, superClassInClass, super);
-    basicAtPut(metaClassObj, superClassInClass, getClass(super));
-//    printf("RAWCLASS %s %s %s\n", charPtr(basicAt(metaClassObj, nameInClass)), charPtr(basicAt(getClass(metaClassObj), nameInClass)), charPtr(basicAt(basicAt(metaClassObj, superClassInClass), nameInClass)));
-//    printf("RAWCLASS %s %s %s\n", charPtr(basicAt(classObj, nameInClass)), charPtr(basicAt(getClass(classObj), nameInClass)), charPtr(basicAt(basicAt(classObj, superClassInClass), nameInClass)));
-		size = intValue(basicAt(super, sizeInClass));
+  className = strdup(tokenString);
+	if (nextToken() == nameconst) 
+  {	/* read superclass name */
+		superName = strdup(tokenString);
 		ignore nextToken();
-		}
-	if (token == nameconst) {		/* read instance var names */
+  }
+  // todo: sprintf eradication!
+  sprintf(metaClassName, "Meta%s", className);
+  if(NULL != superName)
+    sprintf(metaSuperClassName, "Meta%s", superName);
+  else
+    sprintf(metaSuperClassName, "Class");
+
+  metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
+  classObj = createRawClass(className, metaClassName, superName);
+  setClass(classObj, metaObj);
+
+  free(className);
+  free(superName);
+
+  // Get the current class size, we'll build on this as 
+  // we add instance variables.
+  size = basicAt(classObj, sizeInClass);
+
+	if (token == nameconst) 
+  {		/* read instance var names */
 		instanceTop = 0;
-		while (token == nameconst) {
+		while (token == nameconst) 
+    {
 			instanceVariables[instanceTop++] = newSymbol(tokenString);
 			size++;
 			ignore nextToken();
-			}
+    }
 		vars = newArray(instanceTop);
-		for (i = 0; i < instanceTop; i++) {
+		for (i = 0; i < instanceTop; i++) 
+    {
 			basicAtPut(vars, i+1, instanceVariables[i]);
-			}
+    }
 		basicAtPut(classObj, variablesInClass, vars);
-		}
+  }
 	basicAtPut(classObj, sizeInClass, newInteger(size));
-
-  basicAtPut(metaClassObj, methodsInClass, newDictionary(39));
   basicAtPut(classObj, methodsInClass, newDictionary(39));
-
-  object methodsClass = getClass(basicAt(classObj, methodsInClass));
 }
 
 /*
@@ -170,6 +269,8 @@ boolean printit;
 			; /* do nothing, get next line */
 		else if ((token == binary) && streq(tokenString, "*"))
 			; /* do nothing, its a comment */
+		else if ((token == nameconst) && streq(tokenString, "RawClass"))
+			readRawClassDeclaration();
 		else if ((token == nameconst) && streq(tokenString, "Class"))
 			readClassDeclaration();
 		else if ((token == nameconst) && streq(tokenString,"Methods"))

@@ -20,14 +20,6 @@
 #include "memory.h"
 #include "names.h"
 
-#if defined(__APPLE__)
-#define SO_EXT  "so"
-#define MAX_PATH  PATH_MAX
-#elif defined(__CYGWIN__)
-#define SO_EXT  "dll"
-#define MAX_PATH  PATH_MAX
-#endif
-
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
 
