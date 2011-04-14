@@ -83,6 +83,9 @@ Methods String 'all'
 |
 	print
 		stdout print: self
+|
+	printNoReturn
+		stdout printNoReturn: self
 ]
 *
 * initialization code
@@ -121,7 +124,7 @@ Methods UndefinedObject 'initial image'
 		" create a dictionary of classes "
 		classes <- Dictionary new.
 		symbols binaryDo: [:x :y | 
-			(y class == Class)
+			(y isKindOf: Class)
 				ifTrue: [ classes at: x put: y ] ].
 		scheduler <- Scheduler new.
 		" create the initial system process "
