@@ -130,6 +130,17 @@ Methods Class 'creation'
 			into: [:x :y | (y superClass == self)
 						ifTrue: [ x add: y]. x ]
 |
+  viewSubClassTree: indent
+    classes do: [ :obj |
+      ((obj isKindOf: Class) and: [ obj superClass == self])
+        ifTrue: [
+          (1 to: indent) do: [:ignore | ' ' printNoReturn ].
+          obj print.
+          obj viewSubClassTree: indent + 4 ] ]
+|
+  viewSubClassTree
+    self viewSubClassTree: 0
+|
 	superClass
 		^ superClass
 |
@@ -405,5 +416,6 @@ Methods UndefinedObject 'all'
 Methods Object 'errors'
 	message: m notRecognizedWithArguments: a
 		^ smalltalk error: 'not recognized ', (self class printString),
-			' ', (m printString)
+			' ', (m printString),
+      ' ', (a printString)
 ]
