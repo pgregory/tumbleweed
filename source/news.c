@@ -149,21 +149,23 @@ object o;
 	return d;
 }
 
-object newLong(long l)
+object newCPointer(void* l)
 {	
   object newObj;
 
-	newObj = allocByte((int) sizeof (long));
-	ncopy(charPtr(newObj), (char *) &l, (int) sizeof (long));
-	setClass(newObj, globalSymbol("Long"));
+  int s = sizeof(void*);
+	newObj = allocByte((int) sizeof (void*));
+	ncopy(charPtr(newObj), (char *) &l, (int) sizeof (void*));
+	setClass(newObj, globalSymbol("CPointer"));
 	return newObj;
 }
 
-double longValue(object o)
+void* cPointerValue(object o)
 {	
-  long l;
+  void* l;
 
-	ncopy((char *) &l, charPtr(o), (int) sizeof(long));
+  int s = sizeof(void*);
+	ncopy((char *) &l, charPtr(o), (int) sizeof(void*));
 	return l;
 }
 

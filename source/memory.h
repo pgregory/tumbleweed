@@ -131,6 +131,8 @@ extern int byteAt(OBJ X INT);
 extern void byteAtPut(OBJ X INT X INT);
 # endif
 
+extern object newCPointer(void* l);
+extern void* cPointerValue(object);
 /*
 	Finally, a few routines (or macros) are used to access or set
 class fields and size fields of objects

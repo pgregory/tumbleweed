@@ -9,7 +9,6 @@ Class    Char Magnitude value
 Class    Number Magnitude
 Class       Integer Number
 Class           LongInteger Integer negative digits
-Class       Long Number
 Class       Fraction Number top bottom
 Class       Float Number
 Class Random Object
@@ -753,12 +752,4 @@ Methods Random 'all'
 	set: value
 		" set seed for random number generator "
 		<55 value>
-]
-*
-Methods Long 'all'
-  asString
-    ^ <141 self>
-|
-  printString
-    ^ self asString
 ]

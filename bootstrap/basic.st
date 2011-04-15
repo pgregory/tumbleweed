@@ -17,6 +17,7 @@ Class Smalltalk Object
 Class Switch Object const notdone
 Class Symbol Object
 Class UndefinedObject Object
+Class CPointer Object
 *
 Methods Block 'initialization'
 	checkArgumentCount: count
@@ -418,4 +419,12 @@ Methods Object 'errors'
 		^ smalltalk error: 'not recognized ', (self class printString),
 			' ', (m printString),
       ' ', (a printString)
+]
+*
+Methods CPointer 'all'
+  asString
+    ^ <141 self>
+|
+  printString
+    ^ self asString
 ]

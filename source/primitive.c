@@ -558,18 +558,18 @@ static object floatBinary(number, first, second)
 }
 
 
-static int longUnary(int number, long firstarg)
+static int cPointerUnary(int number, void* firstarg)
 {	
   char buffer[20];
   object returnedObject;
 
   switch(number) {
     case 1:		/* floating value asString */
-      ignore sprintf(buffer,"%d", firstarg);
+      ignore sprintf(buffer,"0x%X", firstarg);
       returnedObject = newStString(buffer);
       break;
     default:
-      sysError("unknown primitive","longUnary");
+      sysError("unknown primitive","cPointerUnary");
       break;
   }
 
@@ -639,7 +639,7 @@ object primitive(primitiveNumber, arguments)
       break;
 
     case 14:  /* long unary */
-      returnedObject = longUnary(primitiveNumber-140, longValue(arguments[0]));
+      returnedObject = cPointerUnary(primitiveNumber-140, cPointerValue(arguments[0]));
       break;
 
     case 15:

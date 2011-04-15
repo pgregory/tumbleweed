@@ -33,8 +33,7 @@ typedef struct FFI_Lib_S {
 typedef union FFI_DataType_U {
   char* charPtr;
   int   integer;
-  long  longInteger;
-  unsigned long  uLongInteger;
+  void* cPointer;
   float _float;
   struct {
     void* pointer;
@@ -166,15 +165,11 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
       break;
     case FFI_INT:
     case FFI_UINT:
+    case FFI_LONG:
+    case FFI_ULONG:
       if(isInteger(realValue))
         data->integer = intValue(realValue);
       ptr = &data->integer;
-      break;
-    case FFI_LONG:
-    case FFI_ULONG:
-      // \todo: How to check type.
-      data->longInteger = longValue(realValue);
-      ptr = &data->longInteger;
       break;
     case FFI_DOUBLE:
     case FFI_LONGDOUBLE:
@@ -191,6 +186,13 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_WSTRING_OUT:
       break;
     case FFI_COBJECT:
+      {
+        // \todo: How to check type.
+        void* f = cPointerValue(realValue);
+        int s = sizeof(f);
+        data->cPointer = f;
+        ptr = &data->cPointer;
+      }
       break;
     case FFI_SMALLTALK:
       break;
@@ -219,9 +221,8 @@ object valueIn(int retMap, FFI_DataType* data)
       return newInteger(data->integer);
       break;
 
-    case FFI_LONG:
-    case FFI_ULONG:
-      return newLong(data->longInteger);
+    case FFI_COBJECT:
+      return newCPointer(data->cPointer);
       break;
 
     case FFI_VOID:
