@@ -1,5 +1,12 @@
 RawClass MetaIUP Class MetaObject theInstance 
 Class IUP Object iup
+Class Widget Object handle
+Class   WidgetContainer Widget children
+Class     VBox WidgetContainer
+Class     HBox WidgetContainer
+Class     Dialog WidgetContainer
+Class   Button Widget
+Class   Label Widget
 *
 Methods MetaIUP 'all'
   new
@@ -24,8 +31,54 @@ Methods IUP 'all'
     ^self
 |
   IupGetColorRed: r Green: g Blue: b
-    ^ iup call: 'IupGetColor' returning: #int taking: #(int int charOut charOut charOut) as: #(10 10 r g b).
+    ^ iup call: 'IupGetColor' returning: #int taking: #(int int charOut charOut charOut) as: #(10 10 r g b)
 |
   IupMessage: m title: t
-    ^ iup call: 'IupMessage' returning: #void taking: #(string string) as: #(t m).
+    ^ iup call: 'IupMessage' returning: #void taking: #(string string) as: #(t m)
+|
+  IupButton: title 
+    ^ iup call: 'IupButton' returning: #uLong taking: #(string string) as: #(title 'HELP')
+]
+*
+Methods Widget 'all'
+  new
+    handle <- 0.
+    ^ self
+|
+  handle
+    ^ handle
+| 
+  handle: h
+    handle <- h
+]
+*
+Methods WidgetContainer 'all'
+  new
+    super new.
+    children <- List new.
+    ^ self 
+|
+  children
+    ^ children
+|
+  addChild: child
+    children add: child.
+    ^ self
+]
+*
+Methods MetaButton 'all'
+  new: aString
+  | newButton h |
+  newButton <- super new.
+  newButton init: aString.
+  ^ newButton
+]
+*
+Methods Button 'all'
+  init: aString
+    | iup result |
+    iup <- IUP instance.
+    result <- iup IupButton: 'Test'.
+    super handle: (result at: 1).
+    ^ self
 ]

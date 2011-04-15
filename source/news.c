@@ -149,6 +149,24 @@ object o;
 	return d;
 }
 
+object newLong(long l)
+{	
+  object newObj;
+
+	newObj = allocByte((int) sizeof (long));
+	ncopy(charPtr(newObj), (char *) &l, (int) sizeof (long));
+	setClass(newObj, globalSymbol("Long"));
+	return newObj;
+}
+
+double longValue(object o)
+{	
+  long l;
+
+	ncopy((char *) &l, charPtr(o), (int) sizeof(long));
+	return l;
+}
+
 object newLink(key, value)
 object key, value;
 {	object newObj;
@@ -168,9 +186,9 @@ object newMethod()
 	return newObj;
 }
 
-object newStString(value)
-char *value;
-{	object newObj;
+object newStString(char* value)
+{	
+  object newObj;
 
 	newObj = allocStr(value);
 	if (stringClass == nilobj)

@@ -232,12 +232,20 @@ int size;
 	return newObj;
 }
 
-object allocStr(str)
-register char *str;
-{	register object newSym;
+object allocStr(register char* str)
+{	
+  register object newSym;
 
-	newSym = allocByte(1 + strlen(str));
-	ignore strcpy(charPtr(newSym), str);
+  if(NULL != str)
+  {
+    newSym = allocByte(1 + strlen(str));
+    ignore strcpy(charPtr(newSym), str);
+  }
+  else
+  {
+    newSym = allocByte(1);
+    charPtr(newSym)[0] = '\0';
+  }
 	return(newSym);
 }
 

@@ -557,6 +557,26 @@ static object floatBinary(number, first, second)
   return(returnedObject);
 }
 
+
+static int longUnary(int number, long firstarg)
+{	
+  char buffer[20];
+  object returnedObject;
+
+  switch(number) {
+    case 1:		/* floating value asString */
+      ignore sprintf(buffer,"%d", firstarg);
+      returnedObject = newStString(buffer);
+      break;
+    default:
+      sysError("unknown primitive","longUnary");
+      break;
+  }
+
+  return(returnedObject);
+}
+
+
 /* primitive -
    the main driver for the primitive handler
    */
@@ -616,6 +636,10 @@ object primitive(primitiveNumber, arguments)
     case 12: case 13:	/* file operations */
 
       returnedObject = ioPrimitive(primitiveNumber-120, arguments);
+      break;
+
+    case 14:  /* long unary */
+      returnedObject = longUnary(primitiveNumber-140, longValue(arguments[0]));
       break;
 
     case 15:
