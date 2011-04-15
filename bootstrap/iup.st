@@ -46,23 +46,32 @@ Methods IUP 'all'
     args <- Array new: 2.
     args at: 1 put: title.
     args at: 2 put: 'DefaultButtonAction'.
-    ^ iup call: 'IupButton' returning: #uLong taking: #(string string) as: args 
+    ^ iup call: 'IupButton' returning: #cObject taking: #(string string) as: args 
 |
   IupVBox 
-    ^ iup call: 'IupVbox' returning: #uLong taking: #(int int) as: #(0 0)
+    ^ iup call: 'IupVbox' returning: #cObject taking: #(int int) as: #(0 0)
 |
   IupDialog: child 
     | args |
     args <- Array new: 1.
     args at: 1 put: child.
-    ^ iup call: 'IupDialog' returning: #uLong taking: #(uLong) as: args
+    ^ iup call: 'IupDialog' returning: #cObject taking: #(cObject) as: args
 |
   IupAppend: child to: parent 
     | args |
     args <- Array new: 2.
     args at: 1 put: parent.
     args at: 2 put: child.
-    ^ iup call: 'IupAppend' returning: #uLong taking: #(uLong uLong) as: args 
+    ^ iup call: 'IupAppend' returning: #cObject taking: #(cObject cObject) as: args 
+|
+  IupShow: dialog
+    | args |
+    args <- Array new: 1.
+    args at: 1 put: dialog.
+    ^ iup call: #IupShow returning: #int taking: #(cObject) as: args
+|
+  IupMainLoop
+    ^ iup call: #IupMainLoop returning: #int taking: #() as: #()
 ]
 *
 Methods Widget 'all'
@@ -136,8 +145,12 @@ Methods MetaDialog 'all'
 *
 Methods Dialog 'all'
   init: child
+    | result |
     iup <- IUP instance.
-    iup IupDialog: (child handle).
+    result <- iup IupDialog: (child handle).
     super handle: (result at: 1).
     ^ self
+|
+  show
+    IUP instance IupShow: handle.
 ]
