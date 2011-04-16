@@ -22,7 +22,7 @@ Methods MetaArray 'all'
 ]
 Methods MetaByteArray 'all'
   new: size
-		^ < 22 < 58 size > self >
+		^ < 22 < 59 size > self >
 ]
 Methods Array 'all'
 	< coll
@@ -138,6 +138,17 @@ Methods Array 'all'
 			  (i <= xsize ifTrue: [ self at: i ] ifFalse: [ z ])
 			  value:
 			  (i <= ysize ifTrue: [ coll at: i ] ifFalse: [ z ])]
+|
+  from: low to: high 
+    | start stop size obj |
+    start <- low max: 1.
+    stop <- high min: self size.
+    size <- (stop + 1 - start) max: 1.
+    obj <- (self class) new: size.
+    (1 to: size) do: [ :i |
+      obj basicAt: i put: (self at: start).
+      start <- start + 1 ].
+    ^ obj
 ]
 Methods ByteArray 'all'
 	asString
@@ -503,6 +514,10 @@ Methods Set 'all'
 	add: value
 		(self includes: value)
 			ifFalse: [ self addFirst: value ]
+]
+Methods MetaString 'all'
+  new: size
+    ^ super new: size+1
 ]
 Methods String 'all'
 	, value

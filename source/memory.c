@@ -392,7 +392,7 @@ int i, x;
 	if (isInteger(z))
 		sysError("indexing integer","byteAtPut");
 	else if ((i <= 0) || (i > 2 * - sizeField(z))) {
-fprintf(stderr,"index %d size %d\n", i, sizeField(z));
+    fprintf(stderr,"index %d size %d\n", i, sizeField(z));
 		sysError("index out of range", "byteAtPut");
 		}
 	else {

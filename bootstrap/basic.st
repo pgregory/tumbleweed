@@ -166,6 +166,9 @@ Methods Class 'creation'
 			ifTrue: [ ^ m watch: 
 				[:a | ('executing ', name) print. a print] ]
 			ifFalse: [ ^ 'no such method' ]
+|
+  isMeta
+    ^ (name asString from: 1 to: 4) = 'Meta'
 ]
 Methods Context 'all'
 	at: key put: value

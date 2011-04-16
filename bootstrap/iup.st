@@ -5,8 +5,9 @@ Class   WidgetContainer Widget children
 Class     VBox WidgetContainer
 Class     HBox WidgetContainer
 Class     Dialog WidgetContainer
-Class   Button Widget
-Class   Label Widget
+Class   ButtonControl Widget
+Class   LabelControl Widget
+Class   ListControl Widget
 *
 Methods MetaIUP 'all'
   new
@@ -48,8 +49,11 @@ Methods IUP 'all'
     args at: 2 put: 'DefaultButtonAction'.
     ^ iup call: 'IupButton' returning: #cObject taking: #(string string) as: args 
 |
-  IupVBox 
+  IupVbox 
     ^ iup call: 'IupVbox' returning: #cObject taking: #(int int) as: #(0 0)
+|
+  IupHbox 
+    ^ iup call: 'IupHbox' returning: #cObject taking: #(int int) as: #(0 0)
 |
   IupDialog: child 
     | args |
@@ -72,10 +76,29 @@ Methods IUP 'all'
 |
   IupMainLoop
     ^ iup call: #IupMainLoop returning: #int taking: #() as: #()
+|
+  IupStoreAttribute: name on: handle as: value
+    | args |
+    args <- Array new: 3.
+    args at: 1 put: handle.
+    args at: 2 put: name.
+    args at: 3 put: value.
+    ^ iup call: #IupStoreAttribute returning: #void taking: #(cObject string string) as: args
+|
+  IupList
+    ^ iup call: #IupList returning: #cObject taking: #(string) as: #('DefaultListAction')
+]
+*
+Methods MetaWidget 'all'
+  new
+    | newObj |
+    newObj <- super new.
+    newObj init.
+    ^newObj
 ]
 *
 Methods Widget 'all'
-  new
+  init
     handle <- 0.
     ^ self
 |
@@ -84,10 +107,13 @@ Methods Widget 'all'
 | 
   handle: h
     handle <- h
+|
+  at: name put: value
+  IUP instance IupStoreAttribute: name on: (self handle) as: value
 ]
 *
 Methods WidgetContainer 'all'
-  new
+  init
     super new.
     children <- List new.
     ^ self 
@@ -101,36 +127,42 @@ Methods WidgetContainer 'all'
     ^ self
 ]
 *
-Methods MetaButton 'all'
+Methods MetaButtonControl 'all'
   new: aString
-  | newButton |
-  newButton <- super new.
-  newButton init: aString.
-  ^ newButton
+    | newButton |
+    newButton <- super new.
+    newButton init: aString.
+    ^ newButton
 ]
 *
-Methods Button 'all'
+Methods ButtonControl 'all'
   init: aString
     | iup result |
     iup <- IUP instance.
     result <- iup IupButton: aString.
     super handle: (result at: 1).
     ^ self
+|
+  init
+    ^ self init: 'UNNAMED'
 ]
 *
-*
-Methods MetaVBox 'all'
-  new
-  | newVBox |
-  newVBox <- super new.
-  newVBox init.
-  ^ newVBox
-]
 Methods VBox 'all'
   init
     | iup result |
+    super init.
     iup <- IUP instance.
-    result <- iup IupVBox.
+    result <- iup IupVbox.
+    super handle: (result at: 1).
+    ^ self
+]
+*
+Methods HBox 'all'
+  init
+    | iup result |
+    super init.
+    iup <- IUP instance.
+    result <- iup IupHbox.
     super handle: (result at: 1).
     ^ self
 ]
@@ -145,7 +177,7 @@ Methods MetaDialog 'all'
 *
 Methods Dialog 'all'
   init: child
-    | result |
+    | iup result |
     iup <- IUP instance.
     result <- iup IupDialog: (child handle).
     super handle: (result at: 1).
@@ -153,4 +185,13 @@ Methods Dialog 'all'
 |
   show
     IUP instance IupShow: handle.
+]
+*
+Methods ListControl 'all'
+  init
+    | iup result |
+    iup <- IUP instance.
+    result <- iup IupList.
+    super handle: (result at: 1).
+    ^self
 ]

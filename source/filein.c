@@ -25,7 +25,7 @@ boolean savetext = true;
 	we read the input a line at a time, putting lines into the following
 	buffer.  In addition, all methods must also fit into this buffer.
 */
-# define TextBufferSize 1024
+# define TextBufferSize 16384
 static char textBuffer[TextBufferSize];
 
 /*
@@ -236,7 +236,7 @@ static readMethods(fd, printit)
 FILE *fd;
 boolean printit;
 {	object classObj, methTable, theMethod, selector;
-# define LINEBUFFERSIZE 512
+# define LINEBUFFERSIZE 16384
 	char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
 
 	if (nextToken() != nameconst)
