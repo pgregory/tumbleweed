@@ -23,13 +23,6 @@
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
 
-typedef struct FFI_Lib_S {
-  FFI_LibraryHandle handle;
-  int                 numFunctions;
-  FFI_FunctionHandle* functions;
-  struct FFI_Lib_S*   next;
-} FFI_Lib;
-
 typedef union FFI_DataType_U {
   char* charPtr;
   int   integer;
@@ -40,8 +33,6 @@ typedef union FFI_DataType_U {
     int integer;
   } outInteger;
 } FFI_DataType;
-
-static FFI_Lib* gLibraries = NULL;
 
 typedef enum FFI_Symbols_E {
   FFI_CHAR,
@@ -231,67 +222,6 @@ object valueIn(int retMap, FFI_DataType* data)
   }
 }
 
-static int addLibrary(FFI_LibraryHandle handle)
-{
-  if(NULL == gLibraries)
-  {
-    gLibraries = calloc(1, sizeof(FFI_Lib));
-    gLibraries[0].handle = handle;
-    gLibraries[0].functions = NULL;
-    gLibraries[0].next = NULL;
-
-    return 0;
-  }
-  else
-  {
-    FFI_Lib* newLib = calloc(1, sizeof(FFI_Lib));
-    newLib->handle = handle;
-    newLib->numFunctions = 0;
-    newLib->functions = NULL;
-    newLib->next = NULL;
-    FFI_Lib* last = gLibraries;
-    int id = 0;
-    while(last->next != NULL)
-      last = last->next;
-    last->next = newLib;
-
-    return id + 1;
-  }
-}
-
-static int addFunction(FFI_Lib* lib, FFI_FunctionHandle handle)
-{
-  assert(NULL != lib && NULL != handle);
-  if(NULL == lib->functions)
-  {
-    lib->functions = calloc(1, sizeof(FFI_FunctionHandle));
-    lib->functions[0] = handle;
-    lib->numFunctions = 1;
-    return 0;
-  }
-  else
-  {
-    lib->functions = realloc(lib->functions, (lib->numFunctions+1 * sizeof(FFI_FunctionHandle)));
-    lib->functions[lib->numFunctions] = handle;
-    lib->numFunctions++;
-    return lib->numFunctions-1;
-  }
-}
-
-static FFI_Lib* getLibrary(int id)
-{
-  int i = id;
-  FFI_Lib* lib = gLibraries;
-  while(i-- > 0)
-  {
-    if(NULL == lib->next)
-      return NULL;
-    lib = lib->next;
-  }
-
-  return lib;
-}
-
 object ffiPrimitive(int number, object* arguments)
 {	
   object returnedObject = nilobj;
@@ -302,44 +232,33 @@ object ffiPrimitive(int number, object* arguments)
       {
         char* p = charPtr(arguments[0]);
         sprintf(libName, "%s.%s", p, SO_EXT);
-        void* handle = dlopen(libName, RTLD_LAZY);
+        FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
-        {
-          int id = addLibrary(handle);
-          returnedObject = newInteger(id);
-        }
+          returnedObject = newCPointer(handle);
         else 
         {
           sysWarn("library not found","ffiPrimitive");
-          returnedObject = newInteger(-1);
+          returnedObject = nilobj;
         }
       }
       break;
 
     case 1: /* dlsym */
       {
-        if(isInteger(arguments[0]))
+        // \todo: Check type.
+        FFI_LibraryHandle lib = cPointerValue(arguments[0]);
+        char* p = charPtr(arguments[1]);
+        if(NULL != lib)
         {
-          int id = intValue(arguments[0]);
-          char* p = charPtr(arguments[1]);
-          FFI_Lib* lib = getLibrary(id);
-          if(NULL != lib)
+          FFI_FunctionHandle func = dlsym(lib, p);
+          if(NULL != func)
+            returnedObject = newCPointer(func);
+          else
           {
-            FFI_FunctionHandle func = dlsym(lib->handle, p);
-            if(NULL != func)
-            {
-              int fid = addFunction(lib, func);
-              returnedObject = newInteger(fid);
-            }
-            else
-            {
-              sysWarn("function not found in library", "ffiPrimitive");
-              returnedObject = newInteger(-1);
-            }
+            sysWarn("function not found in library", "ffiPrimitive");
+            returnedObject = nilobj;
           }
         }
-        else
-          sysError("invalid library handle", "ffiPrimitive"); 
       }
       break;
 
@@ -348,70 +267,66 @@ object ffiPrimitive(int number, object* arguments)
       */
     case 2: /* cCall */
       {
-        int lib_id = intValue(arguments[0]);
-        int func_id = intValue(arguments[1]);
-        object rtype = arguments[2];
+        // \todo: Check types.
+        FFI_FunctionHandle func = cPointerValue(arguments[0]);
+        object rtype = arguments[1];
         int retMap = mapType(rtype);
-        int cargTypes = sizeField(arguments[3]);
-        int cargs = sizeField(arguments[4]);
+        int cargTypes = sizeField(arguments[2]);
+        int cargs = sizeField(arguments[3]);
         int cOutArgs = 0;
 
         assert(cargTypes == cargs);
 
-        FFI_Lib* lib = getLibrary(lib_id);
-        if(NULL != lib)
+        if(NULL != func)
         {
-          if(func_id < lib->numFunctions)
+          ffi_type** args = NULL;
+          void** values = NULL;
+          FFI_DataType* dataValues = NULL; 
+          if(cargs > 0)
           {
-            ffi_type** args = NULL;
-            void** values = NULL;
-            FFI_DataType* dataValues = NULL; 
-            if(cargs > 0)
-            {
-              args = calloc(cargTypes, sizeof(ffi_type));
-              values = calloc(cargs, sizeof(void*));
-              dataValues = calloc(cargs, sizeof(FFI_DataType));
+            args = calloc(cargTypes, sizeof(ffi_type));
+            values = calloc(cargs, sizeof(void*));
+            dataValues = calloc(cargs, sizeof(FFI_DataType));
 
-              int i;
-              for(i = 0; i < cargTypes; ++i)
-              {
-                object argType = basicAt(arguments[3], i+1);
-                int argMap = mapType(argType);
-                args[i] = ffiLSTTypes[argMap];
-                values[i] = valueOut(argMap, basicAt(arguments[4], i+1), &dataValues[i]);
-              }
+            int i;
+            for(i = 0; i < cargTypes; ++i)
+            {
+              object argType = basicAt(arguments[2], i+1);
+              int argMap = mapType(argType);
+              args[i] = ffiLSTTypes[argMap];
+              values[i] = valueOut(argMap, basicAt(arguments[3], i+1), &dataValues[i]);
             }
+          }
 
-            ffi_type* ret;
-            ret = ffiLSTTypes[retMap]; 
-            ffi_type retVal;
-            void* retData = &retVal;
+          ffi_type* ret;
+          ret = ffiLSTTypes[retMap]; 
+          ffi_type retVal;
+          void* retData = &retVal;
 
-            ffi_cif cif;
-            if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargs, ret, args) == FFI_OK)
+          ffi_cif cif;
+          if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargs, ret, args) == FFI_OK)
+          {
+            returnedObject = newArray(cargs + 1);
+
+            ffi_call(&cif, func, retData, values);
+            basicAtPut(returnedObject, 1, valueIn(retMap, retData));
+          }
+          // Now fill in the rest of the result array with the arguments
+          // thus getting any 'out' values back to the system in a controlled 
+          // way.
+          // Note: All arguments are passed back, irrespective of if they 
+          // are out or not, they will just be unchanged if not. This makes it
+          // simpler to index them on the other end.
+          if(cargs > 0)
+          {
+            int i;
+            for(i = 0; i < cargs; ++i)
             {
-              returnedObject = newArray(cargs + 1);
-
-              ffi_call(&cif, lib->functions[func_id], retData, values);
-              basicAtPut(returnedObject, 1, valueIn(retMap, retData));
-            }
-            // Now fill in the rest of the result array with the arguments
-            // thus getting any 'out' values back to the system in a controlled 
-            // way.
-            // Note: All arguments are passed back, irrespective of if they 
-            // are out or not, they will just be unchanged if not. This makes it
-            // simpler to index them on the other end.
-            if(cargs > 0)
-            {
-              int i;
-              for(i = 0; i < cargs; ++i)
-              {
-                object argType = basicAt(arguments[3], i+1);
-                int argMap = mapType(argType);
-                // Get a new value out of the arguments array.
-                object newVal = valueIn(argMap, values[i]);
-                basicAtPut(returnedObject, i+2, newVal); 
-              }
+              object argType = basicAt(arguments[2], i+1);
+              int argMap = mapType(argType);
+              // Get a new value out of the arguments array.
+              object newVal = valueIn(argMap, values[i]);
+              basicAtPut(returnedObject, i+2, newVal); 
             }
           }
         }

@@ -1,20 +1,13 @@
 *
 * Foreign Frame Interface wrapper object
 *
-Class FFI Object libraryId name functions
+Class FFI Object handle name functions
 *
 Methods MetaFFI 'all'
-  new
-    | newObj |
-    newObj <- super new.
-    newObj init.
-    ^newObj
-|
   new: aString
     | newObj |
     newObj <- super new.
-    newObj init.
-    newObj open: aString.
+    newObj init: aString.
     ^newObj
 |
   test
@@ -24,13 +17,13 @@ Methods MetaFFI 'all'
 ]
 *
 Methods FFI 'all'
-  init
-    name <- 'unnamed'.
-    functions <- Dictionary new
+  init: aString
+    self open: aString.
+    functions <- Dictionary new.
 |
   open: theName
     name <- theName.
-    ^self open
+    ^ self open
 |
   name: aString
     name <- aString
@@ -44,16 +37,27 @@ Methods FFI 'all'
   openPrim
     ^ <180 name>
 |
+  handle
+    ^ handle
+|
+  add: aString
+    | fhandle |
+    fhandle <- <181 handle aString>.
+    fhandle isNil ifTrue: [ function at: aString put: fhandle ].
+    ^ self
+|
   call: aString returning: aSymbol taking: argTypes as: arguments
     | fid ret |
-    ^ (handle >= 0)
-        ifFalse: [ nil ]
-        ifTrue: [ 
-          fid <- <181 handle aString>.
-          (fid >= 0)
-            ifTrue: 
-              [ <182 handle fid aSymbol argTypes arguments> ]
+    ^ handle isNil
+        ifTrue: [ nil ]
+        ifFalse: [ 
+          (functions includesKey: aString)
+            ifTrue: [ fid <- functions at: aString ]
+            ifFalse: [ fid <- <181 handle aString> ].
+          fid isNil
             ifFalse: 
+              [ <182 fid aSymbol argTypes arguments> ]
+            ifTrue: 
               [ nil ]
         ]
 ]
