@@ -19,11 +19,21 @@ Methods MetaIUP 'all'
     ^ theInstance
 |
   test
-    | iup result |
+    | btn vbox dialog done e |
     iup <- IUP instance.
-    result <- iup IupGetColorRed: 255 Green: 0 Blue: 0.
-    stderr print: ('Return: ', (result at: 1), ' Chose - r: ', (result at: 4), ' g: ', (result at: 5), ' b: ', (result at: 6)).
-    ^ result
+    btn <- ButtonControl new: 'Test'.
+    stderr print: (btn handle asString).
+    vbox <- VBox new.
+    vbox addChild: btn.
+    btn setActionCallback: [ :x | stderr print: ('Hello: ', (x asString)). -3 ].
+    dialog <- Dialog new: vbox.
+    dialog show.
+    done <- false.
+    [ done ] whileFalse: [ 
+      e <- iup IupLoopStep.
+      [ e = -3 ] whileFalse: [ e <- iup IupLoopStep ].
+      done <- true
+    ]
 ]
 *
 Methods IUP 'all'
@@ -74,8 +84,19 @@ Methods IUP 'all'
     args at: 1 put: dialog.
     ^ iup call: #IupShow returning: #int taking: #(cObject) as: args
 |
+  IupHide: dialog
+    | args |
+    args <- Array new: 1.
+    args at: 1 put: dialog.
+    ^ iup call: #IupHide returning: #int taking: #(cObject) as: args
+|
   IupMainLoop
     ^ iup call: #IupMainLoop returning: #int taking: #() as: #()
+|
+  IupLoopStep
+    | result |
+    result <- iup call: #IupLoopStep returning: #int taking: #() as: #().
+    ^ result at: 1
 |
   IupStoreAttribute: name on: handle as: value
     | args |
@@ -118,6 +139,11 @@ Methods Widget 'all'
 |
   at: name put: value
   IUP instance IupStoreAttribute: name on: (self handle) as: value
+|
+  setCallbackFor: action as: aBlock returning: type taking: args
+  | cb |
+  cb <- <183 type args aBlock>.
+  ^ IUP instance IupSetCallbackOn: (self handle) for: (action asString) as: cb
 ]
 *
 Methods WidgetContainer 'all'
@@ -153,6 +179,9 @@ Methods ButtonControl 'all'
 |
   init
     ^ self init: 'UNNAMED'
+|
+  setActionCallback: aBlock
+    ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject)
 ]
 *
 Methods VBox 'all'
@@ -193,6 +222,9 @@ Methods Dialog 'all'
 |
   show
     IUP instance IupShow: handle.
+|
+  hide
+    IUP instance IupHide: handle.
 ]
 *
 Methods ListControl 'all'

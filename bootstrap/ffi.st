@@ -43,7 +43,7 @@ Methods FFI 'all'
   add: aString
     | fhandle |
     fhandle <- <181 handle aString>.
-    fhandle isNil ifTrue: [ function at: aString put: fhandle ].
+    fhandle isNil ifFalse: [ function at: aString put: fhandle ].
     ^ self
 |
   call: aString returning: aSymbol taking: argTypes as: arguments

@@ -225,21 +225,48 @@ object valueIn(int retMap, FFI_DataType* data)
   }
 }
 
+typedef struct FFI_CallbackData_S {
+  object  block;
+  int     numArgs;
+  FFI_Symbols *argTypeArray;
+  FFI_Symbols retType;
+} FFI_CallbackData;
+
+FFI_CallbackData* newCallbackData(int numArgs)
+{
+  FFI_CallbackData* data = calloc(1, sizeof(FFI_CallbackData));
+  data->argTypeArray = calloc(numArgs, sizeof(FFI_Symbols));
+  data->numArgs = numArgs;
+
+  return data;
+}
+
+void deleteCallbackData(FFI_CallbackData *data)
+{
+  free(data->argTypeArray);
+  free(data);
+}
 
 void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 {
-  printf("Got a callback!\n");
   void* handle = *(void**)args[0];
+  int arg;
+
+  FFI_CallbackData* data = (FFI_CallbackData*)ud;
 
   int i = intValue(basicAt(processStack, linkPointer));
   /* change context and byte pointer */
-  object block = *(object*)ud;
-  printf("Blockpointer : %d\n", ud);
-  printf("Block : %d : type : %s\n", block, charPtr(basicAt(getClass(block), nameInClass)));
-  //object context = basicAt(block, contextInBlock);
-  //object bytePointer = basicAt(block, bytecountPositionInBlock);
-  //fieldAtPut(processStack, i+1, context);
-  //fieldAtPut(processStack, i+4, bytePointer);
+  object block = data->block;
+  object context = basicAt(block, contextInBlock);
+  int argLoc = intValue(basicAt(block, argumentLocationInBlock));
+  object temps = basicAt(context, temporariesInContext);
+  for(arg = 0; arg < data->numArgs; ++arg)
+  {
+    basicAtPut(temps, argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
+  }
+  object bytePointer = basicAt(block, bytecountPositionInBlock);
+  fieldAtPut(processStack, i+1, context);
+  fieldAtPut(processStack, i+4, bytePointer);
 }
 
 object ffiPrimitive(int number, object* arguments)
@@ -364,19 +391,17 @@ object ffiPrimitive(int number, object* arguments)
         int retMap = mapType(rtype);
         int cargTypes = sizeField(arguments[1]);
         ffi_closure* closure;
-        ffi_cif *cif = calloc(1, sizeof(cif));
+        ffi_cif *cif = calloc(1, sizeof(ffi_cif));
         object block = arguments[2];
-        object* pblock = calloc(1, sizeof(object));
-        *pblock = block;
-        incr(block);
-        printf("Blockpointer : %d\n", pblock);
-        printf("Block : %d : type : %s\n", *pblock, charPtr(basicAt(getClass(*pblock), nameInClass)));
 
         /* Allocate closure and bound_puts */
         closure = ffi_closure_alloc(sizeof(ffi_closure), &callback);
 
         if(closure)
         {
+          /* Build the callback structure that is passed to the callback handler */
+          FFI_CallbackData* data = newCallbackData(cargTypes);
+
           /* Initialize the argument info vectors */
           ffi_type** args = NULL;
           if(cargTypes > 0)
@@ -388,9 +413,13 @@ object ffiPrimitive(int number, object* arguments)
             {
               object argType = basicAt(arguments[1], i+1);
               int argMap = mapType(argType);
+              data->argTypeArray[i] = argMap;
               args[i] = ffiLSTTypes[argMap];
             }
           }
+          data->retType = retMap;
+          data->block = block;
+          incr(block);
 
           ffi_type* ret;
           ret = ffiLSTTypes[retMap]; 
@@ -399,7 +428,7 @@ object ffiPrimitive(int number, object* arguments)
           if(ffi_prep_cif(cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
           {
             /* Initialize the closure, setting stream to stdout */
-            if(ffi_prep_closure_loc(closure, cif, callBack, pblock, callback) == FFI_OK)
+            if(ffi_prep_closure_loc(closure, cif, callBack, data, callback) == FFI_OK)
             {
               returnedObject = newCPointer(callback);
             }
