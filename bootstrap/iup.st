@@ -87,6 +87,14 @@ Methods IUP 'all'
 |
   IupList
     ^ iup call: #IupList returning: #cObject taking: #(string) as: #('DefaultListAction')
+|
+  IupSetCallbackOn: handle for: action as: callback
+    | args |
+    args <- Array new: 3.
+    args at: 1 put: handle.
+    args at: 2 put: action.
+    args at: 3 put: callback.
+    ^ iup call: #IupSetCallback returning: #cObject taking: #(cObject string cObject) as: args
 ]
 *
 Methods MetaWidget 'all'

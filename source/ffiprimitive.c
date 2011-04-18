@@ -20,6 +20,9 @@
 #include "memory.h"
 #include "names.h"
 
+extern object processStack;
+extern int linkPointer;
+
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
 
@@ -222,6 +225,23 @@ object valueIn(int retMap, FFI_DataType* data)
   }
 }
 
+
+void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
+{
+  printf("Got a callback!\n");
+  void* handle = *(void**)args[0];
+
+  int i = intValue(basicAt(processStack, linkPointer));
+  /* change context and byte pointer */
+  object block = *(object*)ud;
+  printf("Blockpointer : %d\n", ud);
+  printf("Block : %d : type : %s\n", block, charPtr(basicAt(getClass(block), nameInClass)));
+  //object context = basicAt(block, contextInBlock);
+  //object bytePointer = basicAt(block, bytecountPositionInBlock);
+  //fieldAtPut(processStack, i+1, context);
+  //fieldAtPut(processStack, i+4, bytePointer);
+}
+
 object ffiPrimitive(int number, object* arguments)
 {	
   object returnedObject = nilobj;
@@ -263,7 +283,7 @@ object ffiPrimitive(int number, object* arguments)
       break;
 
      /* 
-      *  cCall <lib_id> <func_id> <#return_type> <#(#arg_type ...)> <#(args ...)>
+      *  cCall <func_id> <#return_type> <#(#arg_type ...)> <#(args ...)>
       */
     case 2: /* cCall */
       {
@@ -330,6 +350,64 @@ object ffiPrimitive(int number, object* arguments)
             }
           }
         }
+      }
+      break;
+
+     /* 
+      *  cCallback <#return_type> <#(#arg_type ...)> aBlock
+      */
+    case 3: /* cCallback */
+      {
+        void *callback;
+
+        object rtype = arguments[0];
+        int retMap = mapType(rtype);
+        int cargTypes = sizeField(arguments[1]);
+        ffi_closure* closure;
+        ffi_cif *cif = calloc(1, sizeof(cif));
+        object block = arguments[2];
+        object* pblock = calloc(1, sizeof(object));
+        *pblock = block;
+        incr(block);
+        printf("Blockpointer : %d\n", pblock);
+        printf("Block : %d : type : %s\n", *pblock, charPtr(basicAt(getClass(*pblock), nameInClass)));
+
+        /* Allocate closure and bound_puts */
+        closure = ffi_closure_alloc(sizeof(ffi_closure), &callback);
+
+        if(closure)
+        {
+          /* Initialize the argument info vectors */
+          ffi_type** args = NULL;
+          if(cargTypes > 0)
+          {
+            args = calloc(cargTypes, sizeof(ffi_type));
+
+            int i;
+            for(i = 0; i < cargTypes; ++i)
+            {
+              object argType = basicAt(arguments[1], i+1);
+              int argMap = mapType(argType);
+              args[i] = ffiLSTTypes[argMap];
+            }
+          }
+
+          ffi_type* ret;
+          ret = ffiLSTTypes[retMap]; 
+
+          /* Initialize the cif */
+          if(ffi_prep_cif(cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
+          {
+            /* Initialize the closure, setting stream to stdout */
+            if(ffi_prep_closure_loc(closure, cif, callBack, pblock, callback) == FFI_OK)
+            {
+              returnedObject = newCPointer(callback);
+            }
+          }
+        }
+
+        /* Deallocate both closure, and bound_puts */
+        //ffi_closure_free(closure);
       }
       break;
 
