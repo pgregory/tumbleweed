@@ -254,19 +254,33 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
   FFI_CallbackData* data = (FFI_CallbackData*)ud;
 
-  int i = intValue(basicAt(processStack, linkPointer));
-  /* change context and byte pointer */
   object block = data->block;
   object context = basicAt(block, contextInBlock);
+  object bytePointer = basicAt(block, bytecountPositionInBlock);
+
+  object processClass = globalSymbol("Process");
+  object process = allocObject(processSize);
+  object stack = newArray(50);
+  basicAtPut(process, stackInProcess, stack);
+  basicAtPut(process, stackTopInProcess, newInteger(10));
+  basicAtPut(process, linkPtrInProcess, newInteger(2));
+  basicAtPut(stack, 3, context);
+  basicAtPut(stack, 4, newInteger(1));
+  basicAtPut(stack, 6, bytePointer);
+
+  /* change context and byte pointer */
   int argLoc = intValue(basicAt(block, argumentLocationInBlock));
   object temps = basicAt(context, temporariesInContext);
   for(arg = 0; arg < data->numArgs; ++arg)
-  {
     basicAtPut(temps, argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
-  }
-  object bytePointer = basicAt(block, bytecountPositionInBlock);
-  fieldAtPut(processStack, i+1, context);
-  fieldAtPut(processStack, i+4, bytePointer);
+
+  object saveProcessStack = processStack;
+  int saveLinkPointer = linkPointer;
+  execute(process, 5000);
+  object returnedObject = basicAt(stack, 1);
+  valueOut(data->retType, returnedObject, ret); 
+  processStack = saveProcessStack;
+  linkPointer = saveLinkPointer;
 }
 
 object ffiPrimitive(int number, object* arguments)

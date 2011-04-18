@@ -32,6 +32,7 @@ Methods MetaIUP 'all'
     [ done ] whileFalse: [ 
       e <- iup IupLoopStep.
       [ e = -3 ] whileFalse: [ e <- iup IupLoopStep ].
+      stderr print: (e asString).
       done <- true
     ]
 ]
