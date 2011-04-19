@@ -74,6 +74,10 @@ static object zeroaryPrims(number)
     case 5:		/* flip watch - done in interp */
       break;
 
+    case 6:
+      returnedObject = newCPointer(NULL);
+      break;
+
     case 9:
       exit(0);
 
@@ -564,7 +568,7 @@ static int cPointerUnary(int number, void* firstarg)
   object returnedObject;
 
   switch(number) {
-    case 1:		/* floating value asString */
+    case 1:		/* cPointer value asString */
       ignore sprintf(buffer,"0x%X", firstarg);
       returnedObject = newStString(buffer);
       break;

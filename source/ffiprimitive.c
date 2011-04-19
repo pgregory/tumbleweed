@@ -276,7 +276,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
   object saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
-  execute(process, 5000);
+  while(execute(process, 15000));
   object returnedObject = basicAt(stack, 1);
   valueOut(data->retType, returnedObject, ret); 
   processStack = saveProcessStack;
