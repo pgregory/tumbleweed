@@ -84,6 +84,13 @@ Methods Char 'all'
 	printString
 		^ '$', self asString
 ]
+Methods MetaChar 'all'
+  cr
+    ^ 13 asCharacter
+|
+  lf 
+    ^ 10 asCharacter
+]
 Methods Fraction 'all'
 	= f
 		f isFraction
