@@ -424,6 +424,10 @@ Methods Object 'errors'
       ' ', (a printString)
 ]
 *
+Methods MetaCPointer 'creation'
+  new
+    ^ <6>
+]
 Methods CPointer 'all'
   asString
     ^ <141 self>
