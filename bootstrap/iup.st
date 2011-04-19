@@ -8,6 +8,7 @@ Class     Dialog WidgetContainer
 Class   ButtonControl Widget
 Class   LabelControl Widget
 Class   ListControl Widget
+Class   TextControl Widget
 *
 Methods MetaIUP 'all'
   new
@@ -107,8 +108,19 @@ Methods IUP 'all'
     args at: 3 put: value.
     ^ iup call: #IupStoreAttribute returning: #void taking: #(cObject string string) as: args
 |
+  IupSetNullAttribute: name on: handle
+    | args |
+    args <- Array new: 3.
+    args at: 1 put: handle.
+    args at: 2 put: name.
+    args at: 3 put: CPointer new.
+    ^ iup call: #IupSetAttribute returning: #void taking: #(cObject string cObject) as: args
+|
   IupList
     ^ iup call: #IupList returning: #cObject taking: #(string) as: #('DefaultListAction')
+|
+  IupText
+    ^ iup call: #IupText returning: #cObject taking: #(string) as: #('DefaultListAction')
 |
   IupSetCallbackOn: handle for: action as: callback
     | args |
@@ -235,4 +247,19 @@ Methods ListControl 'all'
     result <- iup IupList.
     super handle: (result at: 1).
     ^self
+|
+  setActionCallback: aBlock
+    ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject string int int)
+]
+*
+Methods TextControl 'all'
+  init
+    | iup result |
+    iup <- IUP instance.
+    result <- iup IupText.
+    super handle: (result at: 1).
+    ^self
+|
+  insert: aString
+    ^ super at: 'INSERT' put: (aString asString)
 ]
