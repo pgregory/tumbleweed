@@ -4,6 +4,7 @@ Class Widget Object handle
 Class   WidgetContainer Widget children
 Class     VBox WidgetContainer
 Class     HBox WidgetContainer
+Class     Split WidgetContainer
 Class     Dialog WidgetContainer
 Class   ButtonControl Widget
 Class   LabelControl Widget
@@ -67,6 +68,13 @@ Methods IUP 'all'
   IupHbox 
     ^ iup call: 'IupHbox' returning: #cObject taking: #(int int) as: #(0 0)
 |
+  IupSplitWith: child1 and: child2 
+    | args |
+    args <- Array new: 2.
+    args at: 1 put: child1.
+    args at: 2 put: child2.
+    ^ iup call: 'IupSplit' returning: #cObject taking: #(cObject cObject) as: args
+|
   IupDialog: child 
     | args |
     args <- Array new: 1.
@@ -79,6 +87,21 @@ Methods IUP 'all'
     args at: 1 put: parent.
     args at: 2 put: child.
     ^ iup call: 'IupAppend' returning: #cObject taking: #(cObject cObject) as: args 
+|
+  IupInsert: child after: ref on: parent 
+    | args |
+    args <- Array new: 3.
+    args at: 1 put: parent.
+    args at: 2 put: ref.
+    args at: 3 put: child.
+    ^ iup call: 'IupInsert' returning: #cObject taking: #(cObject cObject cObect) as: args 
+|
+  IupGetChildAt: pos on: parent
+    | args |
+    args <- Array new: 2.
+    args at: 1 put: parent.
+    args at: 2 put: pos.
+    ^ iup call: 'IupGetChild' returning: #cObject taking: #(cObject int) as: args
 |
   IupShow: dialog
     | args |
@@ -108,13 +131,12 @@ Methods IUP 'all'
     args at: 3 put: value.
     ^ iup call: #IupStoreAttribute returning: #void taking: #(cObject string string) as: args
 |
-  IupSetNullAttribute: name on: handle
+  IupGetAttribute: name on: handle 
     | args |
-    args <- Array new: 3.
+    args <- Array new: 2.
     args at: 1 put: handle.
     args at: 2 put: name.
-    args at: 3 put: CPointer new.
-    ^ iup call: #IupSetAttribute returning: #void taking: #(cObject string cObject) as: args
+    ^ iup call: #IupGetAttribute returning: #string taking: #(cObject string) as: args
 |
   IupList
     ^ iup call: #IupList returning: #cObject taking: #(string) as: #('DefaultListAction')
@@ -149,6 +171,11 @@ Methods Widget 'all'
 | 
   handle: h
     handle <- h
+|
+  at: name
+    | result |
+    result <- IUP instance IupGetAttribute: name on: (self handle).
+    ^ result at: 1
 |
   at: name put: value
   IUP instance IupStoreAttribute: name on: (self handle) as: value
@@ -217,6 +244,30 @@ Methods HBox 'all'
     ^ self
 ]
 *
+Methods MetaSplit 'creation'
+  with: child1 and: child2
+    | newControl |
+    newControl <- super new.
+    newControl left: child1 right: child2.
+    ^ newControl
+]
+*
+Methods Split 'all'
+  init
+    | iup result |
+    super init.
+    iup <- IUP instance.
+    result <- iup IupSplitWith: (CPointer new) and: (CPointer new).
+    super handle: (result at: 1).
+    ^ self
+|
+  left: child1 right: child2
+    | gripper |
+    iup <- IUP instance.
+    iup IupAppend: (child1 handle) to: (self handle).
+    iup IupAppend: (child2 handle) to: (self handle).
+]
+*
 Methods MetaDialog 'all'
   new: child
     | newDialog |
@@ -247,6 +298,11 @@ Methods ListControl 'all'
     result <- iup IupList.
     super handle: (result at: 1).
     ^self
+|
+  count
+    | result |
+    result <- IUP instance IupGetAttribute: 'COUNT' on: handle.
+    ^ result at: 1
 |
   setActionCallback: aBlock
     ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject string int int)

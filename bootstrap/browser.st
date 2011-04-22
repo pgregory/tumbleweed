@@ -1,4 +1,4 @@
-Class Browser Object classCatList classList methodCatList methodList debug dialog
+Class Browser Object classCatList classList methodCatList methodList debug dialog currentClass currentMethod
 *
 Methods MetaBrowser 'all'
   new
@@ -13,28 +13,29 @@ Methods MetaBrowser 'all'
 *
 Methods Browser 'all'
   init
-    | topHBox middleHBox vBox theClass |
+    | topHBox middleHBox vBox |
     controls <- Dictionary new.
     classCatList <- ListControl new; at: 'EXPAND' put: 'YES'.
-    classList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'VISIBLELINES' put: '10'.
+    classList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'.
     methodCatList <- ListControl new; at: 'EXPAND' put: 'YES'.
-    methodList <- ListControl new; at: 'EXPAND' put: 'YES'.
+    methodList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'.
     debug <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'.
-    topHBox <- HBox new.
+    topHBox <- Split with: classList and: methodList.
     middleHBox <- HBox new.
-    vBox <- VBox new.
-    topHBox addChild: classCatList.
-    topHBox addChild: classList.
-    topHBox addChild: methodCatList.
-    topHBox addChild: methodList.
-    vBox addChild: topHBox.
-    vBox addChild: middleHBox.
-    vBox addChild: debug.
+    vBox <- Split with: topHBox and: debug; at: 'ORIENTATION' put: 'HORIZONTAL'.
+    vBox at: 'SIZE' put: '400x200'.
     dialog <- Dialog new: vBox.
+    dialog at: 'SIZE' put: '410x230'.
     classList setActionCallback: [ :h :className :item :state | 
       (state = 1) ifTrue: [
-        theClass <- (className asSymbol) value.
-        self updateMethodList: theClass 
+        currentClass <- (className asSymbol) value.
+        self updateMethodList: currentClass 
+      ]
+    ].
+    methodList setActionCallback: [ :h :methodName :item :state | 
+      (state = 1) ifTrue: [
+        currentMethod <- (currentClass methodNamed: (methodName asSymbol)).
+        self showMethod: currentMethod 
       ]
     ].
     self updateClassList.
@@ -49,15 +50,24 @@ Methods Browser 'all'
 |
   updateMethodList: theClass
     | index |
-    debug insert: ('Changing to ', (theClass name asString), Char cr, Char lf).
-    clearMethodList.
+    self clearMethodList.
     index <- 1.
     (theClass methods) binaryDo: [ :x :y |
       methodList at: (index asString) put: (x asString). index <- index + 1 ].
     ^ self
 |
+  showMethod: method
+    debug at: 'SELECTION' put: 'ALL'.
+    ((debug at: 'SELECTION') isEmpty)
+      ifTrue: [
+        debug insert: (method text)
+      ]
+      ifFalse: [
+        debug at: 'SELECTEDTEXT' put: (method text)
+      ]
+|
   clearMethodList
-    ^ IUP instance IupSetNullAttribute: 'REMOVEITEM' on: (methodList handle) 
+    methodList at: 'REMOVEITEM' put: (cPointer new)
 |
   show
     dialog show.
