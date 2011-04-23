@@ -24,8 +24,7 @@ Methods Browser 'all'
     middleHBox <- HBox new.
     vBox <- Split with: topHBox and: debug; at: 'ORIENTATION' put: 'HORIZONTAL'.
     vBox at: 'SIZE' put: '400x200'.
-    dialog <- Dialog new: vBox.
-    dialog at: 'SIZE' put: '410x230'.
+    dialog <- Dialog new: vBox; at: 'SIZE' put: '410x230'; at: 'TITLE' put: 'Tumbleweed Browser v0.1'.
     classList setActionCallback: [ :h :className :item :state | 
       (state = 1) ifTrue: [
         currentClass <- (className asSymbol) value.
