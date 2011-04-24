@@ -1,4 +1,47 @@
-Class Browser Object classCatList classList methodCatList methodList debug dialog currentClass currentMethod
+Class Panel Object browser
+Class   NavigationPanel Panel panes
+Class   ButtonPanel Panel buttons
+Class   DefinitionPanel Panel 
+Class Browser Object panels dialog currentClass currentMethod
+*
+Methods MetaPanel 'all'
+  new: browser
+    | newPanel |
+    newPanel <- super new.
+    newPanel init: browser.
+    ^ newPanel
+]
+Methods Panel 'all'
+  init: browser
+    browser <- browser
+    super init.
+    ^ self
+]
+Methods NavigationPanel 'all'
+  init
+    | hbox classList methodList currentClass |
+    classList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'.
+    methodList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'. 
+    hbox <- Split with: classList and: methodList.
+    classList setActionCallback: [ :h :className :item :state | 
+      (state = 1) ifTrue: [
+        currentClass <- (className asSymbol) value.
+        self updateMethodList: methodList with: currentClass 
+      ]
+    ].
+    ^ self
+|
+  updateMethodList: list with: class
+    | index |
+    self clearMethodList.
+    index <- 1.
+    (class methods) binaryDo: [ :x :y |
+      list at: (index asString) put: (x asString). index <- index + 1 ].
+    ^ self
+|
+  clearList: list
+    list at: 'REMOVEITEM' put: (cPointer new)
+    ^ self
 *
 Methods MetaBrowser 'all'
   new
@@ -38,6 +81,20 @@ Methods Browser 'all'
       ]
     ].
     self updateClassList.
+|
+  panels
+    ^ Array new: 3; at: 1 put: navigationPanel; 
+                    at: 2 put: buttonPanel; 
+                    at: 3 put: definitionPanel
+|
+  navigationPanel
+    ^ NavigationPanel new: self
+|
+  buttonPanel
+    ^ ButtonPanel new: self
+|
+  definitionPanel
+    ^ DefinitionPanel new: self
 |
   updateClassList
     | index |
