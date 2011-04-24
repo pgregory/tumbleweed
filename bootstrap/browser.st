@@ -1,7 +1,7 @@
 Class Panel Object browser widget
 Class   NavigationPanel Panel panes
 Class   ButtonPanel Panel buttons
-Class   DefinitionPanel Panel 
+Class   DefinitionPanel Panel text
 Class Browser Object panels dialog currentClass currentMethod
 *
 Methods MetaPanel 'all'
@@ -24,7 +24,7 @@ Methods Panel 'all'
 *
 Methods NavigationPanel 'all'
   init: browser
-    | classList methodList currentClass |
+    | classList methodList currentClass currentMethod |
     classList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'.
     methodList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'. 
     panes <- Array new: 2.
@@ -34,6 +34,12 @@ Methods NavigationPanel 'all'
       (state = 1) ifTrue: [
         currentClass <- (className asSymbol) value.
         self updateMethodList: methodList with: currentClass 
+      ]
+    ].
+    methodList setActionCallback: [ :h :methodName :item :state | 
+      (state = 1) ifTrue: [
+        currentMethod <- (currentClass methodNamed: (methodName asSymbol)).
+        browser showMethod: currentMethod
       ]
     ].
     self updateClassList: classList.
@@ -68,11 +74,20 @@ Methods ButtonPanel 'all'
 ]
 Methods DefinitionPanel 'all'
   init: browser
-    | text |
     widget <- VBox new.
-    text <- TextControl new; at: 'EXPAND' put: 'YES'.
+    text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'.
     widget addChild: text.
     ^ self
+|
+  showMethod: method
+    text at: 'SELECTION' put: 'ALL'.
+    ((text at: 'SELECTION') isEmpty)
+      ifTrue: [
+        text insert: (method text)
+      ]
+      ifFalse: [
+        text at: 'SELECTEDTEXT' put: (method text)
+      ]
 ]
 *
 Methods MetaBrowser 'all'
@@ -91,7 +106,7 @@ Methods Browser 'all'
   init
     | container |
     container <- Split with: ((panels at: 1) widget) and: ((panels at: 3) widget); at: 'ORIENTATION' put: 'HORIZONTAL'. 
-    dialog <- Dialog new: container; at: 'SIZE' put: '400x100'; at: 'SHRINK' put: 'YES'.
+    dialog <- Dialog new: container; at: 'SIZE' put: '400x300'; at: 'SHRINK' put: 'YES'; at: 'TITLE' put: 'Tumbleweed Browser v0.1'.
     ^ self
 |
   panels
@@ -113,14 +128,9 @@ Methods Browser 'all'
     ^ DefinitionPanel new: self
 |
   showMethod: method
-    debug at: 'SELECTION' put: 'ALL'.
-    ((debug at: 'SELECTION') isEmpty)
-      ifTrue: [
-        debug insert: (method text)
-      ]
-      ifFalse: [
-        debug at: 'SELECTEDTEXT' put: (method text)
-      ]
+    | defPnl |
+    defPnl <- panels at: 3.
+    defPnl showMethod: method
 |
   clearMethodList
     methodList at: 'REMOVEITEM' put: (cPointer new)
