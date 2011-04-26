@@ -88,8 +88,8 @@ static void* ffiLSTTypes[] = {
   &ffi_type_pointer,    // FFI_STRING_OUT,
   &ffi_type_pointer,    // FFI_SYMBOL,
   &ffi_type_pointer,    // FFI_SYMBOL_OUT,
-  &ffi_type_sint16,     // FFI_INT,
-  &ffi_type_uint16,     // FFI_UINT,
+  &ffi_type_sint32,     // FFI_INT,
+  &ffi_type_uint32,     // FFI_UINT,
   &ffi_type_sint32,     // FFI_LONG,
   &ffi_type_uint32,     // FFI_ULONG,
   &ffi_type_double,     // FFI_DOUBLE,
@@ -163,6 +163,8 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_ULONG:
       if(isInteger(realValue))
         data->integer = intValue(realValue);
+      else if(getClass(realValue) == globalSymbol("Float"))
+        data->integer = (int)floatValue(realValue);
       ptr = &data->integer;
       break;
     case FFI_DOUBLE:
@@ -277,8 +279,11 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
   while(execute(process, 15000));
-  object returnedObject = basicAt(stack, 1);
-  valueOut(data->retType, returnedObject, ret); 
+  // Re-read the stack object, in case it had to grow during execution and 
+  // was replaced.
+  stack = basicAt(process, stackInProcess);
+  object ro = basicAt(stack, 1);
+  valueOut(data->retType, ro, ret); 
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
 }
