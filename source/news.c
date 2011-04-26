@@ -162,6 +162,9 @@ object newCPointer(void* l)
 
 void* cPointerValue(object o)
 {	
+  if(NULL == charPtr(o))
+    sysError("invalid cPointer","cPointerValue");
+
   void* l;
 
   int s = sizeof(void*);
