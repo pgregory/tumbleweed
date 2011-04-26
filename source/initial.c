@@ -137,7 +137,7 @@ char *text;
 	ignore newClass("String");
 	nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
 
-  basicAtPut(objectClass, methodsInClass, newDictionary(39));
+  basicAtPut(classClass, methodsInClass, newDictionary(39));
 
 	/* finally at least make true and false to be distinct */
 	trueobj = newSymbol("true");

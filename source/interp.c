@@ -66,10 +66,13 @@ static boolean findMethod(methodClassLocation)
   methodClass = *methodClassLocation;
 
 
+//  printf("Looking for %s starting at %d\n", charPtr(messageToSend), methodClass);
   for (; methodClass != nilobj; methodClass = 
       basicAt(methodClass, superClassInClass)) {
 //    printf("Looking for %s on %s\n", charPtr(messageToSend), charPtr(basicAt(methodClass, nameInClass)));
     methodTable = basicAt(methodClass, methodsInClass);
+    if(methodTable == 0)
+      printf("Null method table on %s\n", charPtr(basicAt(methodClass, nameInClass)));
     method = hashEachElement(methodTable, messageToSend, messTest);
     if (method != nilobj)
     {
