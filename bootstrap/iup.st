@@ -6,10 +6,12 @@ Class     VBox WidgetContainer
 Class     HBox WidgetContainer
 Class     Split WidgetContainer
 Class     Dialog WidgetContainer
+Class     Menu WidgetContainer
 Class   ButtonControl Widget
 Class   LabelControl Widget
 Class   ListControl Widget
 Class   TextControl Widget
+Class   ItemControl Widget
 *
 Methods MetaIUP 'all'
   new
@@ -63,10 +65,18 @@ Methods IUP 'all'
     ^ iup call: 'IupButton' returning: #cObject taking: #(string string) as: args 
 |
   IupVbox 
-    ^ iup call: 'IupVbox' returning: #cObject taking: #(int int) as: #(0 0)
+    | args |
+    args <- Array new: 2.
+    args at: 1 put: (CPointer new).
+    args at: 2 put: (CPointer new).
+    ^ iup call: 'IupVbox' returning: #cObject taking: #(cObject cObject) as: args
 |
   IupHbox 
-    ^ iup call: 'IupHbox' returning: #cObject taking: #(int int) as: #(0 0)
+    | args |
+    args <- Array new: 2.
+    args at: 1 put: (CPointer new).
+    args at: 2 put: (CPointer new).
+    ^ iup call: 'IupHbox' returning: #cObject taking: #(cObject cObject) as: args
 |
   IupSplitWith: child1 and: child2 
     | args |
@@ -80,6 +90,14 @@ Methods IUP 'all'
     args <- Array new: 1.
     args at: 1 put: child.
     ^ iup call: 'IupDialog' returning: #cObject taking: #(cObject) as: args
+|
+  IupPopup: child at: x and: y
+    | args |
+    args <- Array new: 3.
+    args at: 1 put: child.
+    args at: 2 put: x.
+    args at: 3 put: y.
+    ^ iup call: 'IupPopup' returning: #int taking: #(cObject int int) as: args
 |
   IupAppend: child to: parent 
     | args |
@@ -151,6 +169,20 @@ Methods IUP 'all'
     args at: 2 put: action.
     args at: 3 put: callback.
     ^ iup call: #IupSetCallback returning: #cObject taking: #(cObject string cObject) as: args
+|
+  IupMenu
+    | args |
+    args <- Array new: 2.
+    args at: 1 put: (CPointer new).
+    args at: 2 put: (CPoitner new).
+    ^ iup call: 'IupMenu' returning: #cObject taking: #(cObject cObject) as: args
+|
+  IupItem: title
+    | args |
+    args <- Array new: 2.
+    args at: 1 put: title.
+    args at: 2 put: 'DefaultMenuAction'.
+    ^ iup call: 'IupItem' returning: #cObject taking: #(string string) as: args 
 ]
 *
 Methods MetaWidget 'all'
@@ -319,3 +351,36 @@ Methods TextControl 'all'
   insert: aString
     ^ super at: 'INSERT' put: (aString asString)
 ]
+*
+Methods Menu 'all'
+  init
+    | iup result |
+    iup <- IUP instance.
+    result <- iup IupMenu.
+    super handle: (result at: 1).
+    ^self
+]
+*
+Methods MetaItemControl 'all'
+  new: aString
+    | newItem |
+    newItem <- super new.
+    newItem init: aString.
+    ^ newItem
+]
+*
+Methods ItemControl 'all'
+  init: aString
+    | iup result |
+    iup <- IUP instance.
+    result <- iup IupItem: aString.
+    super handle: (result at: 1).
+    ^ self
+|
+  init
+    ^ self init: 'UNNAMED'
+|
+  setActionCallback: aBlock
+    ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject)
+]
+*
