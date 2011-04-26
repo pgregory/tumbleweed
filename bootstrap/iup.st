@@ -174,7 +174,7 @@ Methods IUP 'all'
     | args |
     args <- Array new: 2.
     args at: 1 put: (CPointer new).
-    args at: 2 put: (CPoitner new).
+    args at: 2 put: (CPointer new).
     ^ iup call: 'IupMenu' returning: #cObject taking: #(cObject cObject) as: args
 |
   IupItem: title
