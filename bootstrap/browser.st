@@ -24,12 +24,14 @@ Methods Panel 'all'
 *
 Methods NavigationPanel 'all'
   init: browser
-    | classList methodList currentClass currentMethod |
+    | classList methodList currentClass currentMethod splitter |
     classList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'.
     methodList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'. 
     panes <- Array new: 2.
     panes at: 1 put: classList; at: 2 put: methodList.
-    widget <- Split with: classList and: methodList.
+    widget <- VBox new; at: 'NMARGIN' put: '5x5'.
+    splitter <- Split with: classList and: methodList.
+    widget addChild: splitter.
     classList setActionCallback: [ :h :className :item :state | 
       (state = 1) ifTrue: [
         currentClass <- (className asSymbol) value.
@@ -79,29 +81,43 @@ Methods ButtonPanel 'all'
 ]
 Methods DefinitionPanel 'all'
   init: browser
-    | buttons button |
-    widget <- VBox new.
+    | hbox vbox|
+    widget <- VBox new; at: 'NMARGIN' put: '5x5'; at: 'GAP' put: '5'.
     text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'.
-    buttons <- HBox new.
-    #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
-      button <- ButtonControl new: (name asString); at: 'EXPAND' put: 'HORIZONTAL'.
-      buttons addChild: button
-    ].
     commands <- Dictionary new.
-    text setCallbackFor: 'K_ANY' as: [ :h :c | self processCommand: c ] returning: #int taking: #(cObject int).
-    text setCallbackFor: 'BUTTON_CB' as: [ :h :button :pressed :x :y :status | self textPopupMenuAt: x and: y ] returning: #int taking: #(cObject int int int int string).
-    widget addChild: buttons.
-    widget addChild: text.
+    text setCallbackFor: 'K_ANY' as: [ :h :c | stderr print: (c asString). (self processCommand: c) ] returning: #int taking: #(cObject int).
+    widget addChild: self buttons.
+    vbox <- VBox new; at: 'EXPAND' put: 'VERTICAL'; at: 'NGAP' put: '5'.
+    hbox <- HBox new; at: 'NGAP' put: '5'.
+    vbox addChild: self acceptButton.
+    vbox addChild: (ButtonControl new: 'Cancel'; at: 'EXPAND' put: 'HORIZONTAL').
+    hbox addChild: text.
+    hbox addChild: vbox.
+    widget addChild: hbox.
     ^ self
 |
-  textPopupMenuAt: x and: y
-    | menu item |
-    menu <- Menu new.
-    menu addChild: (ItemControl new: 'Accept').
-    IUP instance IupPopup: (menu handle) at: x and: y
+  acceptButton
+    | button |
+    button <- ButtonControl new: 'Accept'; at: 'EXPAND' put: 'HORIZONTAL'.
+    button setActionCallback: [ :x | self processCommand: 115 ]. 
+    ^ button
+|
+  cancelButton
+    | button |
+    button <- ButtonControl new: 'Cancel'; at: 'EXPAND' put: 'HORIZONTAL'.
+    "button setActionCallback: [ :x | self processCommand: 115 ]. "
+    ^ button
+|
+  buttons
+    | hbox |
+    hbox <- HBox new.
+    #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
+      hbox addChild: ( ButtonControl new: (name asString); at: 'EXPAND' put: 'HORIZONTAL')
+    ].
+    ^ hbox
 |
   showMethod: method on: class
-    commands at: 595 put: [ 
+    commands at: 115 put: [ 
       self saveMethod: method on: class 
     ].
     text at: 'SELECTION' put: 'ALL'.
@@ -114,11 +130,17 @@ Methods DefinitionPanel 'all'
       ]
 |
   processCommand: c
-    ^ (commands includesKey: c) ifTrue: [
-      (commands at: c) value
-    ] ifFalse: [ nil ]
+    ^ (commands includesKey: c) 
+      ifTrue: [
+        (commands at: c) value.
+        -1
+      ] 
+      ifFalse: [ 
+        -2
+      ]
 |
   saveMethod: method on: class
+    stderr print: 'Saving'.
     method text: (text at: 'VALUE').
     (method compileWithClass: class)
     ifTrue: [ ^ true ]
@@ -142,7 +164,7 @@ Methods Browser 'all'
   init
     | container |
     container <- Split with: ((panels at: 1) widget) and: ((panels at: 3) widget); at: 'ORIENTATION' put: 'HORIZONTAL'. 
-    dialog <- Dialog new: container; at: 'SIZE' put: '400x300'; at: 'SHRINK' put: 'YES'; at: 'TITLE' put: 'Tumbleweed Browser v0.1'.
+    dialog <- Dialog new: container; at: 'SIZE' put: '400x200'; at: 'SHRINK' put: 'YES'; at: 'TITLE' put: 'Tumbleweed Browser v0.1'.
     ^ self
 |
   panels
