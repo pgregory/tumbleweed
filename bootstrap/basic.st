@@ -80,18 +80,34 @@ Methods Boolean 'all'
 	or: aBlock
 		^ self ifTrue: [ true ] ifFalse: aBlock
 ]
+Methods MetaClass 'creation'
+	new		
+    | newObject |
+		newObject <- < 22 < 58 instanceSize > self >.
+    newObject initialize.
+    ^ newObject
+]
+*
 Methods Class 'creation'
 	new		| newObject |
 		newObject <- < 22 < 58 instanceSize > self >.
     newObject new.
     ^newObject
 |
-	addSubClass: aSymbol instanceVariableNames: aString	| newClass |
-		newClass <- Class new; name: aSymbol; superClass: self;
-				variables: 
-				  (aString words: [:x | x isAlphabetic ]).
-		aSymbol assign: newClass.
-		classes at: aSymbol put: newClass
+  subClass: aSymbol
+    ^ self subClass: aSymbol instanceVariableNames: (Array new: 0)
+|
+  subClass: aSymbol instanceVariableNames: v
+    ^ self subClass: aSymbol instanceVariableNames: v classVariableNames: (Array new: 0)
+|
+	subClass: aSymbol instanceVariableNames: v classVariableNames: cv
+    | newClass newMetaClass |
+    newMetaClass <- Class new.
+    newMetaClass name: ('Meta', aSymbol asString); superClass: self class; variables: cv.
+    newClass <- newMetaClass new.
+    newClass name: aSymbol; superClass: self; variables: v.
+    classes at: aSymbol put: newClass.
+    ^ newClass 
 |
 	initialize
 		superClass <- Object.

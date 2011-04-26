@@ -69,13 +69,25 @@ Methods NavigationPanel 'all'
 *
 Methods ButtonPanel 'all'
   init: browser
+    | button |
     widget <- HBox new.
+    #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
+      button <- ButtonControl new: (name asString).
+      widget addChild: button
+    ].
     ^ self
 ]
 Methods DefinitionPanel 'all'
   init: browser
+    | buttons button |
     widget <- VBox new.
     text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'.
+    buttons <- HBox new.
+    #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
+      button <- ButtonControl new: (name asString); at: 'EXPAND' put: 'HORIZONTAL'.
+      buttons addChild: button
+    ].
+    widget addChild: buttons.
     widget addChild: text.
     ^ self
 |
