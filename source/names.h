@@ -13,7 +13,7 @@
 # define superClassInClass 4
 # define variablesInClass 5
 
-# define methodSize 8
+# define methodSize 9
 # define textInMethod 1
 # define messageInMethod 2
 # define bytecodesInMethod 3
@@ -22,6 +22,7 @@
 # define temporarySizeInMethod 6
 # define methodClassInMethod 7
 # define watchInMethod 8
+# define protocolInMethod 9
 # define methodStackSize(x) intValue(basicAt(x, stackSizeInMethod))
 # define methodTempSize(x) intValue(basicAt(x, temporarySizeInMethod))
 

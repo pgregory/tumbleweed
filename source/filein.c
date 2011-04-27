@@ -238,7 +238,9 @@ boolean printit;
 {	object classObj, methTable, theMethod, selector;
 # define LINEBUFFERSIZE 16384
 	char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
+  object protocol;
 
+  protocol = nilobj;
 	if (nextToken() != nameconst)
 		sysError("missing name","following Method keyword");
 	classObj = findClass(tokenString);
@@ -252,6 +254,10 @@ boolean printit;
 		methTable = newDictionary(MethodTableSize);
 		basicAtPut(classObj, methodsInClass, methTable);
 		}
+
+  if(nextToken() == strconst) {
+    protocol = newStString(tokenString);
+  }
 
 	/* now go read the methods */
 	do {
@@ -274,10 +280,10 @@ boolean printit;
 		if (parse(theMethod, textBuffer, savetext)) {
 			selector = basicAt(theMethod, messageInMethod);
 			basicAtPut(theMethod, methodClassInMethod, classObj);
+      basicAtPut(theMethod, protocolInMethod, protocol);
 			if (printit)
 				dspMethod(cp, charPtr(selector));
-			nameTableInsert(methTable, (int) selector, 
-				selector, theMethod);
+			nameTableInsert(methTable, (int) selector, selector, theMethod);
 			}
 		else {
 			/* get rid of unwanted method */

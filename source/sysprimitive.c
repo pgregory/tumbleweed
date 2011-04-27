@@ -55,7 +55,7 @@ compilError(selector, str1, str2)
 noreturn dspMethod(cp, mp)
   char *cp, *mp;
 {
-  /*ignore fprintf(stderr,"%s %s\n", cp, mp);*/
+  ignore fprintf(stderr,"%s %s\n", cp, mp);
 }
 
 givepause()

@@ -12,7 +12,7 @@ Class    False Boolean
 Class Class Object name instanceSize methods superClass variables
 Class Context Object linkLocation method arguments temporaries
 Class Integer Object
-Class Method Object text message bytecodes literals stackSize temporarySize class watch
+Class Method Object text message bytecodes literals stackSize temporarySize class watch protocol
 Class Smalltalk Object
 Class Switch Object const notdone
 Class Symbol Object
@@ -121,6 +121,15 @@ Methods Class 'creation'
 		(superClass notNil)
 			ifTrue: [ ^ superClass methodNamed: name ].
 		^ nil
+|
+  protocols
+    | protocols |
+    protocols <- Set new.
+    (methods) do: [ :m | protocols add: (m protocol) ].
+    ^ protocols
+|
+  methodsFor: protocol
+    ^ methods select: [ :m | m protocol = protocol ]
 |
 	name
 		^ name
@@ -272,6 +281,12 @@ Methods Method 'all'
 		text print.
 		watch value: arguments.
 		^ self executeWith: arguments
+|
+  protocol
+    ^ protocol
+|
+  protocol: aString
+    protocol <- aString
 ]
 Methods Object 'all'
 	assign: name value: val
