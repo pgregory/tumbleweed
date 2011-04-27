@@ -188,7 +188,7 @@ Methods Collection 'all'
 		^ newArray
 |
 	asByteArray	| newArray i |
-		newArray <- ByteArray new size: self size.
+		newArray <- ByteArray new: self size.
 		i <- 0.
 		self do: [:x | i <- i + 1. newArray at: i put: x].
 		^ newArray

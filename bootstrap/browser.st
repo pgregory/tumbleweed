@@ -24,18 +24,22 @@ Methods Panel 'all'
 *
 Methods NavigationPanel 'all'
   init: browser
-    | classList methodList currentClass currentMethod splitter |
-    classList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'.
-    methodList <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '200x50'. 
-    panes <- Array new: 2.
-    panes at: 1 put: classList; at: 2 put: methodList.
-    widget <- VBox new; at: 'NMARGIN' put: '5x5'.
-    splitter <- Split with: classList and: methodList.
-    widget addChild: splitter.
+    | classList protocolList methodList currentClass currentProtocol currentMethod |
+    hbox <- HBox new; at: 'HOMOGENEOUS' put: 'YES'.
+    classList <- self listControl: 'Classes' on: hbox.
+    protocolList <- self listControl: 'Protocols' on: hbox.
+    methodList <- self listControl: 'Methods' on: hbox.
+    widget <- VBox new; at: 'NMARGIN' put: '5x5'; addChild: hbox.
     classList setActionCallback: [ :h :className :item :state | 
       (state = 1) ifTrue: [
         currentClass <- (className asSymbol) value.
-        self updateMethodList: methodList with: currentClass 
+        self updateProtocolList: protocolList on: currentClass 
+      ]
+    ].
+    protocolList setActionCallback: [ :h :protocolName :item :state | 
+      (state = 1) ifTrue: [
+        currentProtocol <- protocolName asSymbol.
+        self updateMethodList: methodList with: currentProtocol on: currentClass 
       ]
     ].
     methodList setActionCallback: [ :h :methodName :item :state | 
@@ -47,11 +51,28 @@ Methods NavigationPanel 'all'
     self updateClassList: classList.
     ^ self
 |
-  updateMethodList: list with: class
+  listControl: name on: container
+    | list vbox |
+    list <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '0x50'.
+    vbox <- VBox new.
+    vbox addChild: (LabelControl new: (name asString)).
+    vbox addChild: list.
+    container addChild: vbox.
+    ^ list
+|
+  updateProtocolList: list on: class
     | index |
     self clearList: list.
     index <- 1.
-    (class methods) binaryDo: [ :x :y |
+    (class protocols) do: [ :x |
+      list at: (index asString) put: (x asString). index <- index + 1 ].
+    ^ self
+|
+  updateMethodList: list with: protocol on: class
+    | index |
+    self clearList: list.
+    index <- 1.
+    (class methodsFor: (protocol asString)) binaryDo: [ :x :y |
       list at: (index asString) put: (x asString). index <- index + 1 ].
     ^ self
 |

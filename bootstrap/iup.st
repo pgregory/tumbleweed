@@ -162,6 +162,12 @@ Methods IUP 'all'
   IupText
     ^ iup call: #IupText returning: #cObject taking: #(string) as: #('DefaultListAction')
 |
+  IupLabel: title
+    | args |
+    args <- Array new: 1.
+    args at: 1 put: title.
+    ^ iup call: #IupLabel returning: #cObject taking: #(string) as: args
+|
   IupSetCallbackOn: handle for: action as: callback
     | args |
     args <- Array new: 3.
@@ -384,3 +390,22 @@ Methods ItemControl 'all'
     ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject)
 ]
 *
+Methods MetaLabelControl 'all'
+  new: aString
+    | newLabel |
+    newLabel <- super new.
+    newLabel init: aString.
+    ^ newLabel
+]
+*
+Methods LabelControl 'all'
+  init: aString
+    | iup result |
+    iup <- IUP instance.
+    result <- iup IupLabel: aString.
+    super handle: (result at: 1).
+    ^ self
+|
+  init
+    ^ self init: 'UNNAMED'
+]

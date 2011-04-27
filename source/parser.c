@@ -36,7 +36,7 @@
 			256) without any trouble.  They are kept low 
 			to keep memory utilization down */
 
-# define codeLimit 256		/* maximum number of bytecodes permitted */
+# define codeLimit 1024		/* maximum number of bytecodes permitted */
 # define literalLimit 128	/* maximum number of literals permitted */
 # define temporaryLimit 32	/* maximum number of temporaries permitted */
 # define argumentLimit 32	/* maximum number of arguments permitted */
