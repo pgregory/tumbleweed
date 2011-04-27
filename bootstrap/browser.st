@@ -83,14 +83,14 @@ Methods DefinitionPanel 'all'
   init: browser
     | hbox vbox|
     widget <- VBox new; at: 'NMARGIN' put: '5x5'; at: 'GAP' put: '5'.
-    text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'.
+    text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'; at: 'TABSIZE' put: '4'.
     commands <- Dictionary new.
     text setCallbackFor: 'K_ANY' as: [ :h :c | stderr print: (c asString). (self processCommand: c) ] returning: #int taking: #(cObject int).
     widget addChild: self buttons.
     vbox <- VBox new; at: 'EXPAND' put: 'VERTICAL'; at: 'NGAP' put: '5'.
     hbox <- HBox new; at: 'NGAP' put: '5'.
     vbox addChild: self acceptButton.
-    vbox addChild: (ButtonControl new: 'Cancel'; at: 'EXPAND' put: 'HORIZONTAL').
+    vbox addChild: self cancelButton.
     hbox addChild: text.
     hbox addChild: vbox.
     widget addChild: hbox.
@@ -99,13 +99,13 @@ Methods DefinitionPanel 'all'
   acceptButton
     | button |
     button <- ButtonControl new: 'Accept'; at: 'EXPAND' put: 'HORIZONTAL'.
-    button setActionCallback: [ :x | self processCommand: 115 ]. 
+    button setActionCallback: [ :x | self processCommand: 833 ]. 
     ^ button
 |
   cancelButton
     | button |
     button <- ButtonControl new: 'Cancel'; at: 'EXPAND' put: 'HORIZONTAL'.
-    "button setActionCallback: [ :x | self processCommand: 115 ]. "
+    button setActionCallback: [ :x | self processCommand: 835 ].
     ^ button
 |
   buttons
@@ -117,8 +117,11 @@ Methods DefinitionPanel 'all'
     ^ hbox
 |
   showMethod: method on: class
-    commands at: 115 put: [ 
+    commands at: 833 put: [ 
       self saveMethod: method on: class 
+    ].
+    commands at: 835 put: [
+      self cancelMethod: method on: class
     ].
     text at: 'SELECTION' put: 'ALL'.
     ((text at: 'SELECTION') isEmpty)
@@ -140,12 +143,22 @@ Methods DefinitionPanel 'all'
       ]
 |
   saveMethod: method on: class
-    stderr print: 'Saving'.
+    | oldMethod |
+    oldMethod <- method text.
     method text: (text at: 'VALUE').
     (method compileWithClass: class)
-    ifTrue: [ ^ true ]
-    ifFalse: [ stderr print: 'Error compiling method' ].
+    ifTrue: [ 
+      ^ true 
+    ]
+    ifFalse: [ 
+      method text: oldMethod.
+      IUP instance IupMessage: (<152>) title: 'Error'
+    ].
     ^ false
+|
+  cancelMethod: method on: class
+    self showMethod: method on: class.
+    ^ true
 ]
 *
 Methods MetaBrowser 'all'

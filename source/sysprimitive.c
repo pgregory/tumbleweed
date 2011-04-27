@@ -18,11 +18,14 @@
 
 extern boolean parseok;
 
+static char gLastError[1024];
+
 /* report a fatal system error */
 noreturn sysError(s1, s2)
   char *s1, *s2;
 {
   ignore fprintf(stderr,"%s\n%s\n", s1, s2);
+  ignore snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
   ignore abort();
 }
 
@@ -45,6 +48,7 @@ compilError(selector, str1, str2)
 {
   ignore fprintf(stderr,"compiler error: Method %s : %s %s\n", 
       selector, str1, str2);
+  ignore snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
   parseok = false;
 }
 
@@ -79,6 +83,12 @@ object sysPrimitive(number, arguments)
         add_history(p);
         returnedObject = newStString(
             p);
+      }
+      break;
+
+    case 2: /* get last error */ 
+      {
+        returnedObject = newStString(gLastError);
       }
       break;
 
