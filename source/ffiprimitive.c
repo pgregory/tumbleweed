@@ -161,7 +161,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      if(isInteger(realValue))
+      if(getClass(realValue) == globalSymbol("Integer"))
         data->integer = intValue(realValue);
       else if(getClass(realValue) == globalSymbol("Float"))
         data->integer = (int)floatValue(realValue);

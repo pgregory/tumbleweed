@@ -55,6 +55,7 @@ extern object newClass(STR);
 extern object newChar(INT);
 extern object newContext(INT X OBJ X OBJ X OBJ);
 extern object newDictionary(INT);
+extern object newInteger(INT);
 extern object newFloat(FLOAT);
 extern object newMethod();
 extern object newLink(OBJ X OBJ);

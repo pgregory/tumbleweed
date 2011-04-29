@@ -101,21 +101,14 @@ static int unaryPrims(number, firstarg)
       break;
 
     case 2:		/* basic size of object */
-      if (isInteger(firstarg))
-        i = 0;
-      else {
-        i = sizeField(firstarg);
-        /* byte objects have negative size */
-        if (i < 0) i = (-i);
-      }
+      i = sizeField(firstarg);
+      /* byte objects have negative size */
+      if (i < 0) i = (-i);
       returnedObject = newInteger(i);
       break;
 
     case 3:		/* hash value of object */
-      if (isInteger(firstarg))
-        returnedObject = firstarg;
-      else
-        returnedObject = newInteger(firstarg);
+      returnedObject = newInteger(firstarg);
       break;
 
     case 4:		/* debugging print */
@@ -215,14 +208,10 @@ static int binaryPrims(number, firstarg, secondarg)
       break;
 
     case 5:		/* basicAt: */
-      if (! isInteger(secondarg))
-        sysError("non integer index","basicAt:");
       returnedObject = basicAt(firstarg, intValue(secondarg));
       break;
 
     case 6:		/* byteAt: */
-      if (! isInteger(secondarg))
-        sysError("non integer index","byteAt:");
       i = byteAt(firstarg, intValue(secondarg));
       if (i < 0) i += 256;
       returnedObject = newInteger(i);
@@ -250,7 +239,7 @@ static int binaryPrims(number, firstarg, secondarg)
       break;
 
     default:		/* unknown primitive */
-      sysError("unknown primitive","binaryPrims");
+      sysError("unknown primitive","binaryprims");
       break;
 
   }
@@ -267,25 +256,16 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
   returnedObject = firstarg;
   switch(number) {
     case 1:			/* basicAt:Put: */
-      if (! isInteger(secondarg))
-        sysError("non integer index","basicAtPut");
       fprintf(stderr,"IN BASICATPUT %d %d %d\n", firstarg, intValue(secondarg), thirdarg);
       fieldAtPut(firstarg, intValue(secondarg), thirdarg);
       break;
 
     case 2:			/* basicAt:Put: for bytes */
-      if (! isInteger(secondarg))
-        sysError("non integer index","byteAtPut");
-      if (! isInteger(thirdarg))
-        sysError("assigning non int","to byte");
-      byteAtPut(firstarg, intValue(secondarg),
-          intValue(thirdarg));
+      byteAtPut(firstarg, intValue(secondarg), intValue(thirdarg));
       break;
 
     case 3:			/* string copyFrom:to: */
       bp = charPtr(firstarg);
-      if ((! isInteger(secondarg)) || (! isInteger(thirdarg)))
-        sysError("non integer index","copyFromTo");
       i = intValue(secondarg);
       j = intValue(thirdarg);
       tp = buffer;
@@ -606,21 +586,13 @@ object primitive(primitiveNumber, arguments)
       break;
 
     case 5:			/* integer unary operations */
-      if (! isInteger(arguments[0]))
-        returnedObject = nilobj;
-      else
-        returnedObject = intUnary(primitiveNumber-50,
-            intValue(arguments[0]));
+      returnedObject = intUnary(primitiveNumber-50, intValue(arguments[0]));
       break;
 
     case 6: case 7:		/* integer binary operations */
-      if ((! isInteger(arguments[0])) || 
-          ! isInteger(arguments[1]))
-        returnedObject = nilobj;
-      else
-        returnedObject = intBinary(primitiveNumber-60,
-            intValue(arguments[0]), 
-            intValue(arguments[1]));
+      returnedObject = intBinary(primitiveNumber-60,
+          intValue(arguments[0]), 
+          intValue(arguments[1]));
       break;
 
     case 8:			/* string unary */

@@ -212,6 +212,7 @@ int memorySize;
 		/* if we STILL don't have it then there is nothing */
 		/* more we can do */
 		if (! done)
+      printf("Object count: %d\n", objectCount());
 			sysError("out of objects","alloc");
 		}
 
@@ -235,11 +236,13 @@ int size;
 object allocStr(register char* str)
 {	
   register object newSym;
+  char* t;
 
   if(NULL != str)
   {
     newSym = allocByte(1 + strlen(str));
-    ignore strcpy(charPtr(newSym), str);
+    t = charPtr(newSym);
+    ignore strcpy(t, str);
   }
   else
   {
@@ -251,27 +254,6 @@ object allocStr(register char* str)
 
 # ifdef incr
 object incrobj;		/* buffer for increment macro */
-# endif
-# ifndef incr
-void incr(z)
-object z;
-{
-	if (z && ! isInteger(z)) {
-		objectTable[z>>1].referenceCount++;
-		}
-}
-# endif
-
-# ifndef decr
-void decr(z)
-object z;
-{
-	if (z && ! isInteger(z)) {
-		if (--objectTable[z>>1].referenceCount <= 0) {
-			sysDecr(z);
-			}
-		}
-}
 # endif
 
 /* do the real work in the decr procedure */
@@ -301,104 +283,25 @@ object z;
 	p->size = size;
 }
 
-# ifndef basicAt
-object basicAt(z, i)
-object z;
-register int i;
-{
-	if (isInteger(z))
-		sysError("attempt to index","into integer");
-	else if ((i <= 0) || (i > sizeField(z))) {
-		ignore fprintf(stderr,"index %d size %d\n", i, (int) sizeField(z));
-		sysError("index out of range","in basicAt");
-		}
-	else
-		return(sysMemPtr(z)[i-1]);
-	return(0);
-}
-# endif
-
-# ifndef simpleAtPut
-
-void simpleAtPut(z, i, v)
-object z, v;
-int i;
-{
-	if (isInteger(z))
-		sysError("assigning index to","integer value");
-	else if ((i <= 0) || (i > sizeField(z))) {
-		ignore fprintf(stderr,"index %d size %d\n", i, (int) sizeField(z));
-		sysError("index out of range","in basicAtPut");
-		}
-	else {
-		sysMemPtr(z)[i-1] = v;
-		}
-}
-# endif
-
-# ifndef basicAtPut
-
-void basicAtPut(z, i, v)
-object z, v;
-register int i;
-{
-	simpleAtPut(z, i, v); 
-	incr(v);
-}
-# endif
 
 # ifdef fieldAtPut
 int f_i;
-# endif
-
-# ifndef fieldAtPut
-void fieldAtPut(z, i, v)
-object z, v;
-register int i;
-{
-	decr(basicAt(z, i)); basicAtPut(z, i, v);
-}
-# endif
-
-# ifndef byteAt
-int byteAt(z, i)
-object z;
-register int i;
-{	byte *bp;
-	unsigned char t;
-
-	if (isInteger(z))
-		sysError("indexing integer","byteAt");
-	else if ((i <= 0) || (i > 2 * - sizeField(z))) {
-		fprintf(stderr,"index %d size %d\n", i, sizeField(z));
-		sysError("index out of range","byteAt");
-		}
-	else {
-		bp = bytePtr(z);
-		t = bp[i-1];
-fprintf(stderr,"byte at %d returning %d\n", i, (int) t);
-		i = (int) t;
-		}
-	return(i);
-}
 # endif
 
 # ifndef byteAtPut
 void byteAtPut(z, i, x)
 object z;
 int i, x;
-{	byte *bp;
-
-	if (isInteger(z))
-		sysError("indexing integer","byteAtPut");
-	else if ((i <= 0) || (i > 2 * - sizeField(z))) {
+{      
+  byte *bp;
+  if ((i <= 0) || (i > 2 * - sizeField(z))) {
     fprintf(stderr,"index %d size %d\n", i, sizeField(z));
-		sysError("index out of range", "byteAtPut");
-		}
-	else {
-		bp = bytePtr(z);
-		bp[i-1] = x;
-		}
+    sysError("index out of range", "byteAtPut");
+  }
+  else {
+    bp = bytePtr(z);
+    bp[i-1] = x;
+  }
 }
 # endif
 
@@ -416,7 +319,7 @@ register object x;
 	int i, s;
 	object *p;
 
-	if (x && !isInteger(x)) {
+	if (x) {
 		if (++(objectTable[x>>1].referenceCount) == 1) {
 			/* then it's the first time we've visited it, so: */
 			visit(objectTable[x>>1].class);

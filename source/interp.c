@@ -171,8 +171,7 @@ readLinkageBlock:
     temps = sysMemPtr(basicAt(contextObject, temporariesInContext));
   }
 
-  if (! isInteger(argumentsAt(0)))
-    rcv = sysMemPtr(argumentsAt(0));
+  rcv = sysMemPtr(argumentsAt(0));
 
 readMethodInfo:
   lits           = sysMemPtr(basicAt(method, literalsInMethod));
@@ -276,13 +275,8 @@ readMethodInfo:
 
 doSendMessage:
         arg = psb + (returnPoint-1);
-        if (isInteger(argumentsAt(0)))
-          /* should fix this later */
-          methodClass = getClass(argumentsAt(0));
-        else {
-          rcv = sysMemPtr(argumentsAt(0));
-          methodClass = classField(argumentsAt(0));
-        }
+        rcv = sysMemPtr(argumentsAt(0));
+        methodClass = classField(argumentsAt(0));
 
 doFindMessage:
         /* look up method in cache */

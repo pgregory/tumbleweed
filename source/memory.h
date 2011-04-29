@@ -32,7 +32,7 @@ struct objectStruct {
 	short size;
 	object *memory;
 	};
-# define ObjectTableMax 6500
+# define ObjectTableMax 12500
 
 # ifdef obtalloc
 extern struct objectStruct *objectTable;
@@ -47,9 +47,9 @@ which increment and decrement reference counts in objects.  By separating
 decrement from memory freeing, we could replace these as procedure calls
 by using the following macros (thereby saving procedure calls):*/
 extern object incrobj;
-# define incr(x) if ((incrobj=(x))&&!isInteger(incrobj)) \
+# define incr(x) if ((incrobj=(x))) \
 objectTable[incrobj>>1].referenceCount++
-#  define decr(x) if (((incrobj=(x))&&!isInteger(incrobj))&&\
+#  define decr(x) if (((incrobj=(x)))&&\
 (--objectTable[incrobj>>1].referenceCount<=0)) sysDecr(incrobj);
 /*
 notice that the argument x is first assigned to a global variable; this is
@@ -86,11 +86,6 @@ Since newInteger does not fill in the class field, it can be given here.
 If it was required to use the class field, it would have to be deferred
 until names.h
 */
-
-extern object intobj;
-# define isInteger(x) ((x) & 0x8001)
-# define newInteger(x) ( (intobj = x)<0 ? intobj : (intobj<<1)+1 )
-# define intValue(x) ( (intobj = x)<0 ? intobj : (intobj>>1) )
 
 /*
 	there are four routines used to access fields within an object.
@@ -144,7 +139,7 @@ class fields and size fields of objects
 
 # define sysMemPtr(x) objectTable[x>>1].memory
 extern object sysobj;
-# define memoryPtr(x) (isInteger(sysobj = x)?(object *) 0:sysMemPtr(sysobj))
+# define memoryPtr(x) sysMemPtr(x)
 # define bytePtr(x) ((byte *) memoryPtr(x))
 # define charPtr(x) ((char *) memoryPtr(x))
 

@@ -27,11 +27,6 @@ register int n;
 object getClass(obj)	/* getClass - get the class of an object */
 register object obj;
 {
-	if (isInteger(obj)) {
-		if (intClass == nilobj)
-			intClass = globalSymbol("Integer");
-		return(intClass);
-		}
 	return (classField(obj));
 }
 
@@ -141,11 +136,31 @@ double d;
 	return newObj;
 }
 
+object newInteger(i)
+int i;
+{	object newObj;
+
+	newObj = allocByte((int) sizeof (int));
+	ncopy(charPtr(newObj), (char *) &i, (int) sizeof (int));
+	setClass(newObj, globalSymbol("Integer"));
+	return newObj;
+}
+
 double floatValue(o)
 object o;
 {	double d;
 
 	ncopy((char *) &d, charPtr(o), (int) sizeof(double));
+	return d;
+}
+
+int intValue(o)
+object o;
+{	int d;
+
+  if(o == nilobj)
+    return 0;
+	ncopy((char *) &d, charPtr(o), (int) sizeof(int));
 	return d;
 }
 
