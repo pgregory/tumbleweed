@@ -333,6 +333,7 @@ Methods Integer 'all'
 |
 	asLongInteger	| newList i |
 		newList <- List new.
+    i <- self.
 		i = 0 ifTrue: [ newList add: 0 ]
 			ifFalse: [ i <- self abs.
 				   [ i ~= 0 ] whileTrue: 
