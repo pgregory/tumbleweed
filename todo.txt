@@ -1,0 +1,2 @@
+Parser:
+  Support for LongInteger in the lexer/parser, automatically creating the right type depending on the size of the value specified.
