@@ -12,7 +12,7 @@ use the latter, although either would work.
 or using a define statement.  Either one will work (check this?)
 */
 
-typedef short object;
+typedef int object;
 
 /*
 	The memory module itself is defined by over a dozen routines.
@@ -32,44 +32,37 @@ struct objectStruct {
 	short size;
 	object *memory;
 	};
-# define ObjectTableMax 12500
+# define ObjectTableMax 32500
 
-# ifdef obtalloc
 extern struct objectStruct *objectTable;
-# endif
-# ifndef obtalloc
-extern struct objectStruct objectTable[];
-# endif
 
 /*
 	The most basic routines to the memory manager are incr and decr,
-which increment and decrement reference counts in objects.  By separating
-decrement from memory freeing, we could replace these as procedure calls
-by using the following macros (thereby saving procedure calls):*/
+  which increment and decrement reference counts in objects.  By separating
+  decrement from memory freeing, we could replace these as procedure calls
+  by using the following macros (thereby saving procedure calls):
+*/
+
+#ifdef USE_MACROS
 extern object incrobj;
 # define incr(x) if ((incrobj=(x))) \
 objectTable[incrobj>>1].referenceCount++
 #  define decr(x) if (((incrobj=(x)))&&\
-(--objectTable[incrobj>>1].referenceCount<=0)) sysDecr(incrobj);
+(--objectTable[incrobj>>1].referenceCount<=0)) sysDecr(incrobj, 1);
+#endif
 /*
-notice that the argument x is first assigned to a global variable; this is
-in case evaluation of x results in side effects (such as assignment) which
-should not be repeated. */
-
-# ifndef incr
-extern void incr( OBJ );
-# endif
-# ifndef decr
-extern void decr( OBJ );
-# endif
+  notice that the argument x is first assigned to a global variable; this is
+  in case evaluation of x results in side effects (such as assignment) which
+  should not be repeated. 
+*/
 
 /*
 	The next most basic routines in the memory module are those that
-allocate blocks of storage.  There are three routines:
+  allocate blocks of storage.  There are three routines:
 	allocObject(size) - allocate an array of objects
 	allocByte(size) - allocate an array of bytes
 	allocStr(str) - allocate a string and fill it in
-again, these may be macros, or they may be actual procedure calls
+  again, these may be macros, or they may be actual procedure calls
 */
 
 extern object allocObject( INT );
@@ -78,59 +71,36 @@ extern object allocStr( STR );
 
 /*
 	integer objects are (but need not be) treated specially.
-In this memory manager, negative integers are just left as is, but
-positive integers are changed to x*2+1.  Either a negative or an odd
-number is therefore an integer, while a nonzero even number is an
-object pointer (multiplied by two).  Zero is reserved for the object ``nil''
-Since newInteger does not fill in the class field, it can be given here.
-If it was required to use the class field, it would have to be deferred
-until names.h
+  In this memory manager, negative integers are just left as is, but
+  positive integers are changed to x*2+1.  Either a negative or an odd
+  number is therefore an integer, while a nonzero even number is an
+  object pointer (multiplied by two).  Zero is reserved for the object ``nil''
+  Since newInteger does not fill in the class field, it can be given here.
+  If it was required to use the class field, it would have to be deferred
+  until names.h
 */
 
 /*
 	there are four routines used to access fields within an object.
-Again, some of these could be replaced by macros, for efficiency
+  Again, some of these could be replaced by macros, for efficiency
 	basicAt(x, i) - ith field (start at 1) of object x
 	basicAtPut(x, i, v) - put value v in object x
 	byteAt(x, i) - ith field (start at 0) of object x
 	byteAtPut(x, i, v) - put value v in object x*/
 
+#ifdef USE_MACROS
 # define basicAt(x,i) (sysMemPtr(x)[i-1])
 # define byteAt(x, i) ((int) ((bytePtr(x)[i-1])))
-
-# ifndef basicAt
-extern object basicAt(OBJ X INT);
-# endif
-
 # define simpleAtPut(x,i,y) (sysMemPtr(x)[i-1] = y)
-# ifndef simpleAtPut
-extern void simpleAtPut(OBJ X INT X OBJ);
-# endif
-
 # define basicAtPut(x,i,y) incr(simpleAtPut(x, i, y))
-# ifndef basicAtPut
-extern void basicAtPut(OBJ X INT X OBJ);
-# endif
 # define fieldAtPut(x,i,y) f_i=i; decr(basicAt(x,f_i)); basicAtPut(x,f_i,y)
-# ifdef fieldAtPut
-extern int f_i;
 #endif
-# ifndef fieldAtPut
-extern void fieldAtPut(OBJ X INT X OBJ);
-# endif
-
-# ifndef byteAt
-extern int byteAt(OBJ X INT);
-# endif
-# ifndef byteAtPut
-extern void byteAtPut(OBJ X INT X INT);
-# endif
 
 extern object newCPointer(void* l);
 extern void* cPointerValue(object);
 /*
 	Finally, a few routines (or macros) are used to access or set
-class fields and size fields of objects
+  class fields and size fields of objects
 */
 
 # define classField(x) objectTable[x>>1].class
@@ -172,9 +142,40 @@ extern object symbols;
 /*
 	finally some external declarations with prototypes
 */
-extern noreturn sysError(STR X STR);
-extern noreturn dspMethod(STR X STR);
-extern noreturn initMemoryManager(NOARGS);
-extern noreturn imageWrite(FILEP);
-extern noreturn imageRead(FILEP);
+extern void sysError(char*, char*);
+extern void dspMethod(char*, char*);
+extern void initMemoryManager();
+extern void imageWrite(FILE*);
+extern void imageRead(FILE*);
+extern void sysDecr(object, int);
 extern boolean debugging;
+
+
+# ifndef basicAtPut
+extern void basicAtPut(object, int, object);
+# endif
+# ifndef simpleAtPut
+extern void simpleAtPut(object, int, object);
+# endif
+# ifndef incr
+extern void incr(object);
+# endif
+# ifndef decr
+extern void decr(object);
+# endif
+# ifdef fieldAtPut
+extern int f_i;
+#else
+extern void fieldAtPut(object, int, object);
+# endif
+# ifndef byteAt
+extern int byteAt(object, int);
+# endif
+# ifndef byteAtPut
+extern void byteAtPut(object, int, int);
+# endif
+
+# ifndef basicAt
+extern object basicAt(object o, int i);
+# endif
+

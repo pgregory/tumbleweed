@@ -15,6 +15,9 @@
 	at the beginning of the file, as shown below
 */
 
+#ifndef ENV_H_INCLUDED
+#define ENV_H_INCLUDED
+
 #include <limits.h>
 
 typedef unsigned char byte;
@@ -93,4 +96,6 @@ prototypes aren't available */
 #elif defined(__CYGWIN__)
 #define SO_EXT  "dll"
 #define MAX_PATH  PATH_MAX
+#endif
+
 #endif

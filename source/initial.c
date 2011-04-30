@@ -13,6 +13,7 @@
 
 extern noreturn initFFISymbols();	/* FFI symbols */
 
+object firstProcess;
 int initial = 1;	/* making initial image */
 
 /* lightspeed C not using argc/argv features */
@@ -66,22 +67,23 @@ char **argv;
 
  goDoIt(text)
 char *text;
-{ 	object process, stack, method;
+{ 	
+  object stack, method;
 
 	method = newMethod();
 	incr(method);
 	setInstanceVariables(nilobj);
 	ignore parse(method, text, false);
 
-	process = allocObject(processSize);
-	incr(process);
+	firstProcess = allocObject(processSize);
+	incr(firstProcess);
 	stack = allocObject(50);
 	incr(stack);
 
 	/* make a process */
-	basicAtPut(process, stackInProcess, stack);
-	basicAtPut(process, stackTopInProcess, newInteger(10));
-	basicAtPut(process, linkPtrInProcess, newInteger(2));
+	basicAtPut(firstProcess, stackInProcess, stack);
+	basicAtPut(firstProcess, stackTopInProcess, newInteger(10));
+	basicAtPut(firstProcess, linkPtrInProcess, newInteger(2));
 
 	/* put argument on stack */
 	basicAtPut(stack, 1, nilobj);	/* argument */
@@ -93,7 +95,7 @@ char *text;
 	basicAtPut(stack, 6, newInteger(1));	/* byte offset */
 
 	/* now go execute it */
-	while (execute(process, 15000)) fprintf(stderr,"..");
+	while (execute(firstProcess, 15000)) fprintf(stderr,"..");
 }
 
 /*

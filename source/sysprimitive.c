@@ -92,6 +92,12 @@ object sysPrimitive(number, arguments)
       }
       break;
 
+    case 3: /* force garbage collect */
+      {
+        garbageCollect(1);
+      }
+      break;
+
     default:
       sysError("unknown primitive","sysPrimitive");
   }

@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "names.h"
 
+object firstProcess;
 int initial = 0;	/* not making initial image */
 
 extern int objectCount();
@@ -27,7 +28,6 @@ char **argv;
 # endif
 {
 FILE *fp;
-object firstProcess;
 char *p, buffer[120];
 
 initMemoryManager();

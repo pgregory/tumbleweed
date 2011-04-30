@@ -31,6 +31,7 @@ boolean debugging = false;
 object sysobj;	/* temporary used to avoid rereference in macros */
 object intobj;
 
+extern object firstProcess;
 object symbols;		/* table of all symbols created */
 
 /*
@@ -45,12 +46,7 @@ object symbols;		/* table of all symbols created */
 	calloc during the initialization of the memory manager.
 */
 
-# ifdef obtalloc
 struct objectStruct *objectTable;
-# endif
-# ifndef obtalloc
-struct objectStruct objectTable[ObjectTableMax];
-# endif
 
 /*
 	The following variables are strictly local to the memory
@@ -75,15 +71,13 @@ static int    currentMemoryPosition;	/* last used position in above */
 noreturn initMemoryManager() {
 	int i;
 
-# ifdef obtalloc
-	objectTable = obtalloc(ObjectTableMax, sizeof(struct objectStruct));
+	objectTable = calloc(ObjectTableMax, sizeof(struct objectStruct));
 	if (! objectTable)
 		sysError("cannot allocate","object table");
-# endif
 
 	/* set all the free list pointers to zero */
-	for (i = 0; i < FREELISTMAX; i++)
-		objectFreeList[i] = nilobj;
+//	for (i = 0; i < FREELISTMAX; i++)
+//		objectFreeList[i] = nilobj;
 
 	/* set all the reference counts to zero */
 	for (i = 0; i < ObjectTableMax; i++) {
@@ -106,6 +100,7 @@ noreturn initMemoryManager() {
 
 /* setFreeLists - initialise the free lists */
 setFreeLists() {
+#if 0
 	int i, size;
 	register int z;
 	register struct objectStruct *p;
@@ -114,6 +109,7 @@ setFreeLists() {
 
 	for (z=ObjectTableMax-1; z>0; z--) {
 		if (objectTable[z].referenceCount == 0){
+      sysDecr(z, 0);
 			/* Unreferenced, so do a sort of sysDecr: */
 			p= &objectTable[z];
 			size = p->size;
@@ -124,6 +120,17 @@ setFreeLists() {
 				p->memory[--i] = nilobj;
 			}
 		}
+#endif
+	register unsigned int z;
+
+	/* set all the free list pointers to zero */
+	for (z = 0; z < FREELISTMAX; z++)
+		objectFreeList[z] = nilobj;
+
+	/* add free objects */
+	for (z=ObjectTableMax-1; z>0; z--)
+	    if (objectTable[z].referenceCount == 0)
+        sysDecr(z<<1, 0);
 }
 
 /*
@@ -254,27 +261,45 @@ object allocStr(register char* str)
 
 # ifdef incr
 object incrobj;		/* buffer for increment macro */
+#else
+void incr(object o)
+{
+  if(nilobj != o)
+    objectTable[o>>1].referenceCount++;
+}
 # endif
 
+#ifndef decr
+void decr(object o)
+{
+  if(nilobj != o)
+  {
+    if( --objectTable[o>>1].referenceCount <= 0)
+      sysDecr(o, 1);
+  }
+}
+#endif
+
 /* do the real work in the decr procedure */
-sysDecr(z)
-object z;
-{	register struct objectStruct *p;
+void sysDecr(object z, int visit)
+{	
+  register struct objectStruct *p;
 	register int i;
 	int size;
 
 	p = &objectTable[z>>1];
-	if (p->referenceCount < 0) {
+	if (p->referenceCount < 0) 
+  {
 		fprintf(stderr,"object %d\n", z);
 		sysError("negative reference count","");
-		}
-	decr(p->class);
+  }
+	if(visit) decr(p->class);
 	size = p->size;
 	if (size < 0) size = ((- size) + 1) /2;
 	p->class = objectFreeList[size];
 	objectFreeList[size] = z>>1;
 	if (size > 0) {
-		if (p->size > 0)
+		if (visit && p->size > 0)
 			for (i = size; i; )
 				decr(p->memory[--i]);
 		for (i = size; i > 0; )
@@ -284,14 +309,66 @@ object z;
 }
 
 
-# ifdef fieldAtPut
-int f_i;
+
+# ifndef basicAt
+object basicAt(object o, int i)
+{
+  if(( i <= 0) || (i > sizeField(o)))
+    sysError("index out of range", "basicAt");
+  else
+    return (sysMemPtr(o)[i-1]);
+  return nilobj;
+}
 # endif
 
+#ifndef simpleAtPut
+void simpleAtPut(object o, int i, object v)
+{
+  if((i <= 0) || (i > sizeField(o)))
+    sysError("index out of range", "simpleAtPut");
+  else
+    sysMemPtr(o)[i-1] = v;
+}
+#endif
+
+#ifndef basicAtPut
+void basicAtPut(object o, int i, object v)
+{
+  simpleAtPut(o, i, v);
+  incr(v);
+}
+#endif
+
+# ifdef fieldAtPut
+int f_i;
+#else
+void fieldAtPut(object o, int i, object v)
+{
+  decr(basicAt(o, i));
+  basicAtPut(o, i, v);
+}
+# endif
+
+#ifndef byteAt
+int byteAt(object o, int i)
+{
+  byte* bp;
+  unsigned char t;
+
+  if((i <= 0) || (i > 2 * - sizeField(o)))
+    sysError("index out of range", "byteAt");
+  else
+  {
+    bp = bytePtr(o);
+    t = bp[i-1];
+    i = (int) t;
+  }
+  return i;
+}
+#endif
+
 # ifndef byteAtPut
-void byteAtPut(z, i, x)
-object z;
-int i, x;
+void byteAtPut(object z, int i, int x)
 {      
   byte *bp;
   if ((i <= 0) || (i > 2 * - sizeField(z))) {
@@ -306,11 +383,13 @@ int i, x;
 # endif
 
 /*
-Written by Steven Pemberton:
-The following routine assures that objects read in are really referenced,
-eliminating junk that may be in the object file but not referenced.
-It is essentially a marking garbage collector algorithm using the 
-reference counts as the mark
+  Written by Steven Pemberton:
+  The following routine assures that objects read in are really referenced,
+  eliminating junk that may be in the object file but not referenced.
+  It is essentially a marking garbage collector algorithm using the 
+  reference counts as the mark
+  
+  Modified by Paul Gregory based on ideas by Michael Koehne
 */
 
 visit(x)
@@ -320,7 +399,10 @@ register object x;
 	object *p;
 
 	if (x) {
-		if (++(objectTable[x>>1].referenceCount) == 1) {
+	if (objectTable[x>>1].referenceCount > 0)
+	    objectTable[x>>1].referenceCount = 0;
+	if (--(objectTable[x>>1].referenceCount) == -1) {
+//		if (++(objectTable[x>>1].referenceCount) == 1) {
 			/* then it's the first time we've visited it, so: */
 			visit(objectTable[x>>1].class);
 			s = sizeField(x);
@@ -339,4 +421,46 @@ int objectCount()
 		if (objectTable[i].referenceCount > 0)
 			j++;
 	return j;
+}
+
+
+int garbageCollect(int verbose)
+{
+  register int j;
+  int c=1,f=0;
+
+  if (verbose) 
+  {
+    fprintf(stderr,"\ngarbage collecting ... ");
+    fprintf(stderr,"%d objects ...", objectCount());
+  }
+
+  /* visit symbols and firstProcess to toggle their referenceCount */
+
+  visit(symbols);
+  if(firstProcess) 
+    visit(firstProcess);
+
+  /* add new garbage to objectFreeList 
+   * toggle referenceCount 
+   * count the objects
+   */
+
+  for (j=ObjectTableMax-1; j>0; j--) 
+  {
+    if (objectTable[j].referenceCount > 0) 
+    {
+      objectTable[j].referenceCount = 0;
+      sysDecr(j<<1,0);
+      f++;
+    } 
+    else
+      if (0!=(objectTable[j].referenceCount =
+          -objectTable[j].referenceCount))
+        c++;
+  }
+
+  if (verbose)
+    fprintf(stderr," %d objects.\n",c);
+  return c;
 }

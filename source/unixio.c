@@ -38,9 +38,9 @@ static int fr(fp, p, s)
   return r;
 }
 
-noreturn imageRead(fp)
-  FILE *fp;
-{	short i, size;
+void imageRead(FILE* fp)
+{	
+  short i, size;
   object *mBlockAlloc();
 
   ignore fr(fp, (char *) &symbols, sizeof(object));
@@ -66,13 +66,17 @@ noreturn imageRead(fp)
     }
     else
       objectTable[i].memory = (object *) 0;
+
+		objectTable[i].referenceCount = 666;
   }
 
   /* now restore ref counts, getting rid of unneeded junk */
-  visit(symbols);
+  //visit(symbols);
   /* toss out the old free lists, build new ones */
-  setFreeLists();
-
+  //setFreeLists();
+	/* toss out the old free lists, build new ones */
+	setFreeLists();
+	garbageCollect(0);
 }
 
 /*
@@ -89,9 +93,9 @@ static fw(fp, p, s)
   }
 }
 
-noreturn imageWrite(fp)
-  FILE *fp;
-{	short i, size;
+void imageWrite(FILE* fp)
+{	
+  short i, size;
 
   fw(fp, (char *) &symbols, sizeof(object));
 
