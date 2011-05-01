@@ -108,7 +108,13 @@ static int unaryPrims(number, firstarg)
       break;
 
     case 3:		/* hash value of object */
-      returnedObject = newInteger(firstarg);
+      // \todo: Not happy about this, need to review the hashing.
+      // This specialises the hash for integers, to ensure values are used, not objects,
+      // but there are other cases where the value should be considered, like float.
+      if(getClass(firstarg) == globalSymbol("Integer"))
+        returnedObject = newInteger(intValue(firstarg));
+      else
+        returnedObject = newInteger(firstarg);
       break;
 
     case 4:		/* debugging print */

@@ -212,7 +212,7 @@ Methods Collection 'all'
 		^ last
 |
 	isEmpty 
-		^ self size == 0
+		^ self size = 0
 |
 	occurrencesOf: anObject
 		^ self inject: 0

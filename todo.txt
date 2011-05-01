@@ -1,2 +1,5 @@
 Parser:
   Support for LongInteger in the lexer/parser, automatically creating the right type depending on the size of the value specified.
+
+VM:
+  Review the hashing mechanism, it's still caught up a bit in the integer code.

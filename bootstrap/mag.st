@@ -322,7 +322,7 @@ Methods Integer 'all'
 					[ ^ (self + $0 asInteger) asCharacter ].
 				  (self < 36) ifTrue:
 					[ ^ (self + $A asInteger - 10) asCharacter ] ].
-		^ smalltalk error: 'illegal conversion, integer to digit'
+		^ smalltalk error: ('illegal conversion, integer to digit [', self, ']')
 |
 	asFloat
 		" should be redefined by any subclasses "

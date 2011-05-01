@@ -106,7 +106,7 @@ Methods DefinitionPanel 'all'
     widget <- VBox new; at: 'NMARGIN' put: '5x5'; at: 'GAP' put: '5'.
     text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'; at: 'TABSIZE' put: '4'.
     commands <- Dictionary new.
-    text setCallbackFor: 'K_ANY' as: [ :h :c | stderr print: (c asString). (self processCommand: c) ] returning: #int taking: #(cObject int).
+    text setCallbackFor: 'K_ANY' as: [ :h :c | (self processCommand: c) ] returning: #int taking: #(cObject int).
     widget addChild: self buttons.
     vbox <- VBox new; at: 'EXPAND' put: 'VERTICAL'; at: 'NGAP' put: '5'.
     hbox <- HBox new; at: 'NGAP' put: '5'.
