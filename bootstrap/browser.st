@@ -15,8 +15,6 @@ Methods MetaPanel 'all'
 Methods Panel 'all'
   init: browser
     browser <- browser.
-    super init.
-    ^ self
 |
   widget
     ^ widget
@@ -25,6 +23,7 @@ Methods Panel 'all'
 Methods NavigationPanel 'all'
   init: browser
     | classList protocolList methodList currentClass currentProtocol currentMethod |
+    super init: browser.
     hbox <- HBox new; at: 'HOMOGENEOUS' put: 'YES'.
     classList <- self listControl: 'Classes' on: hbox.
     protocolList <- self listControl: 'Protocols' on: hbox.
@@ -33,12 +32,14 @@ Methods NavigationPanel 'all'
     classList setActionCallback: [ :h :className :item :state | 
       (state = 1) ifTrue: [
         currentClass <- (className asSymbol) value.
+        self clearList: methodList.
         self updateProtocolList: protocolList on: currentClass 
       ]
     ].
     protocolList setActionCallback: [ :h :protocolName :item :state | 
       (state = 1) ifTrue: [
         currentProtocol <- protocolName asSymbol.
+        self clearList: methodList.
         self updateMethodList: methodList with: currentProtocol on: currentClass 
       ]
     ].
@@ -63,6 +64,7 @@ Methods NavigationPanel 'all'
   updateProtocolList: list on: class
     | index |
     self clearList: list.
+    browser clearMethod.
     index <- 1.
     (class protocols) do: [ :x |
       list at: (index asString) put: (x asString). index <- index + 1 ].
@@ -71,6 +73,7 @@ Methods NavigationPanel 'all'
   updateMethodList: list with: protocol on: class
     | index |
     self clearList: list.
+    browser clearMethod.
     index <- 1.
     (class methodsFor: (protocol asString)) binaryDo: [ :x :y |
       list at: (index asString) put: (x asString). index <- index + 1 ].
@@ -93,6 +96,7 @@ Methods NavigationPanel 'all'
 Methods ButtonPanel 'all'
   init: browser
     | button |
+    super init: browser.
     widget <- HBox new.
     #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
       button <- ButtonControl new: (name asString).
@@ -103,6 +107,7 @@ Methods ButtonPanel 'all'
 Methods DefinitionPanel 'all'
   init: browser
     | hbox vbox|
+    super init: browser.
     widget <- VBox new; at: 'NMARGIN' put: '5x5'; at: 'GAP' put: '5'.
     text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'; at: 'TABSIZE' put: '4'.
     commands <- Dictionary new.
@@ -137,7 +142,21 @@ Methods DefinitionPanel 'all'
     ].
     ^ hbox
 |
+  clearMethod
+    (commands includesKey: 833) ifTrue: [
+      commands removeKey: 833
+    ].
+    (commands includesKey: 835) ifTrue: [
+      commands removeKey: 835
+    ].
+    text at: 'SELECTION' put: 'ALL'.
+    ((text at: 'SELECTION') isEmpty)
+      ifFalse: [
+        text at: 'SELECTEDTEXT' put: '' 
+      ]
+|
   showMethod: method on: class
+    self clearMethod.
     commands at: 833 put: [ 
       self saveMethod: method on: class 
     ].
@@ -219,13 +238,15 @@ Methods Browser 'all'
   definitionPanel
     ^ DefinitionPanel new: self
 |
+  clearMethod
+    | defPnl |
+    defPnl <- panels at: 3.
+    defPnl clearMethod
+|
   showMethod: method on: class
     | defPnl |
     defPnl <- panels at: 3.
     defPnl showMethod: method on: class
-|
-  clearMethodList
-    methodList at: 'REMOVEITEM' put: (cPointer new)
 |
   show
     dialog show.
