@@ -209,7 +209,13 @@ Methods MetaBrowser 'all'
     newObj init.
     ^ newObj
 |
-  test
+  open
+    self openOnClass: nil
+|
+  openOnClass: class
+    self openOnClass: class showing: nil
+|
+  openOnClass: class showing: method
     Browser new; show. IUP instance IupMainLoop
 ]
 *

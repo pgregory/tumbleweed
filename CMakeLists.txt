@@ -47,6 +47,7 @@ set(image_srcs
   bootstrap/tty.st
   bootstrap/iup.st
   bootstrap/browser.st
+  bootstrap/workspace.st
 )
 
 find_package(LibFFI REQUIRED)
