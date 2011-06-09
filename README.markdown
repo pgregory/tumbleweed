@@ -48,14 +48,14 @@ should be obvious.
 
 Get the source from github:
 
-  git clone https://pgregory@github.com/pgregory/tumbleweed.git
+    git clone https://pgregory@github.com/pgregory/tumbleweed.git
 
 Make a build directory, and configure with cmake:
 
-  mkdir build
-  cd build
-  cmake ../tumbleweed
-  make
+    mkdir build
+    cd build
+    cmake ../tumbleweed
+    make
 
 You should then end up with an executable 'tw' in the build
 folder. To work with the GUI, you'll need a copy of the IUP
@@ -65,19 +65,19 @@ from the command line.
 
 Run Tumbleweed:
 
-  ./tw
+    ./tw
 
 You can then run standard Smalltalk like commands from the
 command prompt.
 
-  > 'Hello, World!' printstring
-  'Hello, World!'
-  object count 6942
+    > 'Hello, World!' printstring
+    'Hello, World!'
+    object count 6942
 
 You can launch a class Browser to examine the class hierarchy
 in the current running image.
 
-  > Browser open
+    > Browser open
 
 From within the browser you can view the class hierarchy by
 selecting the class from the class list, you'll see a list
