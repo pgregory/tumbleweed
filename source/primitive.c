@@ -286,6 +286,7 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
       setInstanceVariables(firstarg);
       if (parse(thirdarg, charPtr(secondarg), false)) {
         flushCache(basicAt(thirdarg, messageInMethod), firstarg);
+        basicAtPut(thirdarg, methodClassInMethod, firstarg);
         returnedObject = trueobj;
       }
       else
@@ -596,7 +597,7 @@ object primitive(primitiveNumber, arguments)
       break;
 
     case 6: case 7:		/* integer binary operations */
-      returnedObject = intBinary(primitiveNumber-60,
+        returnedObject = intBinary(primitiveNumber-60,
           intValue(arguments[0]), 
           intValue(arguments[1]));
       break;

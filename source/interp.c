@@ -141,6 +141,7 @@ boolean execute(aProcess, maxsteps)
   int high;
   register object incrobj;  /* speed up increments and decrements */
   byte *bp;
+  object intClass = globalSymbol("Integer");
 
   /* unpack the instance variables from the process */
   processStack    = basicAt(aProcess, stackInProcess);
@@ -392,11 +393,13 @@ doFindMessage:
         /* optimized as long as arguments are int */
         /* and conversions are not necessary */
         /* and overflow does not occur */
-        if ((! watching) && (low <= 12)) {
-          primargs = pst - 1;
+        primargs = pst - 1;
+        if ((! watching) && (low <= 12) &&
+            (getClass(primargs[0]) == intClass && 
+              getClass(primargs[1]) == intClass)) {
           returnedObject = primitive(low+60, primargs);
           if (returnedObject != nilobj) {
-            /* pop arguments off stack , push on result */
+            // pop arguments off stack , push on result 
             stackTopFree();
             stackTopPut(returnedObject);
             break;
