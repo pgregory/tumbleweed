@@ -4,6 +4,7 @@ Class Widget Object handle
 Class   WidgetContainer Widget children
 Class     VBox WidgetContainer
 Class     HBox WidgetContainer
+Class     Fill Widget
 Class     Split WidgetContainer
 Class     Dialog WidgetContainer
 Class     Menu WidgetContainer
@@ -77,6 +78,10 @@ Methods IUP 'all'
     args at: 1 put: (CPointer new).
     args at: 2 put: (CPointer new).
     ^ iup call: 'IupHbox' returning: #cObject taking: #(cObject cObject) as: args
+|
+  IupFill 
+    | args |
+    ^ iup call: 'IupFill' returning: #cObject taking: #() as: #()
 |
   IupSplitWith: child1 and: child2 
     | args |
@@ -278,6 +283,15 @@ Methods HBox 'all'
     super init.
     iup <- IUP instance.
     result <- iup IupHbox.
+    super handle: (result at: 1).
+    ^ self
+]
+Methods Fill 'all'
+  init
+    | iup result |
+    super init.
+    iup <- IUP instance.
+    result <- iup IupFill.
     super handle: (result at: 1).
     ^ self
 ]

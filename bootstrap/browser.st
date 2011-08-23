@@ -1,8 +1,9 @@
 Class Panel Object browser widget
-Class   NavigationPanel Panel panes
+Class   NavigationPanel Panel classList
 Class   ButtonPanel Panel buttons
 Class   DefinitionPanel Panel text commands
 Class Browser Object panels dialog currentClass currentMethod
+Class AddSubClassDialog Object dialog parentClass nameControl ivnamesControl
 *
 Methods MetaPanel 'all'
   new: browser
@@ -22,7 +23,7 @@ Methods Panel 'all'
 *
 Methods NavigationPanel 'all'
   init: browser
-    | classList protocolList methodList currentClass currentProtocol currentMethod |
+    | protocolList methodList currentClass currentProtocol currentMethod |
     super init: browser.
     hbox <- HBox new; at: 'HOMOGENEOUS' put: 'YES'.
     classList <- self listControl: 'Classes' on: hbox.
@@ -33,7 +34,8 @@ Methods NavigationPanel 'all'
       (state = 1) ifTrue: [
         currentClass <- (className asSymbol) value.
         self clearList: methodList.
-        self updateProtocolList: protocolList on: currentClass 
+        self updateProtocolList: protocolList on: currentClass.
+        browser showClass: currentClass
       ]
     ].
     protocolList setActionCallback: [ :h :protocolName :item :state | 
@@ -49,7 +51,7 @@ Methods NavigationPanel 'all'
         browser showMethod: currentMethod on: currentClass
       ]
     ].
-    self updateClassList: classList.
+    self updateClassList.
     ^ self
 |
   listControl: name on: container
@@ -79,13 +81,13 @@ Methods NavigationPanel 'all'
       list at: (index asString) put: (x asString). index <- index + 1 ].
     ^ self
 |
-  updateClassList: list
+  updateClassList
     | index |
     " Initialise the class list "
-    self clearList: list.
+    self clearList: classList.
     index <- 1.
     ((classes select: [ :x | x isMeta not ]) sort: [ :x :y | (x asString) < (y asString) ] ) do: [ :x |
-      list at: (index asString) put: (x asString). index <- index + 1 ].
+      classList at: (index asString) put: (x asString). index <- index + 1 ].
     ^ self
 |
   clearList: list
@@ -137,8 +139,8 @@ Methods DefinitionPanel 'all'
   buttons
     | hbox |
     hbox <- HBox new.
-    #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
-      hbox addChild: ( ButtonControl new: (name asString); at: 'EXPAND' put: 'HORIZONTAL')
+    #(subclass) do: [ :name |
+      hbox addChild: ( ButtonControl new: (name asString); at: 'EXPAND' put: 'HORIZONTAL'; setActionCallback: [ :x | self processCommand: 837 ])
     ].
     ^ hbox
 |
@@ -179,6 +181,7 @@ Methods DefinitionPanel 'all'
         -1
       ] 
       ifFalse: [ 
+        ('Missing command ', c) print.
         -2
       ]
 |
@@ -199,6 +202,16 @@ Methods DefinitionPanel 'all'
   cancelMethod: method on: class
     self showMethod: method on: class.
     ^ true
+|
+  subclassOn: class
+    | dialog |
+    dialog <- AddSubClassDialog new: class.
+    dialog show. 
+|
+  showClass: class
+    commands at: 837 put: [ 
+      self subclassOn: class 
+    ].
 ]
 *
 Methods MetaBrowser 'all'
@@ -254,6 +267,85 @@ Methods Browser 'all'
     defPnl <- panels at: 3.
     defPnl showMethod: method on: class
 |
+  showClass: class
+    | defPnl |
+    defPnl <- panels at: 3.
+    defPnl showClass: class
+|
+  updateClassList
+    | navPnl |
+    navPnl <- panels at: 1.
+    navPnl updateClassList
+|
   show
     dialog show.
 ]
+*
+Methods MetaAddSubClassDialog 'all'
+  new: parent
+    | newDialog |
+    newDialog <- super new.
+    newDialog init: parent.
+    ^ newDialog
+]
+
+*
+Methods AddSubClassDialog 'all'
+  init: parent
+    | container |
+    parentClass <- parent.
+    container <- VBox new.
+    container addChild: self nameControls.
+    container addChild: self instanceVariableControls.
+    container addChild: (Fill new).
+    container addChild: self buttons.
+    container at: 'MARGIN' put: '5x25'.
+    dialog <- Dialog new: container; at: 'SHRINK' put: 'NO'; 
+                                     at: 'TITLE' put: ('Add Subclass of ', (parent name));
+                                     at: 'MINSIZE' put: '400x200';
+                                     at: 'MAXSIZE' put: '800x200'.
+    ^ self
+|
+  nameControls
+    | label editor container |
+    container <- HBox new.
+    label <- LabelControl new: 'Name'.
+    editor <- TextControl new.
+    nameControl <- editor.
+    container addChild: label; addChild: editor.
+    editor at: 'EXPAND' put: 'HORIZONTAL'.
+    container at: 'EXPAND' put: 'HORIZONTAL'; at: 'MARGIN' put: '5x5'; at: 'GAP' put: '5'.
+    ^ container 
+|
+  instanceVariableControls
+    | label editor container |
+    container <- HBox new.
+    label <- LabelControl new: 'Instance Variables'.
+    editor <- TextControl new.
+    ivnamesControl <- editor.
+    container addChild: label; addChild: editor.
+    editor at: 'EXPAND' put: 'HORIZONTAL'.
+    container at: 'EXPAND' put: 'HORIZONTAL'; at: 'MARGIN' put: '5x5'; at: 'GAP' put: '5'.
+    ^ container 
+|
+  buttons
+    | container ok cancel vnames scname |
+    container <- HBox new.
+    ok <- ButtonControl new: 'Ok'.
+    cancel <- ButtonControl new: 'Cancel'.
+    container addChild: (Fill new); addChild: ok; addChild: cancel.
+    container at: 'EXPAND' put: 'HORIZONTAL'; at: 'MARGIN' put: '5x5'; at: 'GAP' put: '5'.
+    ok setActionCallback: [ :h | 
+      'Hello' print.
+      vnames <- (ivnamesControl at: 'VALUE').
+      scname <- (nameControl at: 'VALUE').
+      vnames <- (vnames words: [ :x | (x == $ ) not ]).
+      vnames <- (vnames collect: [ :x | x asSymbol ]).
+      parentClass subClass: (scname asSymbol) instanceVariableNames: vnames
+    ].
+    ^ container
+|
+  show
+    dialog show.
+]
+
