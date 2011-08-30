@@ -48,11 +48,12 @@ char **argv;
   initFFISymbols();
 
 	for (i = 1; i < argc; i++) {
-		fprintf(stderr,"%s:\n", argv[i]);
+		//fprintf(stderr,"%s:\n", argv[i]);
 		ignore sprintf(methbuf, 
 			"x <120 1 '%s' 'r'>. <123 1>. <121 1>", 
 				argv[i]);
 		goDoIt(methbuf);
+
 		}
 
 	/* when we are all done looking at the arguments, do initialization */
@@ -104,6 +105,7 @@ char *text;
 */
  makeInitialImage()
 {	object hashTable;
+	object integerClass;
 	object symbolObj, symbolClass, classClass, metaClassClass;
   object objectClass, metaObjectClass;
 
@@ -116,9 +118,11 @@ char *text;
 	/* next create #Symbol, Symbol and Class */
 	symbolObj = newSymbol("Symbol");
 	symbolClass = newClass("Symbol");
+	integerClass = newClass("Integer");
 	setClass(symbolObj, symbolClass);
 	classClass = newClass("Class");
 	setClass(symbolClass, classClass);
+	setClass(integerClass, classClass);
   metaClassClass = newClass("MetaClass");
 	setClass(classClass, metaClassClass);
   objectClass = newClass("Object");
@@ -128,6 +132,7 @@ char *text;
 
   basicAtPut(metaClassClass, superClassInClass, metaObjectClass);
   basicAtPut(metaObjectClass, superClassInClass, classClass);
+	basicAtPut(metaObjectClass, sizeInClass, newInteger(classSize));
 
 	/* now fix up classes for symbol table */
 	/* and make a couple common classes, just to hold their places */

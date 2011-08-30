@@ -301,6 +301,7 @@ doFindMessage:
               decr(returnedObject);
             }
 //            printf("Failed to find %s (%s)\n", charPtr(messageToSend), charPtr(basicAt(methodClass, nameInClass)));
+            printf("Failed to find %s\n", charPtr(messageToSend));
             ipush(basicAt(argarray, 1)); /* push receiver back */
             ipush(messageToSend);
             messageToSend = newSymbol("message:notRecognizedWithArguments:");

@@ -158,7 +158,7 @@ object ioPrimitive(number, arguments)
 
     case 2:		/* file size */
     case 3:		/* file in */
-      if (fp[i]) fileIn(fp[i], true);
+      if (fp[i]) fileIn(fp[i], false);
       break;
 
     case 4:		/* get character */

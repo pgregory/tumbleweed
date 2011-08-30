@@ -11,7 +11,7 @@ Class    True Boolean
 Class    False Boolean
 Class Class Object name instanceSize methods superClass variables
 Class Context Object linkLocation method arguments temporaries
-Class Integer Object
+Class Zebra Object
 Class Method Object text message bytecodes literals stackSize temporarySize class watch protocol
 Class Smalltalk Object
 Class Switch Object const notdone
