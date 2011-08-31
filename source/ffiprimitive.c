@@ -289,7 +289,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 }
 
 object ffiPrimitive(int number, object* arguments)
-{	
+{   
   object returnedObject = nilobj;
   char libName[MAX_PATH];
 

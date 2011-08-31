@@ -30,7 +30,7 @@ static int fr(fp, p, s)
   FILE *fp;
   char *p;
   int s;
-{	int r;
+{   int r;
 
   r = fread(p, s, 1, fp);
   if (r && (r != 1))
@@ -39,7 +39,7 @@ static int fr(fp, p, s)
 }
 
 void imageRead(FILE* fp)
-{	
+{   
   short i, size;
   object *mBlockAlloc();
 
@@ -67,16 +67,16 @@ void imageRead(FILE* fp)
     else
       objectTable[i].memory = (object *) 0;
 
-		objectTable[i].referenceCount = 666;
+        objectTable[i].referenceCount = 666;
   }
 
   /* now restore ref counts, getting rid of unneeded junk */
   //visit(symbols);
   /* toss out the old free lists, build new ones */
   //setFreeLists();
-	/* toss out the old free lists, build new ones */
-	setFreeLists();
-	garbageCollect(0);
+    /* toss out the old free lists, build new ones */
+    setFreeLists();
+    garbageCollect(0);
 }
 
 /*
@@ -94,7 +94,7 @@ static fw(fp, p, s)
 }
 
 void imageWrite(FILE* fp)
-{	
+{   
   short i, size;
 
   fw(fp, (char *) &symbols, sizeof(object));
@@ -124,7 +124,7 @@ static FILE *fp[MAXFILES];
 object ioPrimitive(number, arguments)
   int number;
   object *arguments;
-{	int i, j;
+{   int i, j;
   char *p, buffer[1024];
   object returnedObject;
 
@@ -133,7 +133,7 @@ object ioPrimitive(number, arguments)
   i = intValue(arguments[0]);
 
   switch(number) {
-    case 0:		/* file open */
+    case 0:     /* file open */
       i = intValue(arguments[0]);
       p = charPtr(arguments[1]);
       if (streq(p, "stdin")) 
@@ -151,20 +151,20 @@ object ioPrimitive(number, arguments)
         returnedObject = newInteger(i);
       break;
 
-    case 1:		/* file close - recover slot */
+    case 1:     /* file close - recover slot */
       if (fp[i]) ignore fclose(fp[i]);
       fp[i] = NULL;
       break;
 
-    case 2:		/* file size */
-    case 3:		/* file in */
+    case 2:     /* file size */
+    case 3:     /* file in */
       if (fp[i]) fileIn(fp[i], false);
       break;
 
-    case 4:		/* get character */
+    case 4:     /* get character */
       sysError("file operation not implemented yet","");
 
-    case 5:		/* get string */
+    case 5:     /* get string */
       if (! fp[i]) break;
       j = 0; buffer[j] = '\0';
       while (1) {
@@ -184,13 +184,13 @@ object ioPrimitive(number, arguments)
       returnedObject = newStString(buffer);
       break;
 
-    case 7:		/* write an object image */
+    case 7:     /* write an object image */
       if (fp[i]) imageWrite(fp[i]);
       returnedObject = trueobj;
       break;
 
-    case 8:		/* print no return */
-    case 9:		/* print string */
+    case 8:     /* print no return */
+    case 9:     /* print string */
       if (! fp[i]) break; 
       ignore fputs(charPtr(arguments[1]), fp[i]);
       if (number == 8)

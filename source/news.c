@@ -1,10 +1,10 @@
 /*
-	little smalltalk, version 3.1
-	written by tim budd, July 1988
+    little smalltalk, version 3.1
+    written by tim budd, July 1988
 
-	new object creation routines
-	built on top of memory allocation, these routines
-	handle the creation of various kinds of objects
+    new object creation routines
+    built on top of memory allocation, these routines
+    handle the creation of various kinds of objects
 */
 
 # include <stdio.h>
@@ -12,225 +12,225 @@
 # include "memory.h"
 # include "names.h"
 
-static object arrayClass = nilobj;	/* the class Array */
-static object intClass = nilobj;	/* the class Integer */
-static object stringClass = nilobj;	/* the class String */
-static object symbolClass = nilobj;	/* the class Symbol */
+static object arrayClass = nilobj;  /* the class Array */
+static object intClass = nilobj;    /* the class Integer */
+static object stringClass = nilobj; /* the class String */
+static object symbolClass = nilobj; /* the class Symbol */
 
-ncopy(p, q, n)		/* ncopy - copy exactly n bytes from place to place */
+ncopy(p, q, n)      /* ncopy - copy exactly n bytes from place to place */
 register char *p, *q;
 register int n;
-{	for (; n>0; n--)
-		*p++ = *q++;
+{   for (; n>0; n--)
+        *p++ = *q++;
 }
 
-object getClass(obj)	/* getClass - get the class of an object */
+object getClass(obj)    /* getClass - get the class of an object */
 register object obj;
 {
-	return (classField(obj));
+    return (classField(obj));
 }
 
 object newArray(size)
 int size;
-{	object newObj;
+{   object newObj;
 
-	newObj = allocObject(size);
-	if (arrayClass == nilobj)
-		arrayClass = globalSymbol("Array");
-	setClass(newObj, arrayClass);
-	return newObj;
+    newObj = allocObject(size);
+    if (arrayClass == nilobj)
+        arrayClass = globalSymbol("Array");
+    setClass(newObj, arrayClass);
+    return newObj;
 }
 
 object newBlock()
-{	object newObj;
+{   object newObj;
 
-	newObj = allocObject(blockSize);
-	setClass(newObj, globalSymbol("Block"));
-	return newObj;
+    newObj = allocObject(blockSize);
+    setClass(newObj, globalSymbol("Block"));
+    return newObj;
 }
 
 object newByteArray(size)
 int size;
-{	object newobj;
+{   object newobj;
 
-	newobj = allocByte(size);
-	setClass(newobj, globalSymbol("ByteArray"));
-	return newobj;
+    newobj = allocByte(size);
+    setClass(newobj, globalSymbol("ByteArray"));
+    return newobj;
 }
 
 object newChar(value)
 int value;
-{	object newobj;
+{   object newobj;
 
-	newobj = allocObject(1);
-	basicAtPut(newobj, 1, newInteger(value));
-	setClass(newobj, globalSymbol("Char"));
-	return(newobj);
+    newobj = allocObject(1);
+    basicAtPut(newobj, 1, newInteger(value));
+    setClass(newobj, globalSymbol("Char"));
+    return(newobj);
 }
 
 object newClass(char* name)
-{	
+{   
   object newObj, nameObj, methTable;
 
-	newObj = allocObject(classSize);
-	setClass(newObj, globalSymbol("Class"));
+    newObj = allocObject(classSize);
+    setClass(newObj, globalSymbol("Class"));
 
-	/* now make name */
-	nameObj = newSymbol(name);
-	basicAtPut(newObj, nameInClass, nameObj);
+    /* now make name */
+    nameObj = newSymbol(name);
+    basicAtPut(newObj, nameInClass, nameObj);
   methTable = newDictionary(39);
   basicAtPut(newObj, methodsInClass, methTable);
   basicAtPut(newObj, sizeInClass, newInteger(classSize));
 
-	/* now put in global symbols table */
-	nameTableInsert(symbols, strHash(name), nameObj, newObj);
+    /* now put in global symbols table */
+    nameTableInsert(symbols, strHash(name), nameObj, newObj);
 
-	return newObj;
+    return newObj;
 }
 
 object copyFrom(obj, start, size)
 object obj;
 int start, size;
-{	object newObj;
-	int i;
+{   object newObj;
+    int i;
 
-	newObj = newArray(size);
-	for (i = 1; i <= size; i++) {
-		basicAtPut(newObj, i, basicAt(obj, start));
-		start++;
-		}
-	return newObj;
+    newObj = newArray(size);
+    for (i = 1; i <= size; i++) {
+        basicAtPut(newObj, i, basicAt(obj, start));
+        start++;
+        }
+    return newObj;
 }
 
 object newContext(link, method, args, temp)
 int link;
 object method, args, temp;
-{	object newObj;
+{   object newObj;
 
-	newObj = allocObject(contextSize);
-	setClass(newObj, globalSymbol("Context"));
-	basicAtPut(newObj, linkPtrInContext, newInteger(link));
-	basicAtPut(newObj, methodInContext, method);
-	basicAtPut(newObj, argumentsInContext, args);
-	basicAtPut(newObj, temporariesInContext, temp);
-	return newObj;
+    newObj = allocObject(contextSize);
+    setClass(newObj, globalSymbol("Context"));
+    basicAtPut(newObj, linkPtrInContext, newInteger(link));
+    basicAtPut(newObj, methodInContext, method);
+    basicAtPut(newObj, argumentsInContext, args);
+    basicAtPut(newObj, temporariesInContext, temp);
+    return newObj;
 }
 
 object newDictionary(size)
 int size;
-{	object newObj;
+{   object newObj;
 
-	newObj = allocObject(1);
-	setClass(newObj, globalSymbol("Dictionary"));
-	basicAtPut(newObj, 1, newArray(size));
-	return newObj;
+    newObj = allocObject(1);
+    setClass(newObj, globalSymbol("Dictionary"));
+    basicAtPut(newObj, 1, newArray(size));
+    return newObj;
 }
 
 object newFloat(d)
 double d;
-{	object newObj;
+{   object newObj;
 
-	newObj = allocByte((int) sizeof (double));
-	ncopy(charPtr(newObj), (char *) &d, (int) sizeof (double));
-	setClass(newObj, globalSymbol("Float"));
-	return newObj;
+    newObj = allocByte((int) sizeof (double));
+    ncopy(charPtr(newObj), (char *) &d, (int) sizeof (double));
+    setClass(newObj, globalSymbol("Float"));
+    return newObj;
 }
 
 object newInteger(i)
 int i;
-{	object newObj;
+{   object newObj;
 
-	newObj = allocByte((int) sizeof (int));
-	ncopy(charPtr(newObj), (char *) &i, (int) sizeof (int));
-	setClass(newObj, globalSymbol("Integer"));
-	return newObj;
+    newObj = allocByte((int) sizeof (int));
+    ncopy(charPtr(newObj), (char *) &i, (int) sizeof (int));
+    setClass(newObj, globalSymbol("Integer"));
+    return newObj;
 }
 
 double floatValue(o)
 object o;
-{	double d;
+{   double d;
 
-	ncopy((char *) &d, charPtr(o), (int) sizeof(double));
-	return d;
+    ncopy((char *) &d, charPtr(o), (int) sizeof(double));
+    return d;
 }
 
 int intValue(o)
 object o;
-{	int d;
+{   int d;
 
   if(o == nilobj)
     return 0;
-	ncopy((char *) &d, charPtr(o), (int) sizeof(int));
-	return d;
+    ncopy((char *) &d, charPtr(o), (int) sizeof(int));
+    return d;
 }
 
 object newCPointer(void* l)
-{	
+{   
   object newObj;
 
   int s = sizeof(void*);
-	newObj = allocByte((int) sizeof (void*));
-	ncopy(charPtr(newObj), (char *) &l, (int) sizeof (void*));
-	setClass(newObj, globalSymbol("CPointer"));
-	return newObj;
+    newObj = allocByte((int) sizeof (void*));
+    ncopy(charPtr(newObj), (char *) &l, (int) sizeof (void*));
+    setClass(newObj, globalSymbol("CPointer"));
+    return newObj;
 }
 
 void* cPointerValue(object o)
-{	
+{   
   if(NULL == charPtr(o))
     sysError("invalid cPointer","cPointerValue");
 
   void* l;
 
   int s = sizeof(void*);
-	ncopy((char *) &l, charPtr(o), (int) sizeof(void*));
-	return l;
+    ncopy((char *) &l, charPtr(o), (int) sizeof(void*));
+    return l;
 }
 
 object newLink(key, value)
 object key, value;
-{	object newObj;
+{   object newObj;
 
-	newObj = allocObject(3);
-	setClass(newObj, globalSymbol("Link"));
-	basicAtPut(newObj, 1, key);
-	basicAtPut(newObj, 2, value);
-	return newObj;
+    newObj = allocObject(3);
+    setClass(newObj, globalSymbol("Link"));
+    basicAtPut(newObj, 1, key);
+    basicAtPut(newObj, 2, value);
+    return newObj;
 }
 
 object newMethod()
-{	object newObj;
+{   object newObj;
 
-	newObj = allocObject(methodSize);
-	setClass(newObj, globalSymbol("Method"));
-	return newObj;
+    newObj = allocObject(methodSize);
+    setClass(newObj, globalSymbol("Method"));
+    return newObj;
 }
 
 object newStString(char* value)
-{	
+{   
   object newObj;
 
-	newObj = allocStr(value);
-	if (stringClass == nilobj)
-		stringClass = globalSymbol("String");
-	setClass(newObj, stringClass);
-	return(newObj);
+    newObj = allocStr(value);
+    if (stringClass == nilobj)
+        stringClass = globalSymbol("String");
+    setClass(newObj, stringClass);
+    return(newObj);
 }
 
 object newSymbol(str)
 char *str;
-{	 object newObj;
+{    object newObj;
 
-	/* first see if it is already there */
-	newObj = globalKey(str);
-	if (newObj) 
-		return newObj;
+    /* first see if it is already there */
+    newObj = globalKey(str);
+    if (newObj) 
+        return newObj;
 
-	/* not found, must make */
-	newObj = allocStr(str);
-	if (symbolClass == nilobj)
-		symbolClass = globalSymbol("Symbol");
-	setClass(newObj, symbolClass);
-	nameTableInsert(symbols, strHash(str), newObj, nilobj);
-	return newObj;
+    /* not found, must make */
+    newObj = allocStr(str);
+    if (symbolClass == nilobj)
+        symbolClass = globalSymbol("Symbol");
+    setClass(newObj, symbolClass);
+    nameTableInsert(symbols, strHash(str), newObj, nilobj);
+    return newObj;
 }

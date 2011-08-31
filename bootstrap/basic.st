@@ -1,8 +1,8 @@
 *
 * Little Smalltalk, version 3
 * basic methods needed for execution, including
-*	object creation
-*	block creation, execution and return
+*   object creation
+*   block creation, execution and return
 *
 Class Object
 Class Block Object context argCount argLoc bytePointer
@@ -20,71 +20,71 @@ Class UndefinedObject Object
 Class CPointer Object
 *
 Methods Block 'initialization'
-	checkArgumentCount: count
-		^ (argCount = count)
-			ifTrue: [ true ]
-			ifFalse: [ smalltalk error:
-				'wrong number of arguments passed to block'.
-				false ]
+    checkArgumentCount: count
+        ^ (argCount = count)
+            ifTrue: [ true ]
+            ifFalse: [ smalltalk error:
+                'wrong number of arguments passed to block'.
+                false ]
 |
-	blockContext: ctx
-		context <- ctx
+    blockContext: ctx
+        context <- ctx
 |
-	value
-		^ (self checkArgumentCount: 0)
-			ifTrue: [ context returnToBlock: bytePointer ]
+    value
+        ^ (self checkArgumentCount: 0)
+            ifTrue: [ context returnToBlock: bytePointer ]
 |
-	value: x
-		^ (self checkArgumentCount:  1)
-			ifTrue: [ context at: argLoc put: x.
-				  context returnToBlock: bytePointer ]
+    value: x
+        ^ (self checkArgumentCount:  1)
+            ifTrue: [ context at: argLoc put: x.
+                  context returnToBlock: bytePointer ]
 |
-	value: x value: y
-		^ (self checkArgumentCount: 2)
-			ifTrue: [ context at: argLoc put: x.
-				  context at: argLoc + 1 put: y.
-				  context returnToBlock: bytePointer ]
+    value: x value: y
+        ^ (self checkArgumentCount: 2)
+            ifTrue: [ context at: argLoc put: x.
+                  context at: argLoc + 1 put: y.
+                  context returnToBlock: bytePointer ]
 |
-	value: x value: y value: z
-		^ (self checkArgumentCount:  3)
-			ifTrue: [ context at: argLoc put: x.
-				  context at: argLoc + 1 put: y.
-				  context at: argLoc + 2 put: z.
-				  context returnToBlock: bytePointer ]
+    value: x value: y value: z
+        ^ (self checkArgumentCount:  3)
+            ifTrue: [ context at: argLoc put: x.
+                  context at: argLoc + 1 put: y.
+                  context at: argLoc + 2 put: z.
+                  context returnToBlock: bytePointer ]
 |
-	whileTrue: aBlock
-		( self value ) ifTrue:
-			[ aBlock value. 
-				self whileTrue: aBlock ]
+    whileTrue: aBlock
+        ( self value ) ifTrue:
+            [ aBlock value. 
+                self whileTrue: aBlock ]
 |
-	whileTrue
-		self whileTrue: []
+    whileTrue
+        self whileTrue: []
 |
-	whileFalse: aBlock
-		[ self value not ] whileTrue: aBlock
+    whileFalse: aBlock
+        [ self value not ] whileTrue: aBlock
 ]
 Methods Boolean 'all'
-	ifTrue: trueBlock
-		^ self ifTrue: trueBlock ifFalse: []
+    ifTrue: trueBlock
+        ^ self ifTrue: trueBlock ifFalse: []
 |
-	ifFalse: falseBlock
-		^ self ifTrue: [] ifFalse: falseBlock
+    ifFalse: falseBlock
+        ^ self ifTrue: [] ifFalse: falseBlock
 |
-	ifFalse: falseBlock ifTrue: trueBlock
-		^ self ifTrue: trueBlock
-			ifFalse: falseBlock
+    ifFalse: falseBlock ifTrue: trueBlock
+        ^ self ifTrue: trueBlock
+            ifFalse: falseBlock
 |
-	and: aBlock
-		^ self ifTrue: aBlock ifFalse: [ false ]
+    and: aBlock
+        ^ self ifTrue: aBlock ifFalse: [ false ]
 |
-	or: aBlock
-		^ self ifTrue: [ true ] ifFalse: aBlock
+    or: aBlock
+        ^ self ifTrue: [ true ] ifFalse: aBlock
 ]
 *
 Methods Class 'creation'
-	new		
+    new     
     | newObj |
-		newObj <- < 22 < 58 instanceSize > self >.
+        newObj <- < 22 < 58 instanceSize > self >.
     (newObj isKindOf: Class) ifTrue: [
       newObj initialize ]
     ifFalse: [
@@ -97,7 +97,7 @@ Methods Class 'creation'
   subClass: aSymbol instanceVariableNames: v
     ^ self subClass: aSymbol instanceVariableNames: v classVariableNames: (Array new: 0)
 |
-	subClass: aSymbol instanceVariableNames: v classVariableNames: cv
+    subClass: aSymbol instanceVariableNames: v classVariableNames: cv
     | newClass newMetaClass |
     newMetaClass <- Class new.
     newMetaClass name: ('Meta', aSymbol asString); superClass: self class; variables: cv.
@@ -107,20 +107,20 @@ Methods Class 'creation'
     classes at: aSymbol put: newClass.
     ^ newClass 
 |
-	initialize
-		superClass <- Object.
-		instanceSize <- 0.
-		methods <- Dictionary new
+    initialize
+        superClass <- Object.
+        instanceSize <- 0.
+        methods <- Dictionary new
 |
-	methods
-		^ methods
+    methods
+        ^ methods
 |
-	methodNamed: name
-		(methods includesKey: name)
-			ifTrue: [ ^ methods at: name ].
-		(superClass notNil)
-			ifTrue: [ ^ superClass methodNamed: name ].
-		^ nil
+    methodNamed: name
+        (methods includesKey: name)
+            ifTrue: [ ^ methods at: name ].
+        (superClass notNil)
+            ifTrue: [ ^ superClass methodNamed: name ].
+        ^ nil
 |
   protocols
     | protocols |
@@ -131,28 +131,28 @@ Methods Class 'creation'
   methodsFor: protocol
     ^ methods select: [ :m | m protocol = protocol ]
 |
-	name
-		^ name
+    name
+        ^ name
 |
-	name: aString
-		name <- aString
+    name: aString
+        name <- aString
 |
-	instanceSize
-		^ instanceSize
+    instanceSize
+        ^ instanceSize
 |
-	printString
-		^ name asString
+    printString
+        ^ name asString
 |
-	respondsTo	| theSet |
-		theSet <- Dictionary new.
-		self upSuperclassChain: 
-			[:x | theSet addAll: x methods ].
-		^ theSet
+    respondsTo  | theSet |
+        theSet <- Dictionary new.
+        self upSuperclassChain: 
+            [:x | theSet addAll: x methods ].
+        ^ theSet
 |
-	subClasses
-		^ classes inject: List new
-			into: [:x :y | (y superClass == self)
-						ifTrue: [ x add: y]. x ]
+    subClasses
+        ^ classes inject: List new
+            into: [:x :y | (y superClass == self)
+                        ifTrue: [ x add: y]. x ]
 |
   viewSubClassTree: indent
     classes do: [ :obj |
@@ -165,122 +165,122 @@ Methods Class 'creation'
   viewSubClassTree
     self viewSubClassTree: 0
 |
-	superClass
-		^ superClass
+    superClass
+        ^ superClass
 |
-	superClass: aClass
-		superClass <- aClass
+    superClass: aClass
+        superClass <- aClass
 |
-	upSuperclassChain: aBlock
-		aBlock value: self.
-		(superClass notNil)
-			ifTrue: [ superClass upSuperclassChain: aBlock ]
+    upSuperclassChain: aBlock
+        aBlock value: self.
+        (superClass notNil)
+            ifTrue: [ superClass upSuperclassChain: aBlock ]
 |
-	variables
-		^ variables
+    variables
+        ^ variables
 |
-	variables: nameArray
-		variables <- nameArray.
-		instanceSize <- superClass instanceSize + nameArray size
+    variables: nameArray
+        variables <- nameArray.
+        instanceSize <- superClass instanceSize + nameArray size
 |
-	watch: name	| m |
-		m <- self methodNamed: name.
-		(m notNil) 
-			ifTrue: [ ^ m watch: 
-				[:a | ('executing ', name) print. a print] ]
-			ifFalse: [ ^ 'no such method' ]
+    watch: name | m |
+        m <- self methodNamed: name.
+        (m notNil) 
+            ifTrue: [ ^ m watch: 
+                [:a | ('executing ', name) print. a print] ]
+            ifFalse: [ ^ 'no such method' ]
 |
   isMeta
     ^ (name asString from: 1 to: 4) = 'Meta'
 ]
 Methods Context 'all'
-	at: key put: value
-		temporaries at: key put: value
+    at: key put: value
+        temporaries at: key put: value
 |
-	method: m
-		method <- m
+    method: m
+        method <- m
 |
-	arguments: a
-		arguments <- a
+    arguments: a
+        arguments <- a
 |
-	temporaries: t
-		temporaries <- t
+    temporaries: t
+        temporaries <- t
 |
-	returnToBlock: bytePtr
-		" change the location we will return to, to execute a block"
-		<28 self bytePtr>
+    returnToBlock: bytePtr
+        " change the location we will return to, to execute a block"
+        <28 self bytePtr>
 |
-	copy
-		^ super copy temporaries: temporaries copy
+    copy
+        ^ super copy temporaries: temporaries copy
 |
-	blockReturn
-		<18 self>
-			ifFalse: [ ^ smalltalk error: 
-				'incorrect context for block return']
+    blockReturn
+        <18 self>
+            ifFalse: [ ^ smalltalk error: 
+                'incorrect context for block return']
 ]
 Methods False 'all'
-	ifTrue: trueBlock ifFalse: falseBlock
-		^ falseBlock value
+    ifTrue: trueBlock ifFalse: falseBlock
+        ^ falseBlock value
 |
-	not
-		^ true
+    not
+        ^ true
 |
-	xor: aBoolean
-		^ aBoolean
+    xor: aBoolean
+        ^ aBoolean
 |
-	printString
-		^ 'false'
+    printString
+        ^ 'false'
 ]
 Methods Method 'all'
-	compileWithClass: aClass
-		^ <39 aClass text self>
+    compileWithClass: aClass
+        ^ <39 aClass text self>
 |
-	name
-		^ message
+    name
+        ^ message
 |
-	message: aSymbol
-		message <- aSymbol
+    message: aSymbol
+        message <- aSymbol
 |
-	printString
-		^ message asString
+    printString
+        ^ message asString
 |
-	signature
-		^ class asString,' ', message asString
+    signature
+        ^ class asString,' ', message asString
 |
-	text
-		^ (text notNil)
-			ifTrue: [ text ]
-			ifFalse: [ 'text not saved']
+    text
+        ^ (text notNil)
+            ifTrue: [ text ]
+            ifFalse: [ 'text not saved']
 |
-	text: aString
-		text <- aString
+    text: aString
+        text <- aString
 |
-	display
-		('Method ', message) print.
-		'text' print.
-		text print.
-		'literals' print.
-		literals print.
-		'bytecodes' print.
-		bytecodes class print.
-		bytecodes do: [:x |
-			(x printString, ' ', (x quo: 16), ' ', (x rem: 16))
-				print ]
+    display
+        ('Method ', message) print.
+        'text' print.
+        text print.
+        'literals' print.
+        literals print.
+        'bytecodes' print.
+        bytecodes class print.
+        bytecodes do: [:x |
+            (x printString, ' ', (x quo: 16), ' ', (x rem: 16))
+                print ]
 |
-	executeWith: arguments
-		^ ( Context new ; method: self ; 
-			temporaries: ( Array new: temporarySize) ;
-			arguments: arguments )
-		   returnToBlock: 1
+    executeWith: arguments
+        ^ ( Context new ; method: self ; 
+            temporaries: ( Array new: temporarySize) ;
+            arguments: arguments )
+           returnToBlock: 1
 |
-	watch: aBlock
-		watch <- aBlock
+    watch: aBlock
+        watch <- aBlock
 |
-	watchWith: arguments
-		" note that we are being watched "
-		text print.
-		watch value: arguments.
-		^ self executeWith: arguments
+    watchWith: arguments
+        " note that we are being watched "
+        text print.
+        watch value: arguments.
+        ^ self executeWith: arguments
 |
   protocol
     ^ protocol
@@ -289,167 +289,167 @@ Methods Method 'all'
     protocol <- aString
 ]
 Methods Object 'all'
-	assign: name value: val
-		^ name assign: val
+    assign: name value: val
+        ^ name assign: val
 |
-	== aValue
-		^ <21 self aValue>
+    == aValue
+        ^ <21 self aValue>
 |
-	~~ aValue
-		^ (self == aValue) not
+    ~~ aValue
+        ^ (self == aValue) not
 |
-	= aValue
-		^ self == aValue
+    = aValue
+        ^ self == aValue
 |
-	asString
-		^ self printString
+    asString
+        ^ self printString
 |
-	basicAt: index
-		^ <25 self index>
+    basicAt: index
+        ^ <25 self index>
 |
-	basicAt: index put: value
-		^ <31 self index value>
+    basicAt: index put: value
+        ^ <31 self index value>
 |
-	basicSize
-		^ <12 self>
+    basicSize
+        ^ <12 self>
 |
-	class
-		^ <11 self>
+    class
+        ^ <11 self>
 |
-	copy
-		^ self shallowCopy
+    copy
+        ^ self shallowCopy
 |
-	deepCopy	| newObj |
-		newObj <- self class new.
-		(1 to: self basicSize) do: 
-			[:i | newObj basicAt: i put: (self basicAt: i) copy].
-		^ newObj
+    deepCopy    | newObj |
+        newObj <- self class new.
+        (1 to: self basicSize) do: 
+            [:i | newObj basicAt: i put: (self basicAt: i) copy].
+        ^ newObj
 |
-	display
-		('(Class ', self class, ') ' , self printString ) print
+    display
+        ('(Class ', self class, ') ' , self printString ) print
 |
-	hash
-		^ <13 self>
+    hash
+        ^ <13 self>
 |
-	isMemberOf: aClass
-		^ self class == aClass
+    isMemberOf: aClass
+        ^ self class == aClass
 |
-	isNil
-		^ false
+    isNil
+        ^ false
 |
-	isKindOf: aClass
-		self class upSuperclassChain:
-			[:x | (x == aClass) ifTrue: [ ^ true ] ].
-		^ false
+    isKindOf: aClass
+        self class upSuperclassChain:
+            [:x | (x == aClass) ifTrue: [ ^ true ] ].
+        ^ false
 |
-	new
-		" default initialization protocol"
-		^ self
+    new
+        " default initialization protocol"
+        ^ self
 |
-	notNil
-		^ true
+    notNil
+        ^ true
 |
-	print
-		self printString print 
+    print
+        self printString print 
 |
-	printString
-		^ self class printString
+    printString
+        ^ self class printString
 |
-	respondsTo: message
-		self class upSuperclassChain: 
-			[:c | (c methodNamed: message) notNil
-					ifTrue: [ ^ true ]].
-		^ false
+    respondsTo: message
+        self class upSuperclassChain: 
+            [:c | (c methodNamed: message) notNil
+                    ifTrue: [ ^ true ]].
+        ^ false
 |
-	shallowCopy	| newObj |
-		newObj <- self class new.
-		(1 to: self basicSize) do: 
-			[:i | newObj basicAt: i put: (self basicAt: i) ].
-		^ newObj
+    shallowCopy | newObj |
+        newObj <- self class new.
+        (1 to: self basicSize) do: 
+            [:i | newObj basicAt: i put: (self basicAt: i) ].
+        ^ newObj
 ]
 Methods Smalltalk 'all'
-	perform: message withArguments: args ifError: aBlock	
-			| receiver method |
-		receiver <- args at: 1 ifAbsent: [ ^ aBlock value ].
-		method <- receiver class methodNamed: message.
-		^ method notNil 
-			ifTrue: [ method executeWith: args ]
-			ifFalse: aBlock
+    perform: message withArguments: args ifError: aBlock    
+            | receiver method |
+        receiver <- args at: 1 ifAbsent: [ ^ aBlock value ].
+        method <- receiver class methodNamed: message.
+        ^ method notNil 
+            ifTrue: [ method executeWith: args ]
+            ifFalse: aBlock
 |
-	perform: message withArguments: args
-		^ self perform: message withArguments: args
-			ifError: [ self error: 'cant perform' ]
+    perform: message withArguments: args
+        ^ self perform: message withArguments: args
+            ifError: [ self error: 'cant perform' ]
 |
-	watch
-		^ <5>
+    watch
+        ^ <5>
 ]
 Methods True 'all'
-	ifTrue: trueBlock ifFalse: falseBlock
-		^ trueBlock value
+    ifTrue: trueBlock ifFalse: falseBlock
+        ^ trueBlock value
 |
-	not
-		^ false
+    not
+        ^ false
 |
-	xor: aBoolean
-		^ aBoolean not
+    xor: aBoolean
+        ^ aBoolean not
 |
-	printString
-		^ 'true'
+    printString
+        ^ 'true'
 ]
 Methods Switch 'all'
-	key: value
-		const <- value.
-		notdone <- true.
+    key: value
+        const <- value.
+        notdone <- true.
 |
-	ifMatch: key do: block
-		(notdone and: [ const = key ])
-			ifTrue: [ notdone <- false. block value ]
+    ifMatch: key do: block
+        (notdone and: [ const = key ])
+            ifTrue: [ notdone <- false. block value ]
 |
-	else: block
-		notdone ifTrue: [ notdone <- false. block value ]
+    else: block
+        notdone ifTrue: [ notdone <- false. block value ]
 ]
 Methods Symbol 'all'
-    	apply: args
-		^ self apply: args ifError: [ 'does not apply' ]
+        apply: args
+        ^ self apply: args ifError: [ 'does not apply' ]
 |
-    	apply: args ifError: aBlock
-		^ smalltalk perform: self withArguments: args ifError: aBlock
+        apply: args ifError: aBlock
+        ^ smalltalk perform: self withArguments: args ifError: aBlock
 |
-	assign: value
-		<27 self value>. ^ value
+    assign: value
+        <27 self value>. ^ value
 |
-	asString
-		" catenation makes string and copy automatically "
-		^ <24 self ''>
+    asString
+        " catenation makes string and copy automatically "
+        ^ <24 self ''>
 |
-	copy
-		^ self
+    copy
+        ^ self
 |
-	printString
-		^ '#' , self asString
+    printString
+        ^ '#' , self asString
 |
-	respondsTo
-		^ classes inject: Set new
-			into: [:x :y | ((y methodNamed: self) notNil)
-						ifTrue: [ x add: y]. x]
+    respondsTo
+        ^ classes inject: Set new
+            into: [:x :y | ((y methodNamed: self) notNil)
+                        ifTrue: [ x add: y]. x]
 |
-	value
-		^ <87 self>
+    value
+        ^ <87 self>
 ]
 Methods UndefinedObject 'all'
-	isNil
-		^ true
+    isNil
+        ^ true
 |
-	notNil
-		^ false
+    notNil
+        ^ false
 |
-	printString
-		^ 'nil'
+    printString
+        ^ 'nil'
 ]
 Methods Object 'errors'
-	message: m notRecognizedWithArguments: a
-		^ smalltalk error: 'not recognized ', (self class printString),
-			' ', (m printString),
+    message: m notRecognizedWithArguments: a
+        ^ smalltalk error: 'not recognized ', (self class printString),
+            ' ', (m printString),
       ' ', (a printString)
 ]
 *

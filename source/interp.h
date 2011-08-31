@@ -1,9 +1,9 @@
 /*
-	Little Smalltalk, version 2
-	Written by Tim Budd, Oregon State University, July 1987
+    Little Smalltalk, version 2
+    Written by Tim Budd, Oregon State University, July 1987
 */
 /*
-	symbolic definitions for the bytecodes
+    symbolic definitions for the bytecodes
 */
 
 # define Extended 0
@@ -22,11 +22,11 @@
 # define DoSpecial 15
 
 /* a few constants that can be pushed by PushConstant */
-# define minusOne 3		/* the value -1 */
-# define contextConst 4		/* the current context */
-# define nilConst 5		/* the constant nil */
-# define trueConst 6		/* the constant true */
-# define falseConst 7		/* the constant false */
+# define minusOne 3     /* the value -1 */
+# define contextConst 4     /* the current context */
+# define nilConst 5     /* the constant nil */
+# define trueConst 6        /* the constant true */
+# define falseConst 7       /* the constant false */
 
 /* types of special instructions (opcode 15) */
 

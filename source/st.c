@@ -1,8 +1,8 @@
 /*
-	Little Smalltalk, version 3
-	Main Driver
-	written By Tim Budd, September 1988
-	Oregon State University
+    Little Smalltalk, version 3
+    Main Driver
+    written By Tim Budd, September 1988
+    Oregon State University
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,10 +13,10 @@
 #include "names.h"
 
 object firstProcess;
-int initial = 0;	/* not making initial image */
+int initial = 0;    /* not making initial image */
 
 extern int objectCount();
-extern noreturn initFFISymbols();	/* FFI symbols */
+extern noreturn initFFISymbols();   /* FFI symbols */
 
 # ifdef NOARGC
 main()
@@ -42,7 +42,7 @@ wmenusetdeflocal(1);
 
 # ifdef NOARGC
 if (! waskync("use default initial object image?", 1))
-	waskfile("image file name", buffer, 120, 0);
+    waskfile("image file name", buffer, 120, 0);
 # endif
 # endif
 
@@ -58,18 +58,18 @@ fp = fopen(p, "r");
 # endif
 
 if (fp == NULL) {
-	sysError("cannot open image", p);
-	exit(1);
-	}
+    sysError("cannot open image", p);
+    exit(1);
+    }
 imageRead(fp);
 initCommonSymbols();
 initFFISymbols();
 
 firstProcess = globalSymbol("systemProcess");
 if (firstProcess == nilobj) {
-	sysError("no initial process","in image");
-	exit(1); return 1;
-	}
+    sysError("no initial process","in image");
+    exit(1); return 1;
+    }
 
 /* execute the main system process loop repeatedly */
 /*debugging = true;*/

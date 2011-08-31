@@ -43,7 +43,7 @@ extern object ffiPrimitive(INT X OBJP);
 
 static object zeroaryPrims(number)
   int number;
-{	short i;
+{   short i;
   object returnedObject;
   int objectCount();
 
@@ -58,20 +58,20 @@ static object zeroaryPrims(number)
       fprintf(stderr,"object count %d\n", objectCount());
       break;
 
-    case 3:			/* return a random number */
+    case 3:         /* return a random number */
       /* this is hacked because of the representation */
       /* of integers as shorts */
-      i = rand() >> 8;	/* strip off lower bits */
+      i = rand() >> 8;  /* strip off lower bits */
       if (i < 0) i = - i;
       returnedObject = newInteger(i>>1);
       break;
 
-    case 4:		/* return time in seconds */
+    case 4:     /* return time in seconds */
       i = (short) time((long *) 0);
       returnedObject = newInteger(i);
       break;
 
-    case 5:		/* flip watch - done in interp */
+    case 5:     /* flip watch - done in interp */
       break;
 
     case 6:
@@ -81,7 +81,7 @@ static object zeroaryPrims(number)
     case 9:
       exit(0);
 
-    default:		/* unknown primitive */
+    default:        /* unknown primitive */
       sysError("unknown primitive","zeroargPrims");
       break;
   }
@@ -91,23 +91,23 @@ static object zeroaryPrims(number)
 static int unaryPrims(number, firstarg)
   int number;
   object firstarg;
-{	int i, j, saveLinkPointer;
+{   int i, j, saveLinkPointer;
   object returnedObject, saveProcessStack;
 
   returnedObject = firstarg;
   switch(number) {
-    case 1:		/* class of object */
+    case 1:     /* class of object */
       returnedObject = getClass(firstarg);
       break;
 
-    case 2:		/* basic size of object */
+    case 2:     /* basic size of object */
       i = sizeField(firstarg);
       /* byte objects have negative size */
       if (i < 0) i = (-i);
       returnedObject = newInteger(i);
       break;
 
-    case 3:		/* hash value of object */
+    case 3:     /* hash value of object */
       // \todo: Not happy about this, need to review the hashing.
       // This specialises the hash for integers, to ensure values are used, not objects,
       // but there are other cases where the value should be considered, like float.
@@ -117,11 +117,11 @@ static int unaryPrims(number, firstarg)
         returnedObject = newInteger(firstarg);
       break;
 
-    case 4:		/* debugging print */
+    case 4:     /* debugging print */
       fprintf(stderr,"primitive 14 %d\n", firstarg);
       break;
 
-    case 8:		/* change return point - block return */
+    case 8:     /* change return point - block return */
       /* first get previous link pointer */
       i = intValue(basicAt(processStack, linkPointer));
       /* then creating context pointer */
@@ -139,7 +139,7 @@ static int unaryPrims(number, firstarg)
       returnedObject = trueobj;
       break;
 
-    case 9:			/* process execute */
+    case 9:         /* process execute */
       /* first save the values we are about to clobber */
       saveProcessStack = processStack;
       saveLinkPointer = linkPointer;
@@ -174,7 +174,7 @@ static int unaryPrims(number, firstarg)
 # endif
       break;
 
-    default:		/* unknown primitive */
+    default:        /* unknown primitive */
       sysError("unknown primitive","unaryPrims");
       break;
   }
@@ -184,51 +184,51 @@ static int unaryPrims(number, firstarg)
 static int binaryPrims(number, firstarg, secondarg)
   int number;
   object firstarg, secondarg;
-{	char buffer[2000];
+{   char buffer[2000];
   int i;
   object returnedObject;
 
   returnedObject = firstarg;
   switch(number) {
-    case 1:		/* object identity test */
+    case 1:     /* object identity test */
       if (firstarg == secondarg)
         returnedObject = trueobj;
       else
         returnedObject = falseobj;
       break;
 
-    case 2:		/* set class of object */
+    case 2:     /* set class of object */
       decr(classField(firstarg));
       setClass(firstarg, secondarg);
       returnedObject = firstarg;
       break;
 
-    case 3:		/* debugging stuff */
+    case 3:     /* debugging stuff */
       fprintf(stderr,"primitive 23 %d %d\n", firstarg, secondarg);
       break;
 
-    case 4:		/* string cat */
+    case 4:     /* string cat */
       ignore strcpy(buffer, charPtr(firstarg));
       ignore strcat(buffer, charPtr(secondarg));
       returnedObject = newStString(buffer);
       break;
 
-    case 5:		/* basicAt: */
+    case 5:     /* basicAt: */
       returnedObject = basicAt(firstarg, intValue(secondarg));
       break;
 
-    case 6:		/* byteAt: */
+    case 6:     /* byteAt: */
       i = byteAt(firstarg, intValue(secondarg));
       if (i < 0) i += 256;
       returnedObject = newInteger(i);
       break;
 
-    case 7:		/* symbol set */
+    case 7:     /* symbol set */
       nameTableInsert(symbols, strHash(charPtr(firstarg)),
           firstarg, secondarg);
       break;
 
-    case 8:		/* block start */
+    case 8:     /* block start */
       /* first get previous link */
       i = intValue(basicAt(processStack, linkPointer));
       /* change context and byte pointer */
@@ -236,7 +236,7 @@ static int binaryPrims(number, firstarg, secondarg)
       fieldAtPut(processStack, i+4, secondarg);
       break;
 
-    case 9:		/* duplicate a block, adding a new context to it */
+    case 9:     /* duplicate a block, adding a new context to it */
       returnedObject = newBlock();
       basicAtPut(returnedObject, 1, secondarg);
       basicAtPut(returnedObject, 2, basicAt(firstarg, 2));
@@ -244,7 +244,7 @@ static int binaryPrims(number, firstarg, secondarg)
       basicAtPut(returnedObject, 4, basicAt(firstarg, 4));
       break;
 
-    default:		/* unknown primitive */
+    default:        /* unknown primitive */
       sysError("unknown primitive","binaryprims");
       break;
 
@@ -255,22 +255,22 @@ static int binaryPrims(number, firstarg, secondarg)
 static int trinaryPrims(number, firstarg, secondarg, thirdarg)
   int number;
   object firstarg, secondarg, thirdarg;
-{	char *bp, *tp, buffer[256];
+{   char *bp, *tp, buffer[256];
   int i, j;
   object returnedObject;
 
   returnedObject = firstarg;
   switch(number) {
-    case 1:			/* basicAt:Put: */
+    case 1:         /* basicAt:Put: */
       fprintf(stderr,"IN BASICATPUT %d %d %d\n", firstarg, intValue(secondarg), thirdarg);
       fieldAtPut(firstarg, intValue(secondarg), thirdarg);
       break;
 
-    case 2:			/* basicAt:Put: for bytes */
+    case 2:         /* basicAt:Put: for bytes */
       byteAtPut(firstarg, intValue(secondarg), intValue(thirdarg));
       break;
 
-    case 3:			/* string copyFrom:to: */
+    case 3:         /* string copyFrom:to: */
       bp = charPtr(firstarg);
       i = intValue(secondarg);
       j = intValue(thirdarg);
@@ -282,7 +282,7 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
       returnedObject = newStString(buffer);
       break;
 
-    case 9:			/* compile method */
+    case 9:         /* compile method */
       setInstanceVariables(firstarg);
       if (parse(thirdarg, charPtr(secondarg), false)) {
         flushCache(basicAt(thirdarg, messageInMethod), firstarg);
@@ -293,7 +293,7 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
         returnedObject = falseobj;
       break;
 
-    default:		/* unknown primitive */
+    default:        /* unknown primitive */
       sysError("unknown primitive","trinaryPrims");
       break;
   }
@@ -302,21 +302,21 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
 
 static int intUnary(number, firstarg)
   int number, firstarg;
-{	object returnedObject;
+{   object returnedObject;
 
   switch(number) {
-    case 1:		/* float equiv of integer */
+    case 1:     /* float equiv of integer */
       returnedObject = newFloat((double) firstarg);
       break;
 
-    case 2:		/* print - for debugging purposes */
+    case 2:     /* print - for debugging purposes */
       fprintf(stderr,"debugging print %d\n", firstarg);
       break;
 
     case 3: /* set time slice - done in interpreter */
       break;
 
-    case 5:		/* set random number */
+    case 5:     /* set random number */
       ignore srand((unsigned) firstarg);
       returnedObject = nilobj;
       break;
@@ -338,12 +338,12 @@ static int intUnary(number, firstarg)
 static object intBinary(number, firstarg, secondarg)
   register int firstarg, secondarg;
   int number;
-{	boolean binresult;
+{   boolean binresult;
   long longresult;
   object returnedObject;
 
   switch(number) {
-    case 0:		/* addition */
+    case 0:     /* addition */
       longresult = firstarg;
       longresult += secondarg;
       if (longCanBeInt(longresult))
@@ -351,7 +351,7 @@ static object intBinary(number, firstarg, secondarg)
       else
         goto overflow;
       break;
-    case 1:		/* subtraction */
+    case 1:     /* subtraction */
       longresult = firstarg;
       longresult -= secondarg;
       if (longCanBeInt(longresult))
@@ -360,7 +360,7 @@ static object intBinary(number, firstarg, secondarg)
         goto overflow;
       break;
 
-    case 2:		/* relationals */
+    case 2:     /* relationals */
       binresult = firstarg < secondarg; break;
     case 3:
       binresult = firstarg > secondarg; break;
@@ -373,7 +373,7 @@ static object intBinary(number, firstarg, secondarg)
     case 7:
       binresult = firstarg != secondarg; break;
 
-    case 8:		/* multiplication */
+    case 8:     /* multiplication */
       longresult = firstarg;
       longresult *= secondarg;
       if (longCanBeInt(longresult))
@@ -382,21 +382,21 @@ static object intBinary(number, firstarg, secondarg)
         goto overflow;
       break;
 
-    case 9:		/* quo: */
+    case 9:     /* quo: */
       if (secondarg == 0) goto overflow;
       firstarg /= secondarg; break;
 
-    case 10:	/* rem: */
+    case 10:    /* rem: */
       if (secondarg == 0) goto overflow;
       firstarg %= secondarg; break;
 
-    case 11:	/* bit operations */
+    case 11:    /* bit operations */
       firstarg &= secondarg; break;
 
     case 12:
       firstarg ^= secondarg; break;
 
-    case 19:	/* shifts */
+    case 19:    /* shifts */
       if (secondarg < 0)
         firstarg >>= (- secondarg);
       else
@@ -422,22 +422,22 @@ overflow:
 static int strUnary(number, firstargument)
   int number;
   char *firstargument;
-{	object returnedObject;
+{   object returnedObject;
 
   switch(number) {
-    case 1:		/* length of string */
+    case 1:     /* length of string */
       returnedObject = newInteger(strlen(firstargument));
       break;
 
-    case 2: 	/* hash value of symbol */
+    case 2:     /* hash value of symbol */
       returnedObject = newInteger(strHash(firstargument));
       break;
 
-    case 3:		/* string as symbol */
+    case 3:     /* string as symbol */
       returnedObject = newSymbol(firstargument);
       break;
 
-    case 7:		/* value of symbol */
+    case 7:     /* value of symbol */
       returnedObject = globalSymbol(firstargument);
       break;
 
@@ -462,26 +462,26 @@ static int strUnary(number, firstargument)
 static int floatUnary(number, firstarg)
   int number;
   double firstarg;
-{	char buffer[20];
+{   char buffer[20];
   double temp;
   int i, j;
   object returnedObject;
 
   switch(number) {
-    case 1:		/* floating value asString */
+    case 1:     /* floating value asString */
       ignore sprintf(buffer,"%g", firstarg);
       returnedObject = newStString(buffer);
       break;
 
-    case 2:		/* log */
+    case 2:     /* log */
       returnedObject = newFloat(log(firstarg));
       break;
 
-    case 3:		/* exp */
+    case 3:     /* exp */
       returnedObject = newFloat(exp(firstarg));
       break;
 
-    case 6:		/* integer part */
+    case 6:     /* integer part */
       /* return two integers n and m such that */
       /* number can be written as n * 2** m */
 # define ndif 12
@@ -518,13 +518,13 @@ static int floatUnary(number, firstarg)
 static object floatBinary(number, first, second)
   int number;
   double first, second;
-{	 boolean binResult;
+{    boolean binResult;
   object returnedObject;
 
   switch(number) {
     case 0: first += second; break;
 
-    case 1:	first -= second; break;
+    case 1: first -= second; break;
     case 2: binResult = (first < second); break;
     case 3: binResult = (first > second); break;
     case 4: binResult = (first <= second); break;
@@ -533,7 +533,7 @@ static object floatBinary(number, first, second)
     case 7: binResult = (first != second); break;
     case 8: first *= second; break;
     case 9: first /= second; break;
-    default:	
+    default:    
             sysError("unknown primitive", "floatBinary");
             break;
   }
@@ -550,12 +550,12 @@ static object floatBinary(number, first, second)
 
 
 static int cPointerUnary(int number, void* firstarg)
-{	
+{   
   char buffer[20];
   object returnedObject;
 
   switch(number) {
-    case 1:		/* cPointer value asString */
+    case 1:     /* cPointer value asString */
       ignore sprintf(buffer,"0x%X", firstarg);
       returnedObject = newStString(buffer);
       break;
@@ -574,7 +574,7 @@ static int cPointerUnary(int number, void* firstarg)
 object primitive(primitiveNumber, arguments)
   register int primitiveNumber;
   object *arguments;
-{	register int primitiveGroup = primitiveNumber / 10;
+{   register int primitiveGroup = primitiveNumber / 10;
   object returnedObject;
 
 
@@ -592,31 +592,31 @@ object primitive(primitiveNumber, arguments)
       returnedObject = trinaryPrims(primitiveNumber-30, arguments[0], arguments[1], arguments[2]);
       break;
 
-    case 5:			/* integer unary operations */
+    case 5:         /* integer unary operations */
       returnedObject = intUnary(primitiveNumber-50, intValue(arguments[0]));
       break;
 
-    case 6: case 7:		/* integer binary operations */
+    case 6: case 7:     /* integer binary operations */
         returnedObject = intBinary(primitiveNumber-60,
           intValue(arguments[0]), 
           intValue(arguments[1]));
       break;
 
-    case 8:			/* string unary */
+    case 8:         /* string unary */
       returnedObject = strUnary(primitiveNumber-80, charPtr(arguments[0]));
       break;
 
-    case 10:		/* float unary */
+    case 10:        /* float unary */
       returnedObject = floatUnary(primitiveNumber-100, floatValue(arguments[0]));
       break;
 
-    case 11:		/* float binary */
+    case 11:        /* float binary */
       returnedObject = floatBinary(primitiveNumber-110,
           floatValue(arguments[0]),
           floatValue(arguments[1]));
       break;
 
-    case 12: case 13:	/* file operations */
+    case 12: case 13:   /* file operations */
 
       returnedObject = ioPrimitive(primitiveNumber-120, arguments);
       break;

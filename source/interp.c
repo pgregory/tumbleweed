@@ -38,16 +38,16 @@ static int messTest(obj)
 /* a cache of recently executed methods is used for fast lookup */
 # define cacheSize 211
 static struct {
-  object cacheMessage;	/* the message being requested */
-  object lookupClass;	/* the class of the receiver */
-  object cacheClass;	/* the class of the method */
-  object cacheMethod;	/* the method itself */
+  object cacheMessage;  /* the message being requested */
+  object lookupClass;   /* the class of the receiver */
+  object cacheClass;    /* the class of the method */
+  object cacheMethod;   /* the method itself */
 } methodCache[cacheSize];
 
 /* flush an entry from the cache (usually when its been recompiled) */
 flushCache(messageToSend, class)
   object messageToSend, class;
-{	int hash;
+{   int hash;
 
   hash = (((int) messageToSend) + ((int) class)) / cacheSize;
   methodCache[hash].cacheMessage = nilobj;
@@ -60,7 +60,7 @@ flushCache(messageToSend, class)
    */
 static boolean findMethod(methodClassLocation)
   object *methodClassLocation;
-{	object methodTable, methodClass;
+{   object methodTable, methodClass;
 
   method = nilobj;
   methodClass = *methodClassLocation;
@@ -81,7 +81,7 @@ static boolean findMethod(methodClassLocation)
     }
   }
 
-  if (method == nilobj) {		/* it wasn't found */
+  if (method == nilobj) {       /* it wasn't found */
     methodClass = *methodClassLocation;
     return false;
   }
@@ -110,12 +110,12 @@ static boolean findMethod(methodClassLocation)
 
 
 /* the following are manipulated by primitives */
-object 	processStack;
-int 	linkPointer;
+object  processStack;
+int     linkPointer;
 
 static object growProcessStack(top, toadd)
   int top, toadd;
-{	int size, i;
+{   int size, i;
   object newStack;
 
   if (toadd < 100) toadd = 100;
@@ -165,7 +165,7 @@ readLinkageBlock:
     method      = processStackAt(linkPointer+3);
     temps = cntx + linkPointer + 4;
   }
-  else {	/* read from context object */
+  else {    /* read from context object */
     cntx = sysMemPtr(contextObject);
     method = basicAt(contextObject, methodInContext);
     arg = sysMemPtr(basicAt(contextObject, argumentsInContext));
@@ -268,7 +268,7 @@ readMethodInfo:
 
       case MarkArguments:
         returnPoint = (processStackTop() - low) + 1;
-        timeSliceCounter++;	/* make sure we do send */
+        timeSliceCounter++; /* make sure we do send */
         break;
 
       case SendMessage:
@@ -420,7 +420,7 @@ doFindMessage:
         /* a few primitives are so common, and so easy, that
            they deserve special treatment */
         switch(i) {
-          case 5:	/* set watch */
+          case 5:   /* set watch */
             watching = ! watching;
             returnedObject = watching?trueobj:falseobj;
             break;

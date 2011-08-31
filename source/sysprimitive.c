@@ -59,7 +59,7 @@ noreturn dspMethod(cp, mp)
 }
 
 givepause()
-{	char buffer[80];
+{   char buffer[80];
 
   ignore fprintf(stderr,"push return to continue\n");
   ignore fgets(buffer,80,stdin);
@@ -68,11 +68,11 @@ givepause()
 object sysPrimitive(number, arguments)
   int number;
   object *arguments;
-{	object returnedObject = nilobj;
+{   object returnedObject = nilobj;
 
   /* someday there will be more here */
   switch(number - 150) {
-    case 0:		/* do a system() call */
+    case 0:     /* do a system() call */
       returnedObject = newInteger(system(
             charPtr(arguments[0])));
       break;
