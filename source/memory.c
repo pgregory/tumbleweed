@@ -68,34 +68,36 @@ static int    currentMemoryPosition;    /* last used position in above */
 
 
 /* initialize the memory management module */
-noreturn initMemoryManager() {
-    int i;
+noreturn initMemoryManager() 
+{
+  int i;
 
-    objectTable = calloc(ObjectTableMax, sizeof(struct objectStruct));
-    if (! objectTable)
-        sysError("cannot allocate","object table");
+  objectTable = calloc(ObjectTableMax, sizeof(struct objectStruct));
+  if (! objectTable)
+    sysError("cannot allocate","object table");
 
-    /* set all the free list pointers to zero */
-//  for (i = 0; i < FREELISTMAX; i++)
-//      objectFreeList[i] = nilobj;
+  /* set all the free list pointers to zero */
+  for (i = 0; i < FREELISTMAX; i++)
+    objectFreeList[i] = nilobj;
 
-    /* set all the reference counts to zero */
-    for (i = 0; i < ObjectTableMax; i++) {
-        objectTable[i].referenceCount = 0;
-        objectTable[i].size = 0;
-        }
+  /* set all the reference counts to zero */
+  for (i = 0; i < ObjectTableMax; i++) 
+  {
+    objectTable[i].referenceCount = 0;
+    objectTable[i].size = 0;
+  }
 
-    /* make up the initial free lists */
-    setFreeLists();
+  /* make up the initial free lists */
+  setFreeLists();
 
 # ifndef mBlockAlloc
-    /* force an allocation on first object assignment */
-    currentMemoryPosition = MemoryBlockSize + 1;
+  /* force an allocation on first object assignment */
+  currentMemoryPosition = MemoryBlockSize + 1;
 # endif
 
-    /* object at location 0 is the nil object, so give it nonzero ref */
-    objectTable[0].referenceCount = 1;
-    objectTable[0].size = 0;
+  /* object at location 0 is the nil object, so give it nonzero ref */
+  objectTable[0].referenceCount = 1;
+  objectTable[0].size = 0;
 }
 
 /* setFreeLists - initialise the free lists */
