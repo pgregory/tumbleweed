@@ -18,74 +18,65 @@ int initial = 0;    /* not making initial image */
 extern int objectCount();
 extern noreturn initFFISymbols();   /* FFI symbols */
 
-# ifdef NOARGC
-main()
-# endif
-# ifndef NOARGC
-main(argc, argv)
-int argc;
-char **argv;
-# endif
+int main(int argc, char** argv)
 {
-FILE *fp;
-char *p, buffer[120];
+    FILE *fp;
+    char *p, buffer[120];
 
-initMemoryManager();
+    initMemoryManager();
  
-strcpy(buffer,"systemImage");
-p = buffer;
+    strcpy(buffer,"systemImage");
+    p = buffer;
 
 # ifdef STDWIN
-/* initialize the standard windows package */
-winit();
-wmenusetdeflocal(1);
-
-# ifdef NOARGC
-if (! waskync("use default initial object image?", 1))
-    waskfile("image file name", buffer, 120, 0);
-# endif
+    /* initialize the standard windows package */
+    winit();
+    wmenusetdeflocal(1);
 # endif
 
-# ifndef NOARGC
-if (argc != 1) p = argv[1];
-# endif
+    if (argc != 1) p = argv[1];
 
 # ifdef BINREADWRITE
-fp = fopen(p, "rb");
+    fp = fopen(p, "rb");
 # endif
 # ifndef BINREADWRITE
-fp = fopen(p, "r");
+    fp = fopen(p, "r");
 # endif
 
-if (fp == NULL) {
-    sysError("cannot open image", p);
-    exit(1);
-    }
-imageRead(fp);
-initCommonSymbols();
-initFFISymbols();
-
-firstProcess = globalSymbol("systemProcess");
-if (firstProcess == nilobj) {
-    sysError("no initial process","in image");
-    exit(1); return 1;
+    if (fp == NULL) 
+    {
+        sysError("cannot open image", p);
+        exit(1);
     }
 
-/* execute the main system process loop repeatedly */
-/*debugging = true;*/
+    imageRead(fp);
+    initCommonSymbols();
+    initFFISymbols();
+
+    firstProcess = globalSymbol("systemProcess");
+    if (firstProcess == nilobj) 
+    {
+        sysError("no initial process","in image");
+        exit(1); 
+        return 1;
+    }
+
+    /* execute the main system process loop repeatedly */
+    /*debugging = true;*/
 
 # ifndef STDWIN
-/* not using windowing interface, safe to print out message */
-printf("Little Smalltalk, Version 3.04\n");
-printf("Written by Tim Budd, Oregon State University\n");
+    /* not using windowing interface, safe to print out message */
+    printf("Little Smalltalk, Version 3.04\n");
+    printf("Written by Tim Budd, Oregon State University\n");
 # endif
 
-while (execute(firstProcess, 15000)) ;
+    while (execute(firstProcess, 15000)) ;
 
 # ifdef STDWIN
-wdone();
+    wdone();
 # endif
 
-/* exit and return - belt and suspenders, but it keeps lint happy */
-exit(0); return 0;
+    /* exit and return - belt and suspenders, but it keeps lint happy */
+    exit(0); 
+    return 0;
 }
