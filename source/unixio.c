@@ -136,19 +136,24 @@ object ioPrimitive(number, arguments)
     case 0:     /* file open */
       i = intValue(arguments[0]);
       p = charPtr(arguments[1]);
-      if (streq(p, "stdin")) 
-        fp[i] = stdin;
-      else if (streq(p, "stdout"))
-        fp[i] = stdout;
-      else if (streq(p, "stderr"))
-        fp[i] = stderr;
-      else {
-        fp[i] = fopen(p, charPtr(arguments[2]));
-      }
-      if (fp[i] == NULL)
+      if(NULL == p)
         returnedObject = nilobj;
-      else
-        returnedObject = newInteger(i);
+      else 
+      {
+        if (streq(p, "stdin")) 
+          fp[i] = stdin;
+        else if (streq(p, "stdout"))
+          fp[i] = stdout;
+        else if (streq(p, "stderr"))
+          fp[i] = stderr;
+        else {
+          fp[i] = fopen(p, charPtr(arguments[2]));
+        }
+        if (fp[i] == NULL)
+          returnedObject = nilobj;
+        else
+          returnedObject = newInteger(i);
+      }
       break;
 
     case 1:     /* file close - recover slot */
