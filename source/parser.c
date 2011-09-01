@@ -381,12 +381,13 @@ object messagesym;
         }
 }
 
- boolean unaryContinuation(superReceiver)
-boolean superReceiver;
-{   int i;
+boolean unaryContinuation(boolean superReceiver)
+{   
+    int i;
     boolean sent;
 
-    while (parseok && (token == nameconst)) {
+    while (parseok && (token == nameconst)) 
+    {
         /* first check to see if it could be a temp by mistake */
         for (i=1; i < temporaryTop; i++)
             if (streq(tokenString, temporaryName[i]))
@@ -404,13 +405,14 @@ boolean superReceiver;
 
         sent = false;
 
-        if (! sent) {
+        if (! sent) 
+        {
             genMessage(superReceiver, 0, newSymbol(tokenString));
-            }
+        }
         /* once a message is sent to super, reciever is not super */
         superReceiver = false;
         ignore nextToken();
-        }
+    }
     return(superReceiver);
 }
 
