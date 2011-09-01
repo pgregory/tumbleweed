@@ -60,17 +60,17 @@ static object objectFreeList[FREELISTMAX];/* free list of objects */
 
 # ifndef mBlockAlloc
 
-# define MemoryBlockSize 6000
-        /* the current memory block being hacked up */
+# define MemoryBlockSize 6000   /* the current memory block being hacked up */
 static object *memoryBlock;     /* malloc'ed chunck of memory */
 static int    currentMemoryPosition;    /* last used position in above */
+
 # endif
 
 
 /* initialize the memory management module */
 noreturn initMemoryManager() 
 {
-  int i;
+    int i;
 
   objectTable = calloc(ObjectTableMax, sizeof(struct objectStruct));
   if (! objectTable)
@@ -80,12 +80,12 @@ noreturn initMemoryManager()
   for (i = 0; i < FREELISTMAX; i++)
     objectFreeList[i] = nilobj;
 
-  /* set all the reference counts to zero */
-  for (i = 0; i < ObjectTableMax; i++) 
-  {
-    objectTable[i].referenceCount = 0;
-    objectTable[i].size = 0;
-  }
+    /* set all the reference counts to zero */
+    for (i = 0; i < ObjectTableMax; i++) 
+    {
+        objectTable[i].referenceCount = 0;
+        objectTable[i].size = 0;
+    }
 
   /* make up the initial free lists */
   setFreeLists();
@@ -141,12 +141,12 @@ setFreeLists() {
 */
 # ifndef mBlockAlloc
 
-object *mBlockAlloc(memorySize)
-int memorySize;
-{   object *objptr;
+object *mBlockAlloc(int memorySize)
+{   
+    object *objptr;
 
-    if (currentMemoryPosition + memorySize >= MemoryBlockSize) {
-        
+    if (currentMemoryPosition + memorySize >= MemoryBlockSize) 
+    {
         /* we toss away space here.  Space-Frugal users may want to
         fix this by making a new object of size
         MemoryBlockSize - currentMemoryPositon - 1
@@ -157,7 +157,7 @@ int memorySize;
         if (! memoryBlock)
             sysError("out of memory","malloc failed");
         currentMemoryPosition = 0;
-        }
+    }
     objptr = (object *) &memoryBlock[currentMemoryPosition];
     currentMemoryPosition += memorySize;
     return(objptr);
@@ -165,47 +165,57 @@ int memorySize;
 # endif
 
 /* allocate a new memory object */
-object allocObject(memorySize)
-int memorySize;
-{   int i;
+object allocObject(int memorySize)
+{   
+    int i;
     register int position;
     boolean done;
 
-    if (memorySize >= FREELISTMAX) {
+    if (memorySize >= FREELISTMAX) 
+    {
         fprintf(stderr,"size %d\n", memorySize);
         sysError("allocation bigger than permitted","allocObject");
-        }
+    }
 
     /* first try the free lists, this is fastest */
-    if ((position = objectFreeList[memorySize]) != 0) {
+    if ((position = objectFreeList[memorySize]) != 0) 
+    {
         objectFreeList[memorySize] = objectTable[position].class;
-        }
+    }
 
     /* if not there, next try making a size zero object and
         making it bigger */
-    else if ((position = objectFreeList[0]) != 0) {
+    else if ((position = objectFreeList[0]) != 0) 
+    {
         objectFreeList[0] = objectTable[position].class;
         objectTable[position].size = memorySize;
         objectTable[position].memory = mBlockAlloc(memorySize);
-        }
+    }
 
-    else {      /* not found, must work a bit harder */
+    else 
+    {      /* not found, must work a bit harder */
         done = false;
 
         /* first try making a bigger object smaller */
         for (i = memorySize + 1; i < FREELISTMAX; i++)
-            if ((position = objectFreeList[i]) != 0) {
+        {
+            if ((position = objectFreeList[i]) != 0) 
+            {
                 objectFreeList[i] = objectTable[position].class;
                 /* just trim it a bit */
                 objectTable[position].size = memorySize;
                 done = true;
                 break;
-                }
+            }
+        }
 
         /* next try making a smaller object bigger */
         if (! done)
+        {
             for (i = 1; i < memorySize; i++)
-                if ((position = objectFreeList[i]) != 0) {
+            {
+                if ((position = objectFreeList[i]) != 0) 
+                {
                     objectFreeList[i] =
                         objectTable[position].class;
                     objectTable[position].size = memorySize;
@@ -216,14 +226,18 @@ int memorySize;
                         mBlockAlloc(memorySize);
                     done = true;
                     break;
-                    }
+                }
+            }
+        }
 
         /* if we STILL don't have it then there is nothing */
         /* more we can do */
         if (! done)
-      printf("Object count: %d\n", objectCount());
+        {
+            printf("Object count: %d\n", objectCount());
             sysError("out of objects","alloc");
         }
+    }
 
     /* set class and type */
     objectTable[position].referenceCount = 0;
@@ -232,9 +246,9 @@ int memorySize;
     return(position << 1);
 }
 
-object allocByte(size)
-int size;
-{   object newObj;
+object allocByte(int size)
+{  
+    object newObj;
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
@@ -244,34 +258,29 @@ int size;
 
 object allocStr(register char* str)
 {   
-  register object newSym;
-  char* t;
+    register object newSym;
+    char* t;
 
-  if(NULL != str)
-  {
-    newSym = allocByte(1 + strlen(str));
-    t = charPtr(newSym);
-    ignore strcpy(t, str);
-  }
-  else
-  {
-    newSym = allocByte(1);
-    charPtr(newSym)[0] = '\0';
-  }
+    if(NULL != str)
+    {
+        newSym = allocByte(1 + strlen(str));
+        t = charPtr(newSym);
+        ignore strcpy(t, str);
+    }
+    else
+    {
+        newSym = allocByte(1);
+        charPtr(newSym)[0] = '\0';
+    }
     return(newSym);
 }
 
-# ifdef incr
-object incrobj;     /* buffer for increment macro */
-#else
 void incr(object o)
 {
-  if(nilobj != o)
-    objectTable[o>>1].referenceCount++;
+    if(nilobj != o)
+        objectTable[o>>1].referenceCount++;
 }
-# endif
 
-#ifndef decr
 void decr(object o)
 {
   if(nilobj != o)
@@ -280,109 +289,100 @@ void decr(object o)
       sysDecr(o, 1);
   }
 }
-#endif
 
 /* do the real work in the decr procedure */
 void sysDecr(object z, int visit)
 {   
-  register struct objectStruct *p;
+    register struct objectStruct *p;
     register int i;
     int size;
 
     p = &objectTable[z>>1];
     if (p->referenceCount < 0) 
-  {
+    {
         fprintf(stderr,"object %d\n", z);
         sysError("negative reference count","");
-  }
+    }
     if(visit) decr(p->class);
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
     p->class = objectFreeList[size];
     objectFreeList[size] = z>>1;
-    if (size > 0) {
+    if (size > 0) 
+    {
         if (visit && p->size > 0)
+        {
             for (i = size; i; )
                 decr(p->memory[--i]);
+        }
         for (i = size; i > 0; )
             p->memory[--i] = nilobj;
-        }
+    }
     p->size = size;
 }
 
 
 
-# ifndef basicAt
 object basicAt(object o, int i)
 {
-  if(( i <= 0) || (i > sizeField(o)))
-    sysError("index out of range", "basicAt");
-  else
-    return (sysMemPtr(o)[i-1]);
-  return nilobj;
-}
-# endif
+    if(( i <= 0) || (i > sizeField(o)))
+        sysError("index out of range", "basicAt");
+    else
+        return (sysMemPtr(o)[i-1]);
 
-#ifndef simpleAtPut
+    return nilobj;
+}
+
 void simpleAtPut(object o, int i, object v)
 {
-  if((i <= 0) || (i > sizeField(o)))
-    sysError("index out of range", "simpleAtPut");
-  else
-    sysMemPtr(o)[i-1] = v;
+    if((i <= 0) || (i > sizeField(o)))
+        sysError("index out of range", "simpleAtPut");
+    else
+        sysMemPtr(o)[i-1] = v;
 }
-#endif
 
-#ifndef basicAtPut
 void basicAtPut(object o, int i, object v)
 {
-  simpleAtPut(o, i, v);
-  incr(v);
+    simpleAtPut(o, i, v);
+    incr(v);
 }
-#endif
 
-# ifdef fieldAtPut
-int f_i;
-#else
 void fieldAtPut(object o, int i, object v)
 {
-  decr(basicAt(o, i));
-  basicAtPut(o, i, v);
+    decr(basicAt(o, i));
+    basicAtPut(o, i, v);
 }
-# endif
 
-#ifndef byteAt
 int byteAt(object o, int i)
 {
-  byte* bp;
-  unsigned char t;
+    byte* bp;
+    unsigned char t;
 
-  if((i <= 0) || (i > 2 * - sizeField(o)))
-    sysError("index out of range", "byteAt");
-  else
-  {
-    bp = bytePtr(o);
-    t = bp[i-1];
-    i = (int) t;
-  }
-  return i;
+    if((i <= 0) || (i > 2 * - sizeField(o)))
+        sysError("index out of range", "byteAt");
+    else
+    {
+        bp = bytePtr(o);
+        t = bp[i-1];
+        i = (int) t;
+    }
+    return i;
 }
-#endif
 
-# ifndef byteAtPut
 void byteAtPut(object z, int i, int x)
 {      
-  byte *bp;
-  if ((i <= 0) || (i > 2 * - sizeField(z))) {
-    fprintf(stderr,"index %d size %d\n", i, sizeField(z));
-    sysError("index out of range", "byteAtPut");
-  }
-  else {
-    bp = bytePtr(z);
-    bp[i-1] = x;
-  }
+    byte *bp;
+    if ((i <= 0) || (i > 2 * - sizeField(z))) 
+    {
+        fprintf(stderr,"index %d size %d\n", i, sizeField(z));
+        sysError("index out of range", "byteAtPut");
+    }
+    else 
+    {
+        bp = bytePtr(z);
+        bp[i-1] = x;
+    }
 }
-# endif
 
 /*
   Written by Steven Pemberton:
@@ -394,30 +394,35 @@ void byteAtPut(object z, int i, int x)
   Modified by Paul Gregory based on ideas by Michael Koehne
 */
 
-visit(x)
-register object x;
+visit(register object x)
 {
     int i, s;
     object *p;
 
-    if (x) {
-    if (objectTable[x>>1].referenceCount > 0)
-        objectTable[x>>1].referenceCount = 0;
-    if (--(objectTable[x>>1].referenceCount) == -1) {
-//      if (++(objectTable[x>>1].referenceCount) == 1) {
-            /* then it's the first time we've visited it, so: */
-            visit(objectTable[x>>1].class);
-            s = sizeField(x);
-            if (s>0) {
-                p = objectTable[x>>1].memory;
-                for (i=s; i; --i) visit(*p++);
+    if (x) 
+    {
+        if (objectTable[x>>1].referenceCount > 0)
+            objectTable[x>>1].referenceCount = 0;
+        if (--(objectTable[x>>1].referenceCount) == -1) 
+        {
+    //      if (++(objectTable[x>>1].referenceCount) == 1) 
+    //      {
+                /* then it's the first time we've visited it, so: */
+                visit(objectTable[x>>1].class);
+                s = sizeField(x);
+                if (s>0) 
+                {
+                    p = objectTable[x>>1].memory;
+                    for (i=s; i; --i) visit(*p++);
                 }
-            }
+    //      }
         }
+    }
 }
 
 int objectCount()
-{   register int i, j;
+{   
+    register int i, j;
     j = 0;
     for (i = 0; i < ObjectTableMax; i++)
         if (objectTable[i].referenceCount > 0)
@@ -428,41 +433,43 @@ int objectCount()
 
 int garbageCollect(int verbose)
 {
-  register int j;
-  int c=1,f=0;
+    register int j;
+    int c=1,f=0;
 
-  if (verbose) 
-  {
-    fprintf(stderr,"\ngarbage collecting ... ");
-    fprintf(stderr,"%d objects ...", objectCount());
-  }
+    if (verbose) 
+    {
+        fprintf(stderr,"\ngarbage collecting ... ");
+        fprintf(stderr,"%d objects ...", objectCount());
+    }
 
-  /* visit symbols and firstProcess to toggle their referenceCount */
+    /* visit symbols and firstProcess to toggle their referenceCount */
 
-  visit(symbols);
-  if(firstProcess) 
+    visit(symbols);
+    if(firstProcess) 
     visit(firstProcess);
 
-  /* add new garbage to objectFreeList 
-   * toggle referenceCount 
-   * count the objects
-   */
+    /* add new garbage to objectFreeList 
+    * toggle referenceCount 
+    * count the objects
+    */
 
-  for (j=ObjectTableMax-1; j>0; j--) 
-  {
-    if (objectTable[j].referenceCount > 0) 
+    for (j=ObjectTableMax-1; j>0; j--) 
     {
-      objectTable[j].referenceCount = 0;
-      sysDecr(j<<1,0);
-      f++;
-    } 
-    else
-      if (0!=(objectTable[j].referenceCount =
-          -objectTable[j].referenceCount))
-        c++;
-  }
+        if (objectTable[j].referenceCount > 0) 
+        {
+            objectTable[j].referenceCount = 0;
+            sysDecr(j<<1,0);
+            f++;
+        } 
+        else
+        {
+            if (0!=(objectTable[j].referenceCount =
+                -objectTable[j].referenceCount))
+            c++;
+        }
+    }
 
-  if (verbose)
-    fprintf(stderr," %d objects.\n",c);
-  return c;
+    if (verbose)
+        fprintf(stderr," %d objects.\n",c);
+    return c;
 }

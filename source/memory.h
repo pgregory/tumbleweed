@@ -12,7 +12,7 @@ use the latter, although either would work.
 or using a define statement.  Either one will work (check this?)
 */
 
-typedef int object;
+typedef long object;
 
 /*
     The memory module itself is defined by over a dozen routines.
@@ -43,13 +43,6 @@ extern struct objectStruct *objectTable;
   by using the following macros (thereby saving procedure calls):
 */
 
-#ifdef USE_MACROS
-extern object incrobj;
-# define incr(x) if ((incrobj=(x))) \
-objectTable[incrobj>>1].referenceCount++
-#  define decr(x) if (((incrobj=(x)))&&\
-(--objectTable[incrobj>>1].referenceCount<=0)) sysDecr(incrobj, 1);
-#endif
 /*
   notice that the argument x is first assigned to a global variable; this is
   in case evaluation of x results in side effects (such as assignment) which
@@ -87,14 +80,6 @@ extern object allocStr( STR );
     basicAtPut(x, i, v) - put value v in object x
     byteAt(x, i) - ith field (start at 0) of object x
     byteAtPut(x, i, v) - put value v in object x*/
-
-#ifdef USE_MACROS
-# define basicAt(x,i) (sysMemPtr(x)[i-1])
-# define byteAt(x, i) ((int) ((bytePtr(x)[i-1])))
-# define simpleAtPut(x,i,y) (sysMemPtr(x)[i-1] = y)
-# define basicAtPut(x,i,y) incr(simpleAtPut(x, i, y))
-# define fieldAtPut(x,i,y) f_i=i; decr(basicAt(x,f_i)); basicAtPut(x,f_i,y)
-#endif
 
 extern object newCPointer(void* l);
 extern void* cPointerValue(object);
