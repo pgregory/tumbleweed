@@ -51,8 +51,8 @@ Methods Test 'all'
         " test a few conversion routines "
         ( (#abc == #abc asString asSymbol) and: [
         ($A == $A asInteger asCharacter) and: [
-        (12 == 12 asDigit digitValue) and: [
-        (237 == 237 asString asInteger) and: [
+        (12 = 12 asDigit digitValue) and: [
+        (237 = 237 asString asInteger) and: [
         (43 = 43 asFloat truncated) and: [
         $A == ($A asString at: 1) ] ] ] ] ] )
             ifFalse: [^ smalltalk error: 'conversion failure'].
@@ -75,7 +75,7 @@ Methods Test 'all'
         'factorial test passed' print
 |
     filein
-        File new; name: 'queen.st'; open: 'r'; fileIn.
+        File new; name: '../tumbleweed/bootstrap/queen.st'; open: 'r'; fileIn.
         "(globalNames includesKey: #Queen )
             ifFalse: [ smalltalk error: 'fileIn failure']."
         'file in test passed' print.
