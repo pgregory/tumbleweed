@@ -1,5 +1,18 @@
++----------------------------------------------------------------------------+
+
 Parser:
-  Support for LongInteger in the lexer/parser, automatically creating the right type depending on the size of the value specified.
+  * Support for LongInteger in the lexer/parser, automatically creating the
+    right type depending on the size of the value specified.
 
 VM:
-  Review the hashing mechanism, it's still caught up a bit in the integer code.
+  * Review the hashing mechanism, it's still caught up a bit in the integer c
+    ode.
+  * Remove inherent limitations on size.
+    * 255 byte allocation chunk limit (memory.c)
+  * Check and remove the multiply/divide by two for the object indexing, it 
+    was done that way because of the old integer special case code, shouldn't 
+    be needed anymore.
+
+CLI:
+  * Review use of libedit, could it perhaps be implemented in Smalltalk?
+  * Implement <tab> completion from the Smalltalk namespace.
