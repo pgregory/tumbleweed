@@ -80,4 +80,6 @@ target_link_libraries(tw ${LIBS})
 
 add_subdirectory(ffi_test)
 
+add_subdirectory(sockets)
+
 
