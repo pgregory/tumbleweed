@@ -81,8 +81,7 @@ object sysPrimitive(number, arguments)
       {
         char* p = readline(charPtr(arguments[0]));
         add_history(p);
-        returnedObject = newStString(
-            p);
+        returnedObject = newStString(p);
       }
       break;
 

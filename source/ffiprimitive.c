@@ -341,7 +341,7 @@ object ffiPrimitive(int number, object* arguments)
         int cargs = sizeField(arguments[3]);
         int cOutArgs = 0;
 
-        assert(cargTypes == cargs);
+        assert(cargTypes <= cargs);
 
         if(NULL != func)
         {
@@ -370,9 +370,9 @@ object ffiPrimitive(int number, object* arguments)
           void* retData = &retVal;
 
           ffi_cif cif;
-          if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargs, ret, args) == FFI_OK)
+          if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
           {
-            returnedObject = newArray(cargs + 1);
+            returnedObject = newArray(cargTypes + 1);
 
             ffi_call(&cif, func, retData, values);
             basicAtPut(returnedObject, 1, valueIn(retMap, retData));
@@ -386,7 +386,7 @@ object ffiPrimitive(int number, object* arguments)
           if(cargs > 0)
           {
             int i;
-            for(i = 0; i < cargs; ++i)
+            for(i = 0; i < cargTypes; ++i)
             {
               object argType = basicAt(arguments[2], i+1);
               int argMap = mapType(argType);
