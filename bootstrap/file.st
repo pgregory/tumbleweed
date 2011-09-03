@@ -36,6 +36,13 @@ Methods File 'all'
     mode: m
         mode <- m
 |
+    exists
+        number notNil ifTrue: [ self close ].
+        self getNumber.
+        <120 number name mode> isNil
+            ifTrue: [ ^ false ]
+            ifFalse: [ ^ true ]
+|
     open
         number notNil ifTrue: [ self close ].
         self getNumber.
