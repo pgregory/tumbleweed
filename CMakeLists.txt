@@ -3,18 +3,6 @@ cmake_minimum_required ( VERSION 2.6 )
 
 project (Tumbleweed)
 
-#
-# export file: copy it to the build tree on every build invocation and add rule for installation
-#
-function    (cm_export_file FILE DEST)
-  if    (NOT TARGET export-files)
-    add_custom_target(export-files ALL COMMENT "Exporting files into build tree")
-  endif (NOT TARGET export-files)
-  get_filename_component(FILENAME "${FILE}" NAME)
-  add_custom_command(TARGET export-files COMMAND ${CMAKE_COMMAND} -E copy_if_different "${FILE}" "${DEST}/${FILENAME}")
-  install(FILES "${FILE}" DESTINATION "${DEST}")
-endfunction (cm_export_file)
-
 set(shared_srcs 
   source/ffiprimitive.c
   source/filein.c
@@ -64,10 +52,9 @@ set(image_srcs
 )
 
 find_package(LibFFI REQUIRED)
-find_package(LibEdit REQUIRED)
 
-include_directories(${LIBFFI_INCLUDE_DIRS} ${LIBEDIT_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LIBFFI_LIBRARIES} ${LIBEDIT_LIBRARIES})
+include_directories(${LIBFFI_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
 
 function(prefix_sources prefix sources)
   set(_TMP)
@@ -94,5 +81,6 @@ target_link_libraries(tw ${LIBS})
 add_subdirectory(ffi_test)
 
 add_subdirectory(sockets)
+add_subdirectory(linenoise)
 
 

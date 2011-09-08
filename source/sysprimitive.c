@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <editline/readline.h>
 #include <dlfcn.h>
 
 #include "env.h"
@@ -78,11 +77,11 @@ object sysPrimitive(number, arguments)
       break;
 
     case 1: /* readline, with history support */
-      {
+/*      {
         char* p = readline(charPtr(arguments[0]));
         add_history(p);
         returnedObject = newStString(p);
-      }
+      }*/
       break;
 
     case 2: /* get last error */ 
