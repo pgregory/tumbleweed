@@ -37,15 +37,17 @@ Methods MetaSocket 'testing'
     'Creating socket: ' print.
     sock <- Socket new.
     'Binding socket: ' print.
-    sock bindTo: 8090.
-    'Listening: ' print.
+    result <- sock bindTo: 8090.
+    (result = 0) 
+      ifTrue: [ 'Listening: ' print ]
+      ifFalse: [ 'Could not bind to socket: ' print. ^ false ].
     sock listen.
     'Accepting: ' print.
     clientsock <- sock accept.
     'Reading request: ' print.
     data <- ByteArray new: 255.
     result <- clientsock read: data.
-    ('Read: ', result) print.
+    ('Read: ', data) print.
     'Sending: ' print.
     clientsock send: '<html><body><h1>Hello from Tumbleweed</h1></body></html>'.
     'Shutting down client' print.
@@ -57,7 +59,7 @@ Methods MetaSocket 'testing'
 *
 Methods Socket 'initialization'
   new
-    sktFFI <- FFI new: 'sockets'.
+    sktFFI <- FFI new: 'modules/sockets/sockets'.
     socketID <- (sktFFI call: 'Socket' returning: #int taking: #(string) as: #('tcp')) at: 1
 |
   init: id

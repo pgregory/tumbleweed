@@ -6,4 +6,4 @@ set_target_properties(sockets PROPERTIES
   PREFIX ""
 )
 
-cm_export_file("${CMAKE_CURRENT_SOURCE_DIR}/sockets.st" "${CMAKE_BINARY_DIR}/modules/sockets")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sockets.st" "${CMAKE_BINARY_DIR}/modules/sockets" COPYONLY)

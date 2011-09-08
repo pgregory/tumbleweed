@@ -103,6 +103,9 @@ Methods Scheduler 'all'
         " set time slice counter to zero, thereby
         yielding to next process "
         <53 0>
+|
+    processCount
+        ^ processList size
 ]
 Methods Process 'creation'
     new
