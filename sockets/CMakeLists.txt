@@ -1,9 +1,8 @@
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/modules/sockets")
-
 add_library(sockets MODULE sockets.c)
 
 set_target_properties(sockets PROPERTIES
   PREFIX ""
 )
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sockets.st" "${CMAKE_BINARY_DIR}/modules/sockets" COPYONLY)
+install(TARGETS sockets LIBRARY DESTINATION "modules/sockets")
+install(FILES sockets.st DESTINATION "modules/sockets")

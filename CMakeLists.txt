@@ -78,8 +78,11 @@ add_executable(tw ${tw_srcs} systemImage)
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})
 
-add_subdirectory(ffi_test)
+install(TARGETS tw RUNTIME DESTINATION .)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
 
+# Modules.
+add_subdirectory(ffi_test)
 add_subdirectory(sockets)
 add_subdirectory(linenoise)
 
