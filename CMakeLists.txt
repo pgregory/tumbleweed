@@ -100,5 +100,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/serverSystemImage DESTINATION .)
 add_subdirectory(ffi_test)
 add_subdirectory(sockets)
 add_subdirectory(linenoise)
+add_subdirectory(trex)
 
 

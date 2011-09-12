@@ -27,7 +27,7 @@ Methods TestHandler 'all'
     get: request from: socket
     | response |
     response <- '<html><body><h1>This is a Test Handler</h1><ul>'.
-    ((classes select: [ :x | x isMeta not ]) sort: [ :x :y | (x printString) < (y printString) ] ) do: [ :x |
+    (classes select: [ :x | x isMeta not ]) do: [ :x |
         response <- (response, '<li>', (x printString), '</li>')
     ].
     response <- (response, '</ul></body></html>').
