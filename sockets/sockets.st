@@ -132,7 +132,6 @@ Methods Socket 'all'
     args <- Array new: 1.
     args at: 1 put: socketID.
     result <- sktFFI call: 'Accept' returning: #int taking: #(int) as: args.
-    ('Accept response: ', result) print.
     ^ (Socket new: (result at: 1))
 |
   printString

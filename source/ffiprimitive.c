@@ -298,7 +298,6 @@ object ffiPrimitive(int number, object* arguments)
       {
         char* p = charPtr(arguments[0]);
         sprintf(libName, "%s.%s", p, SO_EXT);
-        printf("Trying to load %s\n", libName);
         FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
           returnedObject = newCPointer(handle);

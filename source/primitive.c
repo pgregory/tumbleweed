@@ -255,7 +255,9 @@ static int binaryPrims(number, firstarg, secondarg)
 static int trinaryPrims(number, firstarg, secondarg, thirdarg)
   int number;
   object firstarg, secondarg, thirdarg;
-{   char *bp, *tp, buffer[256];
+{   
+  // todo: Fixed length buffer
+  char *bp, *tp, buffer[4096];
   int i, j;
   object returnedObject;
 

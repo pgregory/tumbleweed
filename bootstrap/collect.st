@@ -47,7 +47,7 @@ Methods Array 'all'
         (self includesKey: index)
             ifTrue: [ self basicAt: index put: value ]
             ifFalse: [ smalltalk error: 
-                'illegal index to at:put: for array' ]
+                ('illegal index to at:put: for array: ', index, '(', (self size), ')') ]
 |
     binaryDo: aBlock
         (1 to: self size) do:
@@ -149,7 +149,19 @@ Methods Array 'all'
       obj basicAt: i put: (self at: start).
       start <- start + 1 ].
     ^ obj
+|
+  combineWith: anArray
+    | newArray |
+    (anArray class = self class) 
+        ifFalse: [ smalltalk error: ('Error, cannot combine different collection types: ', (self class), ' : ', (anArray class)) ].
+    newArray <- self class new: (self size + anArray size).
+    (1 to: (self size))
+        do: [:i |  newArray basicAt: i put: (self at: i) ].
+    (1 to: (anArray size))
+        do: [:i |  newArray basicAt: (i + self size) put: (anArray at: i) ].
+    ^ newArray
 ]
+*
 Methods ByteArray 'all'
     asString
         <22 self String>
@@ -158,7 +170,7 @@ Methods ByteArray 'all'
         ^ ((value isMemberOf: Integer) and: [value between: 0 and: 255])
             ifTrue: [ <32 self index value > ]
             ifFalse: [ value print. smalltalk error: 
-                'assign illegal value to ByteArray']
+                ('assign illegal value to ByteArray: ', (value class))]
 |
     basicAt: index
         ^ <26 self index>
@@ -601,4 +613,16 @@ Methods String 'all'
 |
     unixCommand
         ^ <88 self>
+|
+    lowercase
+        | ret |
+        ret <- ByteArray new: (self size).
+        (1 to: self size) do: [ :x | ret at: x put: (self at: x) lowercase asInteger ].
+        ^ ret asString
+|
+    uppercase
+        | ret |
+        ret <- ByteArray new: (self size).
+        (1 to: self size) do: [ :x | ret at: x put: (self at: x) uppercase asInteger ].
+        ^ ret asString
 ]

@@ -34,7 +34,7 @@ set(init_srcs ${shared_srcs}
   source/initial.c
 )
 
-set(image_srcs
+set(common_image_srcs
   bootstrap/basic.st
   bootstrap/collect.st
   bootstrap/ffi.st
@@ -44,11 +44,19 @@ set(image_srcs
   bootstrap/mult.st
   bootstrap/queen.st
   bootstrap/test.st
-  bootstrap/tty.st
   bootstrap/iup.st
   bootstrap/browser.st
   bootstrap/workspace.st
   bootstrap/module.st
+  bootstrap/httprequest.st
+)
+
+set(image_srcs ${common_image_srcs}
+  bootstrap/tty.st
+)
+
+set(server_image_srcs ${common_image_srcs}
+  bootstrap/server.st
 )
 
 find_package(LibFFI REQUIRED)
@@ -65,6 +73,7 @@ function(prefix_sources prefix sources)
 endfunction(prefix_sources)
 
 prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} image_srcs)
+prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} server_image_srcs)
 
 add_executable(initial ${init_srcs})
 add_custom_command(
@@ -72,14 +81,20 @@ add_custom_command(
   COMMAND initial ${image_srcs}
   DEPENDS initial ${image_srcs}
 )
+add_custom_command(
+  OUTPUT serverSystemImage
+  COMMAND initial ${server_image_srcs}
+  DEPENDS initial ${server_image_srcs}
+)
 
-add_executable(tw ${tw_srcs} systemImage)
+add_executable(tw ${tw_srcs} systemImage serverSystemImage)
 
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})
 
 install(TARGETS tw RUNTIME DESTINATION .)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/serverSystemImage DESTINATION .)
 
 # Modules.
 add_subdirectory(ffi_test)

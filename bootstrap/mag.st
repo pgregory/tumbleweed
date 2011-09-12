@@ -83,6 +83,19 @@ Methods Char 'all'
 |
     printString
         ^ '$', self asString
+|
+    lowercase
+        self isUppercase ifTrue: [ ^ Char new: value + 32 ]
+|
+    uppercase
+        self isLowercase ifTrue: [ ^ Char new: value - 32 ]
+]
+Methods MetaChar 'creation'
+    new: aValue
+    | newobj |
+    newobj <- super new.
+    newobj value: aValue.
+    ^ newobj
 ]
 Methods MetaChar 'all'
   cr
