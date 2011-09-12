@@ -11,6 +11,7 @@
 Class Server Object socket handlers
 Class Handler Object
 Class TestHandler Handler
+Class ClassHandler Handler
 *
 Methods Smalltalk 'doit'
     error: aString
@@ -32,6 +33,10 @@ Methods TestHandler 'all'
     ].
     response <- (response, '</ul></body></html>').
     socket send: response
+]
+Methods ClassHandler 'all'
+    get: request from: socket
+    socket send: '<html><body><h1>Class Handler</h1></body></html>'
 ]
 *
 Methods Server 'creation'
@@ -57,7 +62,8 @@ Methods Server 'creation'
     handlers at: aString put: aHandler
 |
     handle: socket
-    | data request result httprequest handler methodname method args |
+    | data request result httprequest urireg handler methodname method args |
+    Module require: 'trex'.
     data <- ByteArray new: 255.
     request <- String new: 0.
     result <- 1.
@@ -67,15 +73,18 @@ Methods Server 'creation'
         request <- request combineWith: (data asString) ].
     request grow: (0 asCharacter).
     httprequest <- HTTPRequest new: request; parseRequest.
-    (handlers includesKey: (httprequest uri)) ifTrue: [
-        handler <- handlers at: (httprequest uri).
-        methodname <- ((httprequest method lowercase), ':from:') asSymbol.
-        (handler respondsTo: methodname)
-            ifTrue: [
-                args <- Array new: 3; at: 1 put: handler; at: 2 put: request; at: 3 put: socket.
-                method <- handler class methodNamed: methodname.
-                method executeWith: args
-            ]
+    handlers binaryDo: [ :for :handler |
+        ('Checking handler: ', for, ' against: ', (httprequest uri)) print.
+        urireg <- TRex new: for.
+        (urireg match: (httprequest uri)) ifTrue: [
+            methodname <- ((httprequest method lowercase), ':from:') asSymbol.
+            (handler respondsTo: methodname)
+                ifTrue: [
+                    args <- Array new: 3; at: 1 put: handler; at: 2 put: request; at: 3 put: socket.
+                    method <- handler class methodNamed: methodname.
+                    method executeWith: args
+                ]
+        ]
     ]
 ]
 
@@ -85,6 +94,7 @@ Methods Scheduler 'get commands'
         Server new; 
             addHandler: (Handler new) for: '/'; 
             addHandler: (TestHandler new) for: '/test'; 
+            addHandler: (ClassHandler new) for: '/class/.*'; 
             run
 ]
 Methods String 'all'
