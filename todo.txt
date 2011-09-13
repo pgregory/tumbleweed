@@ -16,3 +16,12 @@ VM:
 CLI:
   * Review use of libedit, could it perhaps be implemented in Smalltalk?
   * Implement <tab> completion from the Smalltalk namespace.
+
+Web Based Interface:
+  * List control for Class list.
+  * File loading for more complex web pages/templates.
+
+Primitives:
+  * File loading from filesystem.
+  * System image load from zip.
+  * File loading from zip.
