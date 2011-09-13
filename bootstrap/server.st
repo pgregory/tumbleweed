@@ -22,16 +22,40 @@ Methods Smalltalk 'doit'
 *    
 Methods Handler 'all'
     get: request from: socket
-    socket send: '<html><body><h1>Hello from Tumbleweed</h1></body></html>'
+    socket send: (  '<html>',
+                    '<body>',
+                    '<h1>Hello from Tumbleweed</h1>',
+                    '<button onclick="GetAsyncData();">Test</button>',
+                    '<script language=javascript type="text/javascript">',
+                    'var req_fifo;', Char cr, Char lf,
+                    'function GetAsyncData() {', Char cr, Char lf,
+                    '    url = "/test";', Char cr, Char lf,
+                    '    req_fifo = new XMLHttpRequest();', Char cr, Char lf,
+                    '    req_fifo.abort();', Char cr, Char lf,
+                    '    req_fifo.onreadystatechange = GotAsyncData;', Char cr, Char lf,
+                    '    req_fifo.open("POST", url, true);', Char cr, Char lf,
+                    '    req_fifo.send(null);', Char cr, Char lf,
+                    '  }', Char cr, Char lf,
+                    '  function GotAsyncData() {', Char cr, Char lf,
+                    '    if (req_fifo.readyState != 4 || req_fifo.status != 200) {', Char cr, Char lf,
+                    '      return;', Char cr, Char lf,
+                    '    }', Char cr, Char lf,
+                    '    document.getElementById("data").innerHTML=', Char cr, Char lf,
+                    '      req_fifo.responseText;', Char cr, Char lf,
+                    '    return;', Char cr, Char lf,
+                    '  }', Char cr, Char lf,
+                    '</script>',
+                    '<div id="data"></div>',
+                    '</body></html>')
 ]
 Methods TestHandler 'all'
-    get: request from: socket
+    post: request from: socket
     | response |
-    response <- '<html><body><h1>This is a Test Handler</h1><ul>'.
+    response <- '<ul>'.
     (classes select: [ :x | x isMeta not ]) do: [ :x |
         response <- (response, '<li>', (x printString), '</li>')
     ].
-    response <- (response, '</ul></body></html>').
+    response <- (response, '</ul>').
     socket send: response
 ]
 Methods ClassHandler 'all'
@@ -54,6 +78,7 @@ Methods Server 'creation'
     [ doit ] whileTrue: [
         socket listen.
         clientsock <- socket accept.
+        'Accepted connection' print.
         self handle: clientsock.
         clientsock shutdown
     ]
@@ -91,11 +116,11 @@ Methods Server 'creation'
 Methods Scheduler 'get commands'
     initialize  | string |
         Module require: 'sockets'.
-        Server new; 
+        [ Server new; 
             addHandler: (Handler new) for: '/'; 
             addHandler: (TestHandler new) for: '/test'; 
             addHandler: (ClassHandler new) for: '/class/.*'; 
-            run
+            run ] fork
 ]
 Methods String 'all'
     print

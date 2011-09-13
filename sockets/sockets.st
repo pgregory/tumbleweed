@@ -103,7 +103,7 @@ Methods Socket 'all'
     args at: 1 put: socketID; at: 2 put: buffer; at: 3 put: (buffer size).
     result <- (sktFFI call: 'Read' returning: #int taking: #(int string int) as: args) at: 1.
     (result < (buffer size)) ifTrue:
-      [ buffer at: (result + 1) put: (0 asCharacter) ].
+      [ (buffer asString)  at: (result + 1) put: (0 asCharacter) ].
     ^ result
 |
   bindTo: service with: protocol
