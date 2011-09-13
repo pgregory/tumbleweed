@@ -35,6 +35,10 @@ typedef union FFI_DataType_U {
     void* pointer;
     int integer;
   } outInteger;
+  struct {
+    void* pointer;
+    float _float;
+  } outFloat;
 } FFI_DataType;
 
 typedef enum FFI_Symbols_E {
@@ -45,13 +49,20 @@ typedef enum FFI_Symbols_E {
   FFI_SYMBOL,
   FFI_SYMBOL_OUT,
   FFI_INT,
+  FFI_INT_OUT,
   FFI_UINT,
+  FFI_UINT_OUT,
   FFI_LONG,
+  FFI_LONG_OUT,
   FFI_ULONG,
+  FFI_ULONG_OUT,
   FFI_DOUBLE,
+  FFI_DOUBLE_OUT,
   FFI_LONGDOUBLE,
+  FFI_LONGDOUBLE_OUT,
   FFI_VOID,
   FFI_WCHAR,
+  FFI_WCHAR_OUT,
   FFI_WSTRING,
   FFI_WSTRING_OUT,
   FFI_COBJECT,
@@ -67,13 +78,20 @@ static char* ffiStrs[] = {
   "symbol",             // FFI_SYMBOL,
   "symbolOut",          // FFI_SYMBOL_OUT,
   "int",                // FFI_INT,
+  "intOut",             // FFI_INT_OUT,
   "uInt",               // FFI_UINT,
+  "uIntOut",            // FFI_UINT_OUT,
   "long",               // FFI_LONG,
+  "longOut",            // FFI_LONG_OUT,
   "uLong",              // FFI_ULONG,
+  "uLongOut",           // FFI_ULONG_OUT,
   "double",             // FFI_DOUBLE,
+  "doubleOut",          // FFI_DOUBLE_OUT,
   "longDouble",         // FFI_LONGDOUBLE,
+  "longDoubleOut",      // FFI_LONGDOUBLE_OUT,
   "void",               // FFI_VOID,
   "wchar",              // FFI_WCHAR,
+  "wcharOut",           // FFI_WCHAR_OUT,
   "wstring",            // FFI_WSTRING,
   "wstringOut",         // FFI_WSTRING_OUT
   "cObject",            // FFI_COBJECT,
@@ -89,13 +107,20 @@ static void* ffiLSTTypes[] = {
   &ffi_type_pointer,    // FFI_SYMBOL,
   &ffi_type_pointer,    // FFI_SYMBOL_OUT,
   &ffi_type_sint32,     // FFI_INT,
+  &ffi_type_pointer,    // FFI_INT_OUT,
   &ffi_type_uint32,     // FFI_UINT,
+  &ffi_type_pointer,    // FFI_UINT_OUT,
   &ffi_type_sint32,     // FFI_LONG,
+  &ffi_type_pointer,    // FFI_LONG_OUT
   &ffi_type_uint32,     // FFI_ULONG,
+  &ffi_type_pointer,    // FFI_ULONG_OUT,
   &ffi_type_double,     // FFI_DOUBLE,
+  &ffi_type_pointer,    // FFI_DOUBLE_OUT,
   &ffi_type_longdouble, // FFI_LONGDOUBLE,
+  &ffi_type_pointer,    // FFI_LONG_DOUBLE_OUT,
   &ffi_type_void,       // FFI_VOID,
   &ffi_type_uint16,     // FFI_WCHAR,
+  &ffi_type_pointer,    // FFI_WCHAR_OUT,
   &ffi_type_pointer,    // FFI_WSTRING,
   &ffi_type_pointer,    // FFI_WSTRING_OUT
   &ffi_type_pointer,    // FFI_COBJECT,
@@ -141,10 +166,21 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     realValue = value;
   switch(argMap)
   {
+    case FFI_INT_OUT:
+    case FFI_UINT_OUT:
+    case FFI_LONG_OUT:
+    case FFI_ULONG_OUT:
     case FFI_CHAR_OUT:
+    case FFI_WCHAR_OUT:
       data->outInteger.pointer = &data->outInteger.integer;
       data->outInteger.integer = intValue(realValue);
       ptr = &data->outInteger.pointer;
+      break;
+    case FFI_DOUBLE_OUT:
+    case FFI_LONGDOUBLE_OUT:
+      data->outFloat.pointer = &data->outFloat._float;
+      data->outFloat._float = floatValue(realValue);
+      ptr = &data->outFloat.pointer;
       break;
     case FFI_CHAR:
       data->integer = intValue(realValue);
@@ -201,7 +237,12 @@ object valueIn(int retMap, FFI_DataType* data)
 {
   switch(retMap)
   {
+    case FFI_INT_OUT:
+    case FFI_UINT_OUT:
+    case FFI_LONG_OUT:
+    case FFI_ULONG_OUT:
     case FFI_CHAR_OUT:
+    case FFI_WCHAR_OUT:
       return newInteger(data->outInteger.integer);
       break;
 
@@ -214,6 +255,9 @@ object valueIn(int retMap, FFI_DataType* data)
       break;
 
     case FFI_INT:
+    case FFI_UINT:
+    case FFI_LONG:
+    case FFI_ULONG:
       return newInteger(data->integer);
       break;
 
