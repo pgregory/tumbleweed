@@ -60,7 +60,8 @@ Methods MetaSocket 'testing'
 Methods Socket 'initialization'
   new
     sktFFI <- FFI new: 'modules/sockets/sockets'.
-    socketID <- (sktFFI call: 'Socket' returning: #int taking: #(string) as: #('tcp')) at: 1
+    " TODO: error checking "
+    socketID <- (sktFFI call: 'Socket' returning: #int taking: #(string intOut) as: #('tcp', 0)) at: 1
 |
   init: id
     socketID <- id
@@ -72,9 +73,9 @@ Methods Socket 'all'
 |
   shutdown
     | args result |
-    args <- Array new: 1.
-    args at: 1 put: socketID.
-    result <- (sktFFI call: 'Shutdown' returning: #int taking: #(int) as: args) at: 1.
+    args <- Array new: 2.
+    args at: 1 put: socketID; at: 2 put: 0.
+    result <- (sktFFI call: 'Shutdown' returning: #int taking: #(int intOut) as: args) at: 1.
     ^ result
 |
   connect: server
@@ -85,54 +86,55 @@ Methods Socket 'all'
 |
   connect: server using: service with: protocol
     | result args |
-    args <- Array new: 4.
+    args <- Array new: 5.
     args at: 1 put: socketID; at: 2 put: server; at: 3 put: service; at: 4 put: protocol.
-    result <- (sktFFI call: 'Connect' returning: #int taking: #(int string string string) as: args) at: 1.
+    args at: 5 put: 0.
+    result <- (sktFFI call: 'Connect' returning: #int taking: #(int string string string intOut) as: args) at: 1.
     ^ result
 |
   send: data
     | result args |
-    args <- Array new: 4.
+    args <- Array new: 5.
     args at: 1 put: socketID; at: 2 put: data; at: 3 put: (data size); at: 4 put: 0.
-    result <- (sktFFI call: 'Send' returning: #int taking: #(int string int int) as: args) at: 1.
+    args at: 5 put: 0.
+    result <- (sktFFI call: 'Send' returning: #int taking: #(int string int int intOut) as: args) at: 1.
     ^ result
 |
   read: buffer
     | result args |
-    args <- Array new: 3.
-    args at: 1 put: socketID; at: 2 put: buffer; at: 3 put: (buffer size).
-    result <- (sktFFI call: 'Read' returning: #int taking: #(int string int) as: args) at: 1.
-    (result < (buffer size)) ifTrue:
-      [ (buffer asString)  at: (result + 1) put: (0 asCharacter) ].
+    args <- Array new: 4.
+    args at: 1 put: socketID; at: 2 put: buffer; at: 3 put: (buffer size); at: 4 put: 0.
+    result <- sktFFI call: 'Read' returning: #int taking: #(int string int intOut) as: args.
     ^ result
 |
   bindTo: service with: protocol
     | result args |
-    args <- Array new: 3.
-    args at: 1 put: socketID; at: 2 put: service; at: 3 put: protocol.
-    result <- (sktFFI call: 'Bind' returning: #int taking: #(int string string) as: args) at: 1.
+    args <- Array new: 4.
+    args at: 1 put: socketID; at: 2 put: service; at: 3 put: protocol; at: 4 put: 0.
+    result <- (sktFFI call: 'Bind' returning: #int taking: #(int string string intOut) as: args) at: 1.
     ^ result
 |
   bindTo: port
     | result args |
     args <- Array new: 3.
-    args at: 1 put: socketID; at: 2 put: port.
-    result <- (sktFFI call: 'BindToPort' returning: #int taking: #(int int) as: args) at: 1.
+    args at: 1 put: socketID; at: 2 put: port; at: 3 put: 0.
+    result <- (sktFFI call: 'BindToPort' returning: #int taking: #(int int intOut) as: args) at: 1.
     ^ result
 |
   listen
     | result args |
-    args <- Array new: 2.
-    args at: 1 put: socketID; at: 2 put: 5.
-    result <- (sktFFI call: 'Listen' returning: #int taking: #(int int) as: args) at: 1.
+    args <- Array new: 3.
+    args at: 1 put: socketID; at: 2 put: 5; at: 3 put: 0.
+    result <- (sktFFI call: 'Listen' returning: #int taking: #(int int intOut) as: args) at: 1.
     ^ result
 |
   accept
     | result args |
-    args <- Array new: 1.
-    args at: 1 put: socketID.
-    result <- sktFFI call: 'Accept' returning: #int taking: #(int) as: args.
-    ^ (Socket new: (result at: 1))
+    args <- Array new: 2.
+    args at: 1 put: socketID; at: 2 put: 0.
+    result <- sktFFI call: 'Accept' returning: #int taking: #(int intOut) as: args.
+    "^ (Socket new: (result at: 1))"
+    ^ result
 |
   printString
     ^ ('Socket: ', socketID)

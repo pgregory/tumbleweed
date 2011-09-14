@@ -4,11 +4,12 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/fcntl.h>
 #include <netinet/in.h>
 #include <errno.h>
 #include <netdb.h>
 
-int Socket(const char* proto)
+int Socket(const char* proto, int* errcode)
 {
   int sockfd;
   struct protoent *protocol;
@@ -17,20 +18,25 @@ int Socket(const char* proto)
   protocol = getprotobyname(proto);
   sockfd = socket(AF_INET, SOCK_STREAM, protocol->p_proto);
 
+  if(sockfd < 0)
+    *errcode = errno;
+
+  fcntl(sockfd, F_SETFL, O_NONBLOCK);
+
   return sockfd;
 }
 
-int Shutdown(int sockfd)
+int Shutdown(int sockfd, int* errcode)
 {
   int res = shutdown(sockfd, SHUT_RDWR);
 
   if(res < 0)
-    res = errno;
+    *errcode = errno;
 
   return res;
 }
 
-int Connect(int sockfd, const char* addr, const char* servicename, const char* protocol)
+int Connect(int sockfd, const char* addr, const char* servicename, const char* protocol, int* errcode)
 {
   struct sockaddr_in socketaddr;
   struct hostent *hostaddr;
@@ -38,7 +44,10 @@ int Connect(int sockfd, const char* addr, const char* servicename, const char* p
 
   /* Resolve the host name */
   if (!(hostaddr = gethostbyname(addr))) 
-    return h_errno;
+  {
+    *errcode = h_errno;
+    return -1;
+  }
 
   /* clear and initialize socketaddr */
   memset(&socketaddr, 0, sizeof(socketaddr));
@@ -52,12 +61,15 @@ int Connect(int sockfd, const char* addr, const char* servicename, const char* p
 
   /* everything is setup, now we connect */
   if(connect(sockfd, (const struct sockaddr*)&socketaddr, sizeof(socketaddr)) == -1) 
-    return errno;
+  {
+    *errcode = errno;
+    return -1;
+  }
 
   return 0;
 }
 
-int Bind(int sockfd, const char* servicename, const char* protocol)
+int Bind(int sockfd, const char* servicename, const char* protocol, int* errcode)
 {
   struct sockaddr_in socketaddr;
   struct hostent *hostaddr;
@@ -75,13 +87,16 @@ int Bind(int sockfd, const char* servicename, const char* protocol)
 
   /* everything is setup, now we connect */
   if(bind(sockfd, (const struct sockaddr*)&socketaddr, sizeof(socketaddr)) == -1) 
-    return errno;
+  {
+    *errcode = errno;
+    return -1;
+  }
 
   return 0;
 }
 
 
-int BindToPort(int sockfd, int port)
+int BindToPort(int sockfd, int port, int* errcode)
 {
   struct sockaddr_in socketaddr;
   struct hostent *hostaddr;
@@ -95,31 +110,40 @@ int BindToPort(int sockfd, int port)
 
   /* everything is setup, now we connect */
   if(bind(sockfd, (const struct sockaddr*)&socketaddr, sizeof(socketaddr)) == -1) 
-    return errno;
+  {
+    *errcode = errno;
+    return -1;
+  }
 
   return 0;
 }
 
 
-int Send(int sockfd, const char* data, int len, int flags)
+int Send(int sockfd, const char* data, int len, int flags, int* errcode)
 {
   size_t ret;
   /* send our get request */
   if((ret = send(sockfd, data, len, flags)) < 0)
-    return errno;
+  {
+    *errcode = errno;
+    return -1;
+  }
 
   return ret;
 }
 
-int Listen(int sockfd, int backlog)
+int Listen(int sockfd, int backlog, int* errcode)
 {
   if(listen(sockfd, backlog) < 0)
-    return errno;
+  {
+    *errcode = errno;
+    return -1;
+  }
 
   return 0;
 }
 
-int Accept(int sockfd)
+int Accept(int sockfd, int* errcode)
 {
   struct sockaddr_in socketaddr;
   int newsockfd;
@@ -130,24 +154,30 @@ int Accept(int sockfd)
 
   newsockfd = accept(sockfd, (struct sockaddr*)&socketaddr, &client_len);
 
+  if(newsockfd < 0)
+    *errcode = errno;
+
   return newsockfd;
 }
 
 
-int Close(int sockfd)
+int Close(int sockfd, int* errcode)
 {
   if(close(sockfd) < 0)
-    return errno;
+  {
+    *errcode = errno;
+    return -1;
+  }
 
   return 0;
 }
 
 
-int Read(int sockfd, char* buffer, int len)
+int Read(int sockfd, char* buffer, int len, int* errcode)
 {
   size_t res;
   if((res = read(sockfd, buffer, len)) < 0)
-    return errno;
+    *errcode = errno;
 
   return res;
 }

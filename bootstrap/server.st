@@ -73,30 +73,40 @@ Methods Server 'creation'
         ifFalse: [ 'Failed to bind socket' print. socket shutdown. ^ false ]
 |
     run
-    | clientsock doit |
+    | client doit result |
     doit <- true.
     [ doit ] whileTrue: [
         socket listen.
-        clientsock <- socket accept.
+        result <- 35.
+        [ result = 35 ] whileTrue: [
+            client <- socket accept.
+            result <- client at: 3
+        ].
         'Accepted connection' print.
-        self handle: clientsock.
-        clientsock shutdown
+        [ self handle: (Socket new: (client at: 1)) ] fork
     ]
 |
     addHandler: aHandler for: aString
     handlers at: aString put: aHandler
 |
     handle: socket
-    | data request result httprequest urireg handler methodname method args |
+    | data request result read httprequest urireg handler methodname method args |
     Module require: 'trex'.
     data <- ByteArray new: 255.
     request <- String new: 0.
-    result <- 1.
-    [ result > 0 ] whileTrue:
+    result <- Array new: 4.
+    result at: 4 put: 35.
+    [ (result at: 4) = 35 ] whileTrue:
       [ result <- socket read: data.
-        (result < 255) ifTrue: [ result <- 0 ].
-        request <- request combineWith: (data asString) ].
+        read <- result at: 1.
+        ([read < 255] and: [read > 0]) ifTrue: [ 
+            result at: 4 put: 35.
+            data at: (read + 1) put: 0 asCharacter
+        ].
+        request <- request combineWith: (data asString) 
+      ].
     request grow: (0 asCharacter).
+    ('Recv: ', (request asString)) print.
     httprequest <- HTTPRequest new: request; parseRequest.
     handlers binaryDo: [ :for :handler |
         ('Checking handler: ', for, ' against: ', (httprequest uri)) print.
@@ -110,7 +120,8 @@ Methods Server 'creation'
                     method executeWith: args
                 ]
         ]
-    ]
+    ].
+    socket shutdown
 ]
 
 Methods Scheduler 'get commands'
