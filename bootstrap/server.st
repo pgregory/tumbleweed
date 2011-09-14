@@ -73,17 +73,19 @@ Methods Server 'creation'
         ifFalse: [ 'Failed to bind socket' print. socket shutdown. ^ false ]
 |
     run
-    | client doit result |
+    | client doit result clientsock |
     doit <- true.
     [ doit ] whileTrue: [
         socket listen.
-        result <- 35.
-        [ result = 35 ] whileTrue: [
+        result <- 11.
+        [ result = 11 ] whileTrue: [
             client <- socket accept.
             result <- client at: 3
         ].
-        'Accepted connection' print.
-        [ self handle: (Socket new: (client at: 1)) ] fork
+        ('Accepted connection: ', (client printString)) print.
+        clientsock <- Socket new: (client at: 1).
+        ('Client: ', (clientsock printString)) print.
+        [ self handle: clientsock ] fork
     ]
 |
     addHandler: aHandler for: aString
@@ -95,18 +97,19 @@ Methods Server 'creation'
     data <- ByteArray new: 255.
     request <- String new: 0.
     result <- Array new: 4.
-    result at: 4 put: 35.
-    [ (result at: 4) = 35 ] whileTrue:
+    result at: 4 put: 11.
+    ('Handling socket: ', (socket printString)) print.
+    [ (result at: 4) = 11 ] whileTrue:
       [ result <- socket read: data.
+        ('Read: ', (result printString)) print.
         read <- result at: 1.
-        ([read < 255] and: [read > 0]) ifTrue: [ 
-            result at: 4 put: 35.
+        ((read < 255) and: [read > 0]) ifTrue: [ 
+            result at: 4 put: 11.
             data at: (read + 1) put: 0 asCharacter
         ].
         request <- request combineWith: (data asString) 
       ].
     request grow: (0 asCharacter).
-    ('Recv: ', (request asString)) print.
     httprequest <- HTTPRequest new: request; parseRequest.
     handlers binaryDo: [ :for :handler |
         ('Checking handler: ', for, ' against: ', (httprequest uri)) print.
