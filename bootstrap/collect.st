@@ -325,7 +325,7 @@ Methods IndexedCollection 'all'
 |
     at: aKey
         ^ self at: aKey 
-            ifAbsent: [ smalltalk error: 'index to at: illegal' ]
+            ifAbsent: [ smalltalk error: ('index to at: illegal ', (aKey printString), '(', (self size), ')') ]
 |
     at: index ifAbsent: exceptionBlock
          ^ (self includesKey: index)
