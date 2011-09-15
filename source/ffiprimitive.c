@@ -504,6 +504,20 @@ object ffiPrimitive(int number, object* arguments)
       }
       break;
 
+    case 4: // dlclose
+      {
+        // \todo: Check type.
+        FFI_LibraryHandle lib = cPointerValue(arguments[0]);
+        char* p = charPtr(arguments[1]);
+        if(NULL != lib)
+        {
+          int result = dlclose(lib);
+          returnedObject = newInteger(result);
+        }
+      }
+      break;
+
+
     default:
       sysError("unknown primitive","ffiPrimitive");
   }

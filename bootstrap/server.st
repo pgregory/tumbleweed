@@ -77,8 +77,8 @@ Methods Server 'creation'
     doit <- true.
     [ doit ] whileTrue: [
         socket listen.
-        result <- 35.
-        [ result = 35 ] whileTrue: [
+        result <- (Socket eagain).
+        [ result = (Socket eagain) ] whileTrue: [
             client <- socket accept.
             result <- client at: 3
         ].
@@ -118,6 +118,7 @@ Methods Server 'creation'
             methodname <- ((httprequest method lowercase), ':from:') asSymbol.
             (handler respondsTo: methodname)
                 ifTrue: [
+                    'Handler found' print.
                     args <- Array new: 3; at: 1 put: handler; at: 2 put: request; at: 3 put: socket.
                     method <- handler class methodNamed: methodname.
                     method executeWith: args

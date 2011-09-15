@@ -37,6 +37,9 @@ Methods FFI 'all'
   openPrim
     ^ <180 name>
 |
+  close
+    ^ <184 handle>
+|
   handle
     ^ handle
 |

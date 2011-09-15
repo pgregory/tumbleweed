@@ -1,3 +1,4 @@
+RawClass MetaSocket Class MetaObject eagain
 Class Socket Object sktFFI socketID
 
 Methods MetaSocket 'creation'
@@ -55,6 +56,17 @@ Methods MetaSocket 'testing'
     'Shutting down server' print.
     sock shutdown.
     'Done: ' print
+]
+*
+Methods MetaSocket 'constants'
+  eagain
+  | sktFFI |
+    (eagain isNil) ifTrue: [
+      sktFFI <- FFI new: 'modules/sockets/sockets'.
+      eagain <- (sktFFI call: 'eagain' returning: #int taking: #() as: #()) at: 1.
+      sktFFI close
+    ].
+    ^ eagain
 ]
 *
 Methods Socket 'initialization'

@@ -181,4 +181,9 @@ int Read(int sockfd, char* buffer, int len, int* errcode)
 
   return res;
 }
+
+int eagain()
+{
+  return EAGAIN;
+}
   
