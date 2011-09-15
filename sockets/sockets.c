@@ -175,7 +175,7 @@ int Close(int sockfd, int* errcode)
 
 int Read(int sockfd, char* buffer, int len, int* errcode)
 {
-  size_t res;
+  ssize_t res;
   if((res = read(sockfd, buffer, len)) < 0)
     *errcode = errno;
 

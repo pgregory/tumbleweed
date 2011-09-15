@@ -53,10 +53,10 @@ Methods TestHandler 'all'
     | response |
     response <- '<ul>'.
     (classes select: [ :x | x isMeta not ]) do: [ :x |
-        response <- (response, '<li>', (x printString), '</li>')
+        response <- ('<li><a href="/class/', (x printString), '">', (x printString), '</a></li>').
+        socket send: response
     ].
-    response <- (response, '</ul>').
-    socket send: response
+    socket send: '</ul>'
 ]
 Methods ClassHandler 'all'
     get: request from: socket
@@ -77,14 +77,12 @@ Methods Server 'creation'
     doit <- true.
     [ doit ] whileTrue: [
         socket listen.
-        result <- 11.
-        [ result = 11 ] whileTrue: [
+        result <- 35.
+        [ result = 35 ] whileTrue: [
             client <- socket accept.
             result <- client at: 3
         ].
-        ('Accepted connection: ', (client printString)) print.
         clientsock <- Socket new: (client at: 1).
-        ('Client: ', (clientsock printString)) print.
         [ self handle: clientsock ] fork
     ]
 |
@@ -92,22 +90,24 @@ Methods Server 'creation'
     handlers at: aString put: aHandler
 |
     handle: socket
-    | data request result read httprequest urireg handler methodname method args |
+    | data request result read httprequest urireg handler methodname method args doit |
     Module require: 'trex'.
     data <- ByteArray new: 255.
     request <- String new: 0.
-    result <- Array new: 4.
-    result at: 4 put: 11.
-    ('Handling socket: ', (socket printString)) print.
-    [ (result at: 4) = 11 ] whileTrue:
-      [ result <- socket read: data.
-        ('Read: ', (result printString)) print.
+    doit <- true.
+    [ doit ] whileTrue: [
+        result <- socket read: data.
         read <- result at: 1.
-        ((read < 255) and: [read > 0]) ifTrue: [ 
-            result at: 4 put: 11.
-            data at: (read + 1) put: 0 asCharacter
-        ].
-        request <- request combineWith: (data asString) 
+        ( read >= 0 ) ifTrue: [
+            ( read < 255 ) ifTrue: [ 
+                "Make sure String size gets the right length"
+                data at: (read + 1) put: 0 
+            ] ifFalse: [
+                "If less than 255 read, we're done"
+                doit <- false
+            ].
+            request <- request combineWith: (data asString) 
+        ]
       ].
     request grow: (0 asCharacter).
     httprequest <- HTTPRequest new: request; parseRequest.
