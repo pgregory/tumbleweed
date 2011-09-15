@@ -37,4 +37,18 @@ Methods TRex 'match'
   args at: 1 put: txHandle; at: 2 put: aString.
   result <- (txFFI call: 'trex_match' returning: #int taking: #(cObject string) as: args) at: 1.
   ^ ((result = 0) not)
+|
+  numSubexpressions
+  | args result |
+  args <- Array new: 1.
+  args at: 1 put: txHandle. 
+  result <- (txFFI call: 'trex_getsubexpcount' returning: #int taking: #(cObject) as: args) at: 1.
+  ^ result
+|
+  subExpression: aNumber
+  | args result |
+  args <- Array new: 2.
+  args at: 1 put: txHandle; at: 2 put: aNumber.
+  result <- (txFFI call: 'trex_getsubexp_string' returning: #string taking: #(cObject int) as: args) at: 1.
+  ^ result
 ]
