@@ -101,5 +101,6 @@ add_subdirectory(ffi_test)
 add_subdirectory(sockets)
 add_subdirectory(linenoise)
 add_subdirectory(trex)
+add_subdirectory(events)
 
 
