@@ -111,6 +111,7 @@ Methods Server 'creation'
       ].
     request grow: (0 asCharacter).
     httprequest <- HTTPRequest new: request; parseRequest.
+    ('Processing request: ', request) print.
     handlers binaryDo: [ :for :handler |
         ('Checking handler: ', for, ' against: ', (httprequest uri)) print.
         urireg <- TRex new: for.
