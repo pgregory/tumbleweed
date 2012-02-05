@@ -12,7 +12,10 @@
 #include "memory.h"
 #include "names.h"
 
-struct {
+void fileIn(FILE* fd, boolean printit);
+
+struct SDummy
+{
   int di;
   object cl;
   short ds;
@@ -26,11 +29,9 @@ struct {
    The only objects with nonzero reference counts
    will be those reachable from either symbols
    */
-static int fr(fp, p, s)
-  FILE *fp;
-  char *p;
-  int s;
-{   int r;
+static int fr(FILE* fp, char* p, int s)
+{   
+  int r;
 
   r = fread(p, s, 1, fp);
   if (r && (r != 1))
@@ -41,7 +42,6 @@ static int fr(fp, p, s)
 void imageRead(FILE* fp)
 {   
   short i, size;
-  object *mBlockAlloc();
 
   ignore fr(fp, (char *) &symbols, sizeof(object));
   i = 0;
@@ -51,10 +51,10 @@ void imageRead(FILE* fp)
 
     if ((i < 0) || (i > ObjectTableMax))
       sysError("reading index out of range","");
-    objectTable[i].class = dummyObject.cl;
-    if ((objectTable[i].class < 0) || 
-        ((objectTable[i].class>>1) > ObjectTableMax)) {
-      fprintf(stderr,"index %d\n", dummyObject.cl);
+    objectTable[i]._class = dummyObject.cl;
+    if ((objectTable[i]._class < 0) || 
+        ((objectTable[i]._class>>1) > ObjectTableMax)) {
+      fprintf(stderr,"index %d\n", static_cast<int>(dummyObject.cl));
       sysError("class out of range","imageRead");
     }
     objectTable[i].size = size = dummyObject.ds;
@@ -83,10 +83,7 @@ void imageRead(FILE* fp)
    imageWrite - write out an object image
    */
 
-static fw(fp, p, s)
-  FILE *fp;
-  char *p;
-  int  s;
+static void fw(FILE* fp, char* p, int s)
 {
   if (fwrite(p, s, 1, fp) != 1) {
     sysError("imageWrite size error","");
@@ -102,7 +99,7 @@ void imageWrite(FILE* fp)
   for (i = 0; i < ObjectTableMax; i++) {
     if (objectTable[i].referenceCount > 0) {
       dummyObject.di = i;
-      dummyObject.cl = objectTable[i].class;
+      dummyObject.cl = objectTable[i]._class;
       dummyObject.ds = size = objectTable[i].size;
       fw(fp, (char *) &dummyObject, sizeof(dummyObject));
       if (size < 0) size = ((- size) + 1) / 2;
@@ -121,10 +118,9 @@ void imageWrite(FILE* fp)
 /* we assume this is initialized to NULL */
 static FILE *fp[MAXFILES];
 
-object ioPrimitive(number, arguments)
-  int number;
-  object *arguments;
-{   int i, j;
+object ioPrimitive(int number, object* arguments)
+{   
+  int i, j;
   char *p, buffer[1024];
   object returnedObject;
 

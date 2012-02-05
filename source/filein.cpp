@@ -34,7 +34,7 @@ static char textBuffer[TextBufferSize];
     in addition, it makes sure it has a size, by setting
     the size to zero if it is nil.
 */
-static object findClass(char* name)
+static object findClass(const char* name)
 {   
   object newobj;
 
@@ -48,7 +48,7 @@ static object findClass(char* name)
     return newobj;
 }
 
-static object findClassWithMeta(char* name, object metaObj)
+static object findClassWithMeta(const char* name, object metaObj)
 {   
   object newObj, nameObj, methTable;
   int size;
@@ -77,13 +77,13 @@ static object findClassWithMeta(char* name, object metaObj)
  * Create raw class
  */
 
-static object createRawClass(char* class, char* metaclass, char* superclass)
+static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
   object classObj, superObj, metaObj;
     int i, size, instanceTop;
 
   metaObj = findClass(metaclass);
-    classObj = findClassWithMeta(class, metaObj);
+    classObj = findClassWithMeta(_class, metaObj);
   setClass(classObj, metaObj);
 
   //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
@@ -106,7 +106,7 @@ static object createRawClass(char* class, char* metaclass, char* superclass)
 /*
     readRawDeclaration reads a declaration of a class
 */
-static readRawClassDeclaration()
+static void readRawClassDeclaration()
 {   
   object classObj, vars;
   char* className, *metaName, *superName;
@@ -163,7 +163,7 @@ static readRawClassDeclaration()
 /*
     readDeclaration reads a declaration of a class
 */
-static readClassDeclaration()
+static void readClassDeclaration()
 {   
   object classObj, metaObj, vars;
   char* className, *superName;
@@ -232,10 +232,9 @@ static readClassDeclaration()
 /*
     readClass reads a class method description
 */
-static readMethods(fd, printit)
-FILE *fd;
-boolean printit;
-{   object classObj, methTable, theMethod, selector;
+static void readMethods(FILE* fd, boolean printit)
+{   
+    object classObj, methTable, theMethod, selector;
 # define LINEBUFFERSIZE 16384
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
   object protocol;
@@ -298,9 +297,7 @@ boolean printit;
 /*
     fileIn reads in a module definition
 */
-fileIn(fd, printit)
-FILE *fd;
-boolean printit;
+void fileIn(FILE* fd, boolean printit)
 {
     while(fgets(textBuffer, TextBufferSize, fd) != NULL) {
         lexinit(textBuffer);

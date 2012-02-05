@@ -6,17 +6,13 @@
     should be called only by parser 
 */
 
-# include <stdio.h>
-# include <ctype.h>
-# ifdef LIGHTC
-# include <unix.h>
-# include <proto.h>
-# endif
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
 # include "env.h"
 # include "memory.h"
 # include "lex.h"
 
-extern double atof();
 
 /* global variables returned by lexical analyser */
 
@@ -27,15 +23,14 @@ double tokenFloat;      /* floating point value of token */
 
 /* local variables used only by lexical analyser */
 
-static char *cp;        /* character pointer */
+static const char *cp;        /* character pointer */
 static char pushBuffer[10]; /* pushed back buffer */
 static int  pushindex;      /* index of last pushed back char */
 static char cc;         /* current character */
 static long longresult;     /* value used when building int tokens */
 
 /* lexinit - initialize the lexical analysis routines */
-noreturn lexinit(str)
-char *str;
+noreturn lexinit(const char* str)
 {
     pushindex = 0;
     cp = str;
@@ -44,8 +39,7 @@ char *str;
 }
 
 /* pushBack - push one character back into the input */
-static pushBack(c)
-char c;
+static void pushBack(char c)
 {
     pushBuffer[pushindex++] = c;
 }
@@ -67,8 +61,7 @@ char peek()
 }
 
 /* isClosing - characters which can close an expression */
-static boolean isClosing(c)
-char c;
+static boolean isClosing(char c)
 {
     switch(c) {
         case '.': case ']': case ')': case ';':
@@ -79,8 +72,7 @@ char c;
 }
 
 /* isSymbolChar - characters which can be part of symbols */
-static boolean isSymbolChar(c)
-char c;
+static boolean isSymbolChar(char c)
 {
     if (isdigit(c) || isalpha(c)) return(true);
     if (isspace(c) || isClosing(c)) return(false);
@@ -88,8 +80,7 @@ char c;
 }
 
 /* singleBinary - binary characters that cannot be continued */
-static boolean singleBinary(c)
-char c;
+static boolean singleBinary(char c)
 {
     switch(c) {
         case '[': case '(': case ')': case ']':
@@ -99,8 +90,7 @@ char c;
 }
 
 /* binarySecond - return true if char can be second char in binary symbol */
-static boolean binarySecond(c)
-char c;
+static boolean binarySecond(char c)
 {
     if (isalpha(c) || isdigit(c) || isspace(c) || isClosing(c) ||
         singleBinary(c))
@@ -109,7 +99,8 @@ char c;
 }
 
 tokentype nextToken()
-{   char *tp;
+{   
+    char *tp;
     boolean sign;
 
     /* skip over blanks and comments */

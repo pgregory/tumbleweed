@@ -31,8 +31,8 @@ typedef unsigned char byte;
 
 # define streq(a,b) (strcmp(a,b) == 0)
 
-# define true 1
-# define false 0
+//# define true 1
+//# define false 0
 
     /* define the datatype boolean */
 # ifdef NOTYPEDEF
@@ -59,7 +59,6 @@ typedef int boolean;
 used; but if they are not available their use will cause compiler errors.
 To get around this we define a lot of symbols which become nothing if
 prototypes aren't available */
-# ifdef PROTO
 
 # define X ,
 # define OBJ object
@@ -67,27 +66,11 @@ prototypes aren't available */
 # define INT int
 # define BOOL boolean
 # define STR char *
+# define CSTR const char *
 # define FLOAT double
 # define NOARGS void
 # define FILEP FILE *
 # define FUNC ()
-
-# endif
-
-# ifndef PROTO
-
-# define X
-# define OBJ
-# define OBJP
-# define INT
-# define BOOL
-# define STR
-# define FLOAT
-# define NOARGS
-# define FILEP
-# define FUNC
-
-# endif
 
 
 #if defined(__APPLE__)
@@ -99,3 +82,7 @@ prototypes aren't available */
 #endif
 
 #endif
+
+noreturn sysWarn(const char* s1, const char* s2);
+noreturn compilWarn(const char* selector, const char* str1, const char* str2);
+noreturn compilError(const char* selector, const char* str1, const char* str2);

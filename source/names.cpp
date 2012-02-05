@@ -26,14 +26,14 @@
 */
 
 # include <stdio.h>
+# include <string.h>
 # include "env.h"
 # include "memory.h"
 # include "names.h"
 
-noreturn nameTableInsert(dict, hash, key, value)
-object dict, key, value;
-int hash;
-{   object table, link, nwLink, nextLink, tablentry;
+noreturn nameTableInsert(object dict, int hash, object key, object value)
+{   
+    object table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
     table = basicAt(dict, 1);
@@ -71,11 +71,9 @@ int hash;
     }
 }
 
-object hashEachElement(dict, hash, fun)
-object dict;
-register int hash;
-int (*fun)();
-{   object table, key, value, link;
+object hashEachElement(object dict, register int hash, int (*fun)(object))
+{   
+    object table, key, value, link;
     register object *hp;
     int tablesize;
 
@@ -102,10 +100,10 @@ int (*fun)();
     return nilobj;
 }
 
-int strHash(str)    /* compute hash value of string ---- strHash */
-char *str;
-{   register int hash;
-    register char *p;
+int strHash(const char* str)    /* compute hash value of string ---- strHash */
+{   
+    register int hash;
+    register const char *p;
 
     hash = 0;
     for (p = str; *p; p++)
@@ -118,10 +116,9 @@ char *str;
 }
 
 static object objBuffer;
-static char   *charBuffer;
+static const char   *charBuffer;
 
-static int strTest(key) /* test for string equality ---- strTest */
-object key;
+static int strTest(object key) /* test for string equality ---- strTest */
 {
     if (charPtr(key) && streq(charPtr(key), charBuffer)) {
         objBuffer = key;
@@ -130,8 +127,7 @@ object key;
     return 0;
 }
 
-object globalKey(str)   /* return key associated with global symbol */
-char *str;
+object globalKey(const char *str)   /* return key associated with global symbol */
 {
     objBuffer = nilobj;
     charBuffer = str;
@@ -139,9 +135,7 @@ char *str;
     return objBuffer;
 }
 
-object nameTableLookup(dict, str)
-object dict;
-char *str;
+object nameTableLookup(object dict, const char* str)
 {
     charBuffer = str;
     return hashEachElement(dict, strHash(str), strTest);
@@ -150,10 +144,10 @@ char *str;
 object unSyms[12];
 object binSyms[30];
 
-char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
+const char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
 "basicSize", "print", "printString", 0};
 
-char *binStrs[] = {"+", "-", "<", ">", "<=", ">=", "=", "~=", "*", 
+const char *binStrs[] = {"+", "-", "<", ">", "<=", ">=", "=", "~=", "*", 
 "quo:", "rem:", "bitAnd:", "bitXor:", "==",
 ",", "at:", "basicAt:", "do:", "coerce:", "error:", "includesKey:",
 "isMemberOf:", "new:", "to:", "value:", "whileTrue:", "addFirst:", "addLast:",

@@ -19,6 +19,7 @@
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+#include "interp.h"
 
 extern object processStack;
 extern int linkPointer;
@@ -70,7 +71,7 @@ typedef enum FFI_Symbols_E {
 } FFI_Symbols;
 
 
-static char* ffiStrs[] = {
+static const char* ffiStrs[] = {
   "char",               // FFI_CHAR,       
   "charOut",            // FFI_CHAR_OUT,
   "string",             // FFI_STRING,
@@ -97,6 +98,7 @@ static char* ffiStrs[] = {
   "cObject",            // FFI_COBJECT,
   "smalltalk"           // FFI_SMALLTALK,
 };
+
 static int ffiNumStrs = sizeof(ffiStrs)/sizeof(ffiStrs[0]);
 static object *ffiSyms;
 static void* ffiLSTTypes[] = {
@@ -129,7 +131,7 @@ static void* ffiLSTTypes[] = {
 
 void initFFISymbols()
 {
-  ffiSyms = calloc(ffiNumStrs, sizeof(object));
+  ffiSyms = static_cast<object*>(calloc(ffiNumStrs, sizeof(object)));
   int i;
   for(i = 0; i < ffiNumStrs; ++i)
     ffiSyms[i] = newSymbol(ffiStrs[i]);
@@ -280,8 +282,8 @@ typedef struct FFI_CallbackData_S {
 
 FFI_CallbackData* newCallbackData(int numArgs)
 {
-  FFI_CallbackData* data = calloc(1, sizeof(FFI_CallbackData));
-  data->argTypeArray = calloc(numArgs, sizeof(FFI_Symbols));
+  FFI_CallbackData* data = static_cast<FFI_CallbackData*>(calloc(1, sizeof(FFI_CallbackData)));
+  data->argTypeArray = static_cast<FFI_Symbols*>(calloc(numArgs, sizeof(FFI_Symbols)));
   data->numArgs = numArgs;
 
   return data;
@@ -327,7 +329,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   // was replaced.
   stack = basicAt(process, stackInProcess);
   object ro = basicAt(stack, 1);
-  valueOut(data->retType, ro, ret); 
+  valueOut(data->retType, ro, static_cast<FFI_DataType*>(ret)); 
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
 }
@@ -395,22 +397,22 @@ object ffiPrimitive(int number, object* arguments)
           FFI_DataType* dataValues = NULL; 
           if(cargs > 0)
           {
-            args = calloc(cargTypes, sizeof(ffi_type));
-            values = calloc(cargs, sizeof(void*));
-            dataValues = calloc(cargs, sizeof(FFI_DataType));
+            args = static_cast<ffi_type**>(calloc(cargTypes, sizeof(ffi_type)));
+            values = static_cast<void**>(calloc(cargs, sizeof(void*)));
+            dataValues = static_cast<FFI_DataType*>(calloc(cargs, sizeof(FFI_DataType)));
 
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
               object argType = basicAt(arguments[2], i+1);
               int argMap = mapType(argType);
-              args[i] = ffiLSTTypes[argMap];
+              args[i] = static_cast<ffi_type*>(ffiLSTTypes[argMap]);
               values[i] = valueOut(argMap, basicAt(arguments[3], i+1), &dataValues[i]);
             }
           }
 
           ffi_type* ret;
-          ret = ffiLSTTypes[retMap]; 
+          ret = static_cast<ffi_type*>(ffiLSTTypes[retMap]); 
           ffi_type retVal;
           void* retData = &retVal;
 
@@ -419,8 +421,8 @@ object ffiPrimitive(int number, object* arguments)
           {
             returnedObject = newArray(cargTypes + 1);
 
-            ffi_call(&cif, func, retData, values);
-            basicAtPut(returnedObject, 1, valueIn(retMap, retData));
+            ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
+            basicAtPut(returnedObject, 1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
           }
           // Now fill in the rest of the result array with the arguments
           // thus getting any 'out' values back to the system in a controlled 
@@ -436,7 +438,7 @@ object ffiPrimitive(int number, object* arguments)
               object argType = basicAt(arguments[2], i+1);
               int argMap = mapType(argType);
               // Get a new value out of the arguments array.
-              object newVal = valueIn(argMap, values[i]);
+              object newVal = valueIn(argMap, static_cast<FFI_DataType*>(values[i]));
               basicAtPut(returnedObject, i+2, newVal); 
             }
           }
@@ -455,11 +457,11 @@ object ffiPrimitive(int number, object* arguments)
         int retMap = mapType(rtype);
         int cargTypes = sizeField(arguments[1]);
         ffi_closure* closure;
-        ffi_cif *cif = calloc(1, sizeof(ffi_cif));
+        ffi_cif *cif = static_cast<ffi_cif*>(calloc(1, sizeof(ffi_cif)));
         object block = arguments[2];
 
         /* Allocate closure and bound_puts */
-        closure = ffi_closure_alloc(sizeof(ffi_closure), &callback);
+        closure = static_cast<ffi_closure*>(ffi_closure_alloc(sizeof(ffi_closure), &callback));
 
         if(closure)
         {
@@ -470,23 +472,23 @@ object ffiPrimitive(int number, object* arguments)
           ffi_type** args = NULL;
           if(cargTypes > 0)
           {
-            args = calloc(cargTypes, sizeof(ffi_type));
+            args = static_cast<ffi_type**>(calloc(cargTypes, sizeof(ffi_type)));
 
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
               object argType = basicAt(arguments[1], i+1);
               int argMap = mapType(argType);
-              data->argTypeArray[i] = argMap;
-              args[i] = ffiLSTTypes[argMap];
+              data->argTypeArray[i] = static_cast<FFI_Symbols_E>(argMap);
+              args[i] = static_cast<ffi_type*>(ffiLSTTypes[argMap]);
             }
           }
-          data->retType = retMap;
+          data->retType = static_cast<FFI_Symbols>(retMap);
           data->block = block;
           incr(block);
 
           ffi_type* ret;
-          ret = ffiLSTTypes[retMap]; 
+          ret = static_cast<ffi_type*>(ffiLSTTypes[retMap]); 
 
           /* Initialize the cif */
           if(ffi_prep_cif(cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)

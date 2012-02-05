@@ -29,8 +29,7 @@ extern object primitive( INT X OBJP );
 
 static object method, messageToSend;
 
-static int messTest(obj)
-  object obj;
+static int messTest(object obj)
 {
   return obj == messageToSend;
 }
@@ -45,11 +44,11 @@ static struct {
 } methodCache[cacheSize];
 
 /* flush an entry from the cache (usually when its been recompiled) */
-flushCache(messageToSend, class)
-  object messageToSend, class;
-{   int hash;
+void flushCache(object messageToSend, object _class)
+{   
+  int hash;
 
-  hash = (((int) messageToSend) + ((int) class)) / cacheSize;
+  hash = (((int) messageToSend) + ((int) _class)) / cacheSize;
   methodCache[hash].cacheMessage = nilobj;
 }
 
@@ -58,9 +57,9 @@ flushCache(messageToSend, class)
    given a message and a class to start looking in,
    find the method associated with the message
    */
-static boolean findMethod(methodClassLocation)
-  object *methodClassLocation;
-{   object methodTable, methodClass;
+static boolean findMethod(object* methodClassLocation)
+{   
+  object methodTable, methodClass;
 
   method = nilobj;
   methodClass = *methodClassLocation;
@@ -113,9 +112,9 @@ static boolean findMethod(methodClassLocation)
 object  processStack;
 int     linkPointer;
 
-static object growProcessStack(top, toadd)
-  int top, toadd;
-{   int size, i;
+static object growProcessStack(int top, int toadd)
+{   
+  int size, i;
   object newStack;
 
   if (toadd < 100) toadd = 100;
@@ -127,10 +126,9 @@ static object growProcessStack(top, toadd)
   return newStack;
 }
 
-boolean execute(aProcess, maxsteps)
-  object aProcess;
-  int maxsteps;
-{   object returnedObject;
+boolean execute(object aProcess, int maxsteps)
+{   
+  object returnedObject;
   int returnPoint, timeSliceCounter;
   object *pst, *psb, *rcv, *arg, *temps, *lits, *cntx;
   object contextObject, *primargs;

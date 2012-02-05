@@ -10,32 +10,17 @@
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+#include "interp.h"
+
+void makeInitialImage();
+void goDoIt(const char * text);
 
 extern noreturn initFFISymbols();   /* FFI symbols */
 
 object firstProcess;
 int initial = 1;    /* making initial image */
 
-/* lightspeed C not using argc/argv features */
-# ifdef NOARGC
-char *argv[] = {"initial", "basic.st","mag.st","collect.st", "file.st",
-        "mult.st", 
-# ifdef STDWIN
-        "graphics.st", "stdwin.st", 0};
-int argc = 8;
-# endif
-# ifndef STDWIN
-        "tty.st", 0};
-int argc = 7;
-# endif
-
-main()
-# endif
-# ifndef NOARGC
-main(argc, argv) 
-int argc;
-char **argv;
-# endif
+int main(int argc, char** argv) 
 {   
   char methbuf[MAX_PATH];
     int i;
@@ -66,8 +51,7 @@ char **argv;
     exit(0); return 0;
 }
 
- goDoIt(text)
-char *text;
+void goDoIt(const char * text)
 {   
   object stack, method;
 
@@ -103,8 +87,9 @@ char *text;
     there is a sort of chicken and egg problem with regards to making
     the initial image
 */
- makeInitialImage()
-{   object hashTable;
+void makeInitialImage()
+{   
+    object hashTable;
     object integerClass;
     object symbolObj, symbolClass, classClass, metaClassClass;
   object objectClass, metaObjectClass;

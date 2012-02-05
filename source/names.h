@@ -51,7 +51,7 @@ extern object copyFrom( OBJ X INT X INT);
 extern object newArray(INT);
 extern object newBlock();
 extern object newByteArray(INT);
-extern object newClass(STR);
+extern object newClass(CSTR);
 extern object newChar(INT);
 extern object newContext(INT X OBJ X OBJ X OBJ);
 extern object newDictionary(INT);
@@ -59,15 +59,17 @@ extern object newInteger(INT);
 extern object newFloat(FLOAT);
 extern object newMethod();
 extern object newLink(OBJ X OBJ);
-extern object newStString(STR);
-extern object newSymbol(STR);
+extern object newStString(CSTR);
+extern object newSymbol(CSTR);
 extern double floatValue(OBJ);
+extern int intValue(OBJ);
 extern noreturn initCommonSymbols();    /* common symbols */
 extern object unSyms[], binSyms[];
 
 extern noreturn nameTableInsert( OBJ X INT X OBJ X OBJ );
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/
-extern int strHash ( STR );
-extern object globalKey ( STR );
-extern object nameTableLookup ( OBJ X STR );
+extern int strHash ( CSTR );
+extern object globalKey ( CSTR );
+extern object nameTableLookup ( OBJ X CSTR );
 # define globalSymbol(s) nameTableLookup(symbols, s)
+object hashEachElement(object dict, register int hash, int(*fun)(object));

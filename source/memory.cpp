@@ -27,6 +27,7 @@
 #include "env.h"
 #include "memory.h"
 
+
 boolean debugging = false;
 object sysobj;  /* temporary used to avoid rereference in macros */
 object intobj;
@@ -72,7 +73,7 @@ noreturn initMemoryManager()
 {
     int i;
 
-  objectTable = calloc(ObjectTableMax, sizeof(struct objectStruct));
+  objectTable = static_cast<objectStruct*>(calloc(ObjectTableMax, sizeof(struct objectStruct)));
   if (! objectTable)
     sysError("cannot allocate","object table");
 
@@ -101,7 +102,8 @@ noreturn initMemoryManager()
 }
 
 /* setFreeLists - initialise the free lists */
-setFreeLists() {
+void setFreeLists() 
+{
 #if 0
     int i, size;
     register int z;
@@ -116,7 +118,7 @@ setFreeLists() {
             p= &objectTable[z];
             size = p->size;
             if (size < 0) size = ((-size) + 1)/2;
-            p->class = objectFreeList[size];
+            p->_class = objectFreeList[size];
             objectFreeList[size]= z;
             for (i= size; i>0; )
                 p->memory[--i] = nilobj;
@@ -180,14 +182,14 @@ object allocObject(int memorySize)
     /* first try the free lists, this is fastest */
     if ((position = objectFreeList[memorySize]) != 0) 
     {
-        objectFreeList[memorySize] = objectTable[position].class;
+        objectFreeList[memorySize] = objectTable[position]._class;
     }
 
     /* if not there, next try making a size zero object and
         making it bigger */
     else if ((position = objectFreeList[0]) != 0) 
     {
-        objectFreeList[0] = objectTable[position].class;
+        objectFreeList[0] = objectTable[position]._class;
         objectTable[position].size = memorySize;
         objectTable[position].memory = mBlockAlloc(memorySize);
     }
@@ -201,7 +203,7 @@ object allocObject(int memorySize)
         {
             if ((position = objectFreeList[i]) != 0) 
             {
-                objectFreeList[i] = objectTable[position].class;
+                objectFreeList[i] = objectTable[position]._class;
                 /* just trim it a bit */
                 objectTable[position].size = memorySize;
                 done = true;
@@ -217,7 +219,7 @@ object allocObject(int memorySize)
                 if ((position = objectFreeList[i]) != 0) 
                 {
                     objectFreeList[i] =
-                        objectTable[position].class;
+                        objectTable[position]._class;
                     objectTable[position].size = memorySize;
 # ifdef mBlockAlloc
                     free(objectTable[position].memory);
@@ -241,7 +243,7 @@ object allocObject(int memorySize)
 
     /* set class and type */
     objectTable[position].referenceCount = 0;
-    objectTable[position].class = nilobj;
+    objectTable[position]._class = nilobj;
     objectTable[position].size = memorySize;
     return(position << 1);
 }
@@ -256,7 +258,7 @@ object allocByte(int size)
     return newObj;
 }
 
-object allocStr(register char* str)
+object allocStr(register const char* str)
 {   
     register object newSym;
     char* t;
@@ -300,13 +302,13 @@ void sysDecr(object z, int visit)
     p = &objectTable[z>>1];
     if (p->referenceCount < 0) 
     {
-        fprintf(stderr,"object %d\n", z);
+        fprintf(stderr,"object %d\n", static_cast<int>(z));
         sysError("negative reference count","");
     }
-    if(visit) decr(p->class);
+    if(visit) decr(p->_class);
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
-    p->class = objectFreeList[size];
+    p->_class = objectFreeList[size];
     objectFreeList[size] = z>>1;
     if (size > 0) 
     {
@@ -394,7 +396,7 @@ void byteAtPut(object z, int i, int x)
   Modified by Paul Gregory based on ideas by Michael Koehne
 */
 
-visit(register object x)
+void visit(register object x)
 {
     int i, s;
     object *p;
@@ -408,7 +410,7 @@ visit(register object x)
     //      if (++(objectTable[x>>1].referenceCount) == 1) 
     //      {
                 /* then it's the first time we've visited it, so: */
-                visit(objectTable[x>>1].class);
+                visit(objectTable[x>>1]._class);
                 s = sizeField(x);
                 if (s>0) 
                 {

@@ -40,3 +40,6 @@
 # define AndBranch 9
 # define OrBranch 10
 # define SendToSuper 11
+
+boolean execute(object aProcess, int maxsteps);
+void flushCache(object messageToSend, object _class);

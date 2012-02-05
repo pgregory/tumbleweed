@@ -14,14 +14,14 @@
 
 #include "env.h"
 #include "memory.h"
+#include "names.h"
 
 extern boolean parseok;
 
 static char gLastError[1024];
 
 /* report a fatal system error */
-noreturn sysError(s1, s2)
-  char *s1, *s2;
+noreturn sysError(const char* s1, const char* s2)
 {
   ignore fprintf(stderr,"%s\n%s\n", s1, s2);
   ignore snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
@@ -29,21 +29,19 @@ noreturn sysError(s1, s2)
 }
 
 /* report a nonfatal system error */
-noreturn sysWarn(s1, s2)
-  char *s1, *s2;
+noreturn sysWarn(const char * s1, const char * s2)
 {
   ignore fprintf(stderr,"%s\n%s\n", s1, s2);
 }
 
-compilWarn(selector, str1, str2)
-  char *selector, *str1, *str2;
+noreturn compilWarn(const char* selector, const char* str1, const char* str2)
 {
   ignore fprintf(stderr,"compiler warning: Method %s : %s %s\n", 
       selector, str1, str2);
 }
 
-compilError(selector, str1, str2)
-  char *selector, *str1, *str2;
+
+noreturn compilError(const char* selector, const char* str1, const char* str2)
 {
   ignore fprintf(stderr,"compiler error: Method %s : %s %s\n", 
       selector, str1, str2);
@@ -51,23 +49,21 @@ compilError(selector, str1, str2)
   parseok = false;
 }
 
-noreturn dspMethod(cp, mp)
-  char *cp, *mp;
+noreturn dspMethod(char* cp, char* mp)
 {
   ignore fprintf(stderr,"%s %s\n", cp, mp);
 }
 
-givepause()
+void givepause()
 {   char buffer[80];
 
   ignore fprintf(stderr,"push return to continue\n");
   ignore fgets(buffer,80,stdin);
 }
 
-object sysPrimitive(number, arguments)
-  int number;
-  object *arguments;
-{   object returnedObject = nilobj;
+object sysPrimitive(int number, object* arguments)
+{   
+  object returnedObject = nilobj;
 
   /* someday there will be more here */
   switch(number - 150) {

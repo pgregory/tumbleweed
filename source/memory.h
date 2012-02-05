@@ -27,7 +27,7 @@ replacement is possible as long as the interface remains consistent
 */
 
 struct objectStruct {
-    object class;
+    object _class;
     short referenceCount;
     short size;
     object *memory;
@@ -60,7 +60,7 @@ extern struct objectStruct *objectTable;
 
 extern object allocObject( INT );
 extern object allocByte( INT );
-extern object allocStr( STR );
+extern object allocStr( CSTR );
 
 /*
     integer objects are (but need not be) treated specially.
@@ -68,8 +68,8 @@ extern object allocStr( STR );
   positive integers are changed to x*2+1.  Either a negative or an odd
   number is therefore an integer, while a nonzero even number is an
   object pointer (multiplied by two).  Zero is reserved for the object ``nil''
-  Since newInteger does not fill in the class field, it can be given here.
-  If it was required to use the class field, it would have to be deferred
+  Since newInteger does not fill in the _class field, it can be given here.
+  If it was required to use the _class field, it would have to be deferred
   until names.h
 */
 
@@ -85,10 +85,10 @@ extern object newCPointer(void* l);
 extern void* cPointerValue(object);
 /*
     Finally, a few routines (or macros) are used to access or set
-  class fields and size fields of objects
+  _class fields and size fields of objects
 */
 
-# define classField(x) objectTable[x>>1].class
+# define classField(x) objectTable[x>>1]._class
 # define setClass(x,y) incr(classField(x)=y)
 # define sizeField(x) objectTable[x>>1].size
 
@@ -127,13 +127,19 @@ extern object symbols;
 /*
     finally some external declarations with prototypes
 */
-extern void sysError(char*, char*);
+extern void sysError(const char*, const char*);
 extern void dspMethod(char*, char*);
 extern void initMemoryManager();
 extern void imageWrite(FILE*);
 extern void imageRead(FILE*);
 extern void sysDecr(object, int);
 extern boolean debugging;
+void setInstanceVariables(object aClass);
+boolean parse(object method, const char* text, boolean savetext);
+void givepause();
+int objectCount();
+void setFreeLists();
+int garbageCollect(int verbose);
 
 
 # ifndef basicAtPut

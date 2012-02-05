@@ -27,23 +27,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+#include "interp.h"
 
 extern object processStack;
 extern int linkPointer;
 
 extern double frexp(), ldexp();
-extern long time();
 extern object ioPrimitive(INT X OBJP);
 extern object sysPrimitive(INT X OBJP);
 extern object ffiPrimitive(INT X OBJP);
 
 
-static object zeroaryPrims(number)
-  int number;
-{   short i;
+static object zeroaryPrims(int number)
+{   
+  short i;
   object returnedObject;
   int objectCount();
 
@@ -88,10 +89,9 @@ static object zeroaryPrims(number)
   return(returnedObject);
 }
 
-static int unaryPrims(number, firstarg)
-  int number;
-  object firstarg;
-{   int i, j, saveLinkPointer;
+static int unaryPrims(int number, object firstarg)
+{   
+  int i, j, saveLinkPointer;
   object returnedObject, saveProcessStack;
 
   returnedObject = firstarg;
@@ -118,7 +118,7 @@ static int unaryPrims(number, firstarg)
       break;
 
     case 4:     /* debugging print */
-      fprintf(stderr,"primitive 14 %d\n", firstarg);
+      fprintf(stderr,"primitive 14 %d\n", static_cast<int>(firstarg));
       break;
 
     case 8:     /* change return point - block return */
@@ -181,10 +181,9 @@ static int unaryPrims(number, firstarg)
   return(returnedObject);
 }
 
-static int binaryPrims(number, firstarg, secondarg)
-  int number;
-  object firstarg, secondarg;
-{   char buffer[2000];
+static int binaryPrims(int number, object firstarg, object secondarg)
+{   
+  char buffer[2000];
   int i;
   object returnedObject;
 
@@ -204,7 +203,7 @@ static int binaryPrims(number, firstarg, secondarg)
       break;
 
     case 3:     /* debugging stuff */
-      fprintf(stderr,"primitive 23 %d %d\n", firstarg, secondarg);
+      fprintf(stderr,"primitive 23 %d %d\n", static_cast<int>(firstarg), static_cast<int>(secondarg));
       break;
 
     case 4:     /* string cat */
@@ -252,9 +251,7 @@ static int binaryPrims(number, firstarg, secondarg)
   return(returnedObject);
 }
 
-static int trinaryPrims(number, firstarg, secondarg, thirdarg)
-  int number;
-  object firstarg, secondarg, thirdarg;
+static int trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
 {   
   // todo: Fixed length buffer
   char *bp, *tp, buffer[4096];
@@ -264,7 +261,7 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
   returnedObject = firstarg;
   switch(number) {
     case 1:         /* basicAt:Put: */
-      fprintf(stderr,"IN BASICATPUT %d %d %d\n", firstarg, intValue(secondarg), thirdarg);
+      fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), intValue(secondarg), static_cast<int>(thirdarg));
       fieldAtPut(firstarg, intValue(secondarg), thirdarg);
       break;
 
@@ -302,9 +299,9 @@ static int trinaryPrims(number, firstarg, secondarg, thirdarg)
   return(returnedObject);
 }
 
-static int intUnary(number, firstarg)
-  int number, firstarg;
-{   object returnedObject;
+static int intUnary(int number, object firstarg)
+{   
+  object returnedObject;
 
   switch(number) {
     case 1:     /* float equiv of integer */
@@ -312,7 +309,7 @@ static int intUnary(number, firstarg)
       break;
 
     case 2:     /* print - for debugging purposes */
-      fprintf(stderr,"debugging print %d\n", firstarg);
+      fprintf(stderr,"debugging print %d\n", static_cast<int>(firstarg));
       break;
 
     case 3: /* set time slice - done in interpreter */
@@ -337,10 +334,9 @@ static int intUnary(number, firstarg)
   return(returnedObject);
 }
 
-static object intBinary(number, firstarg, secondarg)
-  register int firstarg, secondarg;
-  int number;
-{   boolean binresult;
+static object intBinary(register int number, register int firstarg, int secondarg)
+{   
+  boolean binresult;
   long longresult;
   object returnedObject;
 
@@ -421,10 +417,9 @@ overflow:
   return(returnedObject);
 }
 
-static int strUnary(number, firstargument)
-  int number;
-  char *firstargument;
-{   object returnedObject;
+static int strUnary(int number, char* firstargument)
+{   
+  object returnedObject;
 
   switch(number) {
     case 1:     /* length of string */
@@ -461,10 +456,9 @@ static int strUnary(number, firstargument)
   return(returnedObject);
 }
 
-static int floatUnary(number, firstarg)
-  int number;
-  double firstarg;
-{   char buffer[20];
+static int floatUnary(int number, double firstarg)
+{   
+  char buffer[20];
   double temp;
   int i, j;
   object returnedObject;
@@ -517,10 +511,9 @@ static int floatUnary(number, firstarg)
   return(returnedObject);
 }
 
-static object floatBinary(number, first, second)
-  int number;
-  double first, second;
-{    boolean binResult;
+static object floatBinary(int number, double first, double second)
+{    
+  boolean binResult;
   object returnedObject;
 
   switch(number) {
@@ -558,7 +551,7 @@ static int cPointerUnary(int number, void* firstarg)
 
   switch(number) {
     case 1:     /* cPointer value asString */
-      ignore sprintf(buffer,"0x%X", firstarg);
+      //ignore sprintf(buffer,"0x%X", reinterpret_cast<unsigned int>(firstarg));
       returnedObject = newStString(buffer);
       break;
     default:
@@ -573,10 +566,9 @@ static int cPointerUnary(int number, void* firstarg)
 /* primitive -
    the main driver for the primitive handler
    */
-object primitive(primitiveNumber, arguments)
-  register int primitiveNumber;
-  object *arguments;
-{   register int primitiveGroup = primitiveNumber / 10;
+object primitive(register int primitiveNumber, object* arguments)
+{   
+  register int primitiveGroup = primitiveNumber / 10;
   object returnedObject;
 
 

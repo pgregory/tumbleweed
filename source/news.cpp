@@ -17,22 +17,20 @@ static object intClass = nilobj;    /* the class Integer */
 static object stringClass = nilobj; /* the class String */
 static object symbolClass = nilobj; /* the class Symbol */
 
-ncopy(p, q, n)      /* ncopy - copy exactly n bytes from place to place */
-register char *p, *q;
-register int n;
-{   for (; n>0; n--)
+void ncopy(register char* p, register char* q, register int n)      /* ncopy - copy exactly n bytes from place to place */
+{   
+    for (; n>0; n--)
         *p++ = *q++;
 }
 
-object getClass(obj)    /* getClass - get the class of an object */
-register object obj;
+object getClass(register object obj)    /* getClass - get the class of an object */
 {
     return (classField(obj));
 }
 
-object newArray(size)
-int size;
-{   object newObj;
+object newArray(int size)
+{   
+    object newObj;
 
     newObj = allocObject(size);
     if (arrayClass == nilobj)
@@ -42,25 +40,26 @@ int size;
 }
 
 object newBlock()
-{   object newObj;
+{   
+    object newObj;
 
     newObj = allocObject(blockSize);
     setClass(newObj, globalSymbol("Block"));
     return newObj;
 }
 
-object newByteArray(size)
-int size;
-{   object newobj;
+object newByteArray(int size)
+{   
+    object newobj;
 
     newobj = allocByte(size);
     setClass(newobj, globalSymbol("ByteArray"));
     return newobj;
 }
 
-object newChar(value)
-int value;
-{   object newobj;
+object newChar(int value)
+{   
+    object newobj;
 
     newobj = allocObject(1);
     basicAtPut(newobj, 1, newInteger(value));
@@ -68,7 +67,7 @@ int value;
     return(newobj);
 }
 
-object newClass(char* name)
+object newClass(const char* name)
 {   
   object newObj, nameObj, methTable;
 
@@ -88,10 +87,9 @@ object newClass(char* name)
     return newObj;
 }
 
-object copyFrom(obj, start, size)
-object obj;
-int start, size;
-{   object newObj;
+object copyFrom(object obj, int start, int size)
+{   
+    object newObj;
     int i;
 
     newObj = newArray(size);
@@ -102,10 +100,9 @@ int start, size;
     return newObj;
 }
 
-object newContext(link, method, args, temp)
-int link;
-object method, args, temp;
-{   object newObj;
+object newContext(int link, object method, object args, object temp)
+{   
+    object newObj;
 
     newObj = allocObject(contextSize);
     setClass(newObj, globalSymbol("Context"));
@@ -116,9 +113,9 @@ object method, args, temp;
     return newObj;
 }
 
-object newDictionary(size)
-int size;
-{   object newObj;
+object newDictionary(int size)
+{   
+    object newObj;
 
     newObj = allocObject(1);
     setClass(newObj, globalSymbol("Dictionary"));
@@ -126,9 +123,9 @@ int size;
     return newObj;
 }
 
-object newFloat(d)
-double d;
-{   object newObj;
+object newFloat(double d)
+{   
+    object newObj;
 
     newObj = allocByte((int) sizeof (double));
     ncopy(charPtr(newObj), (char *) &d, (int) sizeof (double));
@@ -136,9 +133,9 @@ double d;
     return newObj;
 }
 
-object newInteger(i)
-int i;
-{   object newObj;
+object newInteger(int i)
+{   
+    object newObj;
 
     newObj = allocByte((int) sizeof (int));
     ncopy(charPtr(newObj), (char *) &i, (int) sizeof (int));
@@ -146,17 +143,17 @@ int i;
     return newObj;
 }
 
-double floatValue(o)
-object o;
-{   double d;
+double floatValue(object o)
+{   
+    double d;
 
     ncopy((char *) &d, charPtr(o), (int) sizeof(double));
     return d;
 }
 
-int intValue(o)
-object o;
-{   int d;
+int intValue(object o)
+{   
+    int d;
 
   if(o == nilobj)
     return 0;
@@ -187,9 +184,9 @@ void* cPointerValue(object o)
     return l;
 }
 
-object newLink(key, value)
-object key, value;
-{   object newObj;
+object newLink(object key, object value)
+{   
+    object newObj;
 
     newObj = allocObject(3);
     setClass(newObj, globalSymbol("Link"));
@@ -206,7 +203,7 @@ object newMethod()
     return newObj;
 }
 
-object newStString(char* value)
+object newStString(const char* value)
 {   
   object newObj;
 
@@ -217,9 +214,9 @@ object newStString(char* value)
     return(newObj);
 }
 
-object newSymbol(str)
-char *str;
-{    object newObj;
+object newSymbol(const char* str)
+{    
+    object newObj;
 
     /* first see if it is already there */
     newObj = globalKey(str);

@@ -4,18 +4,18 @@ cmake_minimum_required ( VERSION 2.6 )
 project (Tumbleweed)
 
 set(shared_srcs 
-  source/ffiprimitive.c
-  source/filein.c
-  source/interp.c
-  source/lex.c
-  source/memory.c
-  source/names.c
-  source/parser.c
-  source/news.c
-  source/parser.c
-  source/primitive.c
-  source/sysprimitive.c
-  source/unixio.c
+  source/ffiprimitive.cpp
+  source/filein.cpp
+  source/interp.cpp
+  source/lex.cpp
+  source/memory.cpp
+  source/names.cpp
+  source/parser.cpp
+  source/news.cpp
+  source/parser.cpp
+  source/primitive.cpp
+  source/sysprimitive.cpp
+  source/unixio.cpp
 )
 
 set(headers
@@ -27,11 +27,11 @@ set(headers
 )
   
 set(tw_srcs ${shared_srcs}
-  source/st.c
+  source/st.cpp
 )
 
 set(init_srcs ${shared_srcs}
-  source/initial.c
+  source/initial.cpp
 )
 
 set(common_image_srcs

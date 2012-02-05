@@ -61,9 +61,17 @@ int literalTop;         /*  ... etc. */
 
 enum blockstatus {NotInBlock, InBlock, OptimizedBlock} blockstat;
 
-setInstanceVariables(aClass)
-object aClass;
-{   int i, limit;
+void genMessage(boolean toSuper, int argumentCount, object messagesym);
+void expression();
+void parsePrimitive();
+void block();
+void body();
+void statement();
+void assignment(char* name);
+
+void setInstanceVariables(object aClass)
+{   
+    int i, limit;
     object vars;
 
     if (aClass == nilobj)
@@ -79,8 +87,7 @@ object aClass;
         }
 }
 
- genCode(value)
-int value;
+void genCode(int value)
 {
     if (codeTop >= codeLimit)
         compilError(selector,"too many bytecode instructions in method","");
@@ -88,8 +95,7 @@ int value;
         codeArray[codeTop++] = value;
 }
 
- genInstruction(high, low)
-int high, low;
+void genInstruction(int high, int low)
 {
     if (low >= 16) {
         genInstruction(Extended, high);
@@ -99,8 +105,7 @@ int high, low;
         genCode(high * 16 + low);
 }
 
- int genLiteral(aLiteral)
-object aLiteral;
+int genLiteral(object aLiteral)
 {
     if (literalTop >= literalLimit)
         compilError(selector,"too many literals in method","");
@@ -111,8 +116,7 @@ object aLiteral;
     return(literalTop - 1);
 }
 
- genInteger(val)    /* generate an integer push */
-int val;
+void genInteger(int val)    /* generate an integer push */
 {
     if (val == -1)
         genInstruction(PushConstant, minusOne);
@@ -123,12 +127,12 @@ int val;
             genLiteral(newInteger(val)));
 }
 
- char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
+const char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
 0 };
 
-boolean nameTerm(name)
-char *name;
-{   int i;
+boolean nameTerm(char *name)
+{   
+    int i;
     boolean done = false;
     boolean isSuper = false;
 
@@ -174,10 +178,11 @@ char *name;
 
     /* not anything else, it must be a global */
     /* must look it up at run time */
-    if (! done) {
+    if (! done) 
+    {
         genInstruction(PushLiteral, genLiteral(newSymbol(name)));
         genMessage(false, 0, newSymbol("value"));
-        }
+    }
 
     return(isSuper);
 }
@@ -332,7 +337,7 @@ char *name;
     return(superTerm);
 }
 
- parsePrimitive()
+void parsePrimitive()
 {   int primitiveNumber, argumentCount;
 
     if (nextToken() != intconst)
@@ -349,10 +354,7 @@ char *name;
     ignore nextToken();
 }
 
- genMessage(toSuper, argumentCount, messagesym)
-boolean toSuper;
-int argumentCount;
-object messagesym;
+void genMessage(boolean toSuper, int argumentCount, object messagesym)
 {   boolean sent = false;
     int i;
 
@@ -416,9 +418,9 @@ boolean unaryContinuation(boolean superReceiver)
     return(superReceiver);
 }
 
- boolean binaryContinuation(superReceiver)
-boolean superReceiver;
-{   boolean superTerm;
+boolean binaryContinuation(boolean superReceiver)
+{   
+    boolean superTerm;
     object messagesym;
 
     superReceiver = unaryContinuation(superReceiver);
@@ -433,10 +435,9 @@ boolean superReceiver;
     return(superReceiver);
 }
 
- int optimizeBlock(instruction, dopop)
-int instruction;
-boolean dopop;
-{   int location;
+int optimizeBlock(int instruction, boolean dopop)
+{   
+    int location;
     enum blockstatus savebstat;
 
     savebstat = blockstat;
@@ -464,9 +465,9 @@ boolean dopop;
     return(location);
 }
 
- boolean keyContinuation(superReceiver)
-boolean superReceiver;
-{   int i, j, argumentCount;
+boolean keyContinuation(boolean superReceiver)
+{   
+    int i, j, argumentCount;
     boolean sent, superTerm;
     object messagesym;
     char pattern[80];
@@ -526,8 +527,7 @@ boolean superReceiver;
     return(superReceiver);
 }
 
- continuation(superReceiver)
-boolean superReceiver;
+void continuation(boolean superReceiver)
 {
     superReceiver = keyContinuation(superReceiver);
 
@@ -539,8 +539,9 @@ boolean superReceiver;
         }
 }
 
- expression()
-{   boolean superTerm;
+void expression()
+{   
+    boolean superTerm;
     char assignname[60];
 
     if (token == nameconst) {   /* possible assignment */
@@ -562,9 +563,9 @@ boolean superReceiver;
         }
 }
 
- assignment(name)
-char *name;
-{   int i;
+void assignment(char* name)
+{   
+    int i;
     boolean done;
 
     done = false;
@@ -593,7 +594,7 @@ char *name;
         }
 }
 
- statement()
+void statement()
 {
 
     if ((token == binary) && streq(tokenString, "^")) {
@@ -612,7 +613,7 @@ char *name;
         }
 }
 
- body()
+void body()
 {
     /* empty blocks are same as nil */
     if ((blockstat == InBlock) || (blockstat == OptimizedBlock))
@@ -643,8 +644,9 @@ char *name;
         }
 }
 
- block()
-{   int saveTemporary, argumentCount, fixLocation;
+void block()
+{   
+    int saveTemporary, argumentCount, fixLocation;
     object tempsym, newBlk;
     enum blockstatus savebstat;
 
@@ -698,8 +700,9 @@ char *name;
     blockstat = savebstat;
 }
 
- temporaries()
-{   object tempsym;
+void temporaries()
+{   
+    object tempsym;
 
     temporaryTop = 0;
     if ((token == binary) && streq(tokenString, "|")) {
@@ -722,8 +725,9 @@ char *name;
         }
 }
 
- messagePattern()
-{   object argsym;
+void messagePattern()
+{   
+    object argsym;
 
     argumentTop = 0;
     ignore strcpy(selector, tokenString);
@@ -756,11 +760,9 @@ char *name;
         compilError(selector,"illegal message selector", tokenString);
 }
 
-boolean parse(method, text, savetext)
-object method;
-char *text;
-boolean savetext;
-{   int i;
+boolean parse(object method, const char* text, boolean savetext)
+{   
+    int i;
     object bytecodes, theLiterals;
     byte *bp;
 

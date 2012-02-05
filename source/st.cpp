@@ -11,6 +11,7 @@
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+#include "interp.h"
 
 object firstProcess;
 int initial = 0;    /* not making initial image */
@@ -28,20 +29,9 @@ int main(int argc, char** argv)
     strcpy(buffer,"systemImage");
     p = buffer;
 
-# ifdef STDWIN
-    /* initialize the standard windows package */
-    winit();
-    wmenusetdeflocal(1);
-# endif
-
     if (argc != 1) p = argv[1];
 
-# ifdef BINREADWRITE
-    fp = fopen(p, "rb");
-# endif
-# ifndef BINREADWRITE
     fp = fopen(p, "r");
-# endif
 
     if (fp == NULL) 
     {
@@ -64,17 +54,7 @@ int main(int argc, char** argv)
     /* execute the main system process loop repeatedly */
     /*debugging = true;*/
 
-# ifndef STDWIN
-    /* not using windowing interface, safe to print out message */
-    printf("Little Smalltalk, Version 3.04\n");
-    printf("Written by Tim Budd, Oregon State University\n");
-# endif
-
     while (execute(firstProcess, 15000)) ;
-
-# ifdef STDWIN
-    wdone();
-# endif
 
     /* exit and return - belt and suspenders, but it keeps lint happy */
     exit(0); 
