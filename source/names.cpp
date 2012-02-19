@@ -38,10 +38,10 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
     /* first get the hash table */
     table = basicAt(dict, 1);
 
-    if (sizeField(table) < 3)
+    if (objectRef(table).sizeField() < 3)
         sysError("attempt to insert into","too small name table");
     else {
-        hash = 3 * ( hash % (sizeField(table) / 3));
+        hash = 3 * ( hash % (objectRef(table).sizeField() / 3));
         tablentry = basicAt(table, hash+1);
         if ((tablentry == nilobj) || (tablentry == key)) {
             basicAtPut(table, hash+1, key);
@@ -80,17 +80,17 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     table = basicAt(dict, 1);
 
     /* now see if table is valid */
-    if ((tablesize = sizeField(table)) < 3)
+    if ((tablesize = objectRef(table).sizeField()) < 3)
         sysError("system error","lookup on null table");
     else {
         hash = 1+ (3 * (hash % (tablesize / 3)));
-        hp = sysMemPtr(table) + (hash-1);
+        hp = objectRef(table).sysMemPtr() + (hash-1);
         key = *hp++; /* table at: hash */
         value = *hp++; /* table at: hash + 1 */
         if ((key != nilobj) && (*fun)(key)) 
             return value;
         for (link = *hp; link != nilobj; link = *hp) {
-            hp = sysMemPtr(link);
+            hp = objectRef(link).sysMemPtr();
             key = *hp++; /* link at: 1 */
             value = *hp++; /* link at: 2 */
             if ((key != nilobj) && (*fun)(key))
@@ -120,7 +120,7 @@ static const char   *charBuffer;
 
 static int strTest(object key) /* test for string equality ---- strTest */
 {
-    if (charPtr(key) && streq(charPtr(key), charBuffer)) {
+    if (objectRef(key).charPtr() && streq(objectRef(key).charPtr(), charBuffer)) {
         objBuffer = key;
         return 1;
         }

@@ -101,7 +101,7 @@ static int unaryPrims(int number, object firstarg)
       break;
 
     case 2:     /* basic size of object */
-      i = sizeField(firstarg);
+      i = objectRef(firstarg).sizeField();
       /* byte objects have negative size */
       if (i < 0) i = (-i);
       returnedObject = newInteger(i);
@@ -197,8 +197,8 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 2:     /* set class of object */
-      decr(classField(firstarg));
-      setClass(firstarg, secondarg);
+      decr(objectRef(firstarg).classField());
+      objectRef(firstarg).setClass(secondarg);
       returnedObject = firstarg;
       break;
 
@@ -207,8 +207,8 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 4:     /* string cat */
-      ignore strcpy(buffer, charPtr(firstarg));
-      ignore strcat(buffer, charPtr(secondarg));
+      ignore strcpy(buffer, objectRef(firstarg).charPtr());
+      ignore strcat(buffer, objectRef(secondarg).charPtr());
       returnedObject = newStString(buffer);
       break;
 
@@ -223,7 +223,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 7:     /* symbol set */
-      nameTableInsert(symbols, strHash(charPtr(firstarg)),
+      nameTableInsert(symbols, strHash(objectRef(firstarg).charPtr()),
           firstarg, secondarg);
       break;
 
@@ -270,7 +270,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
       break;
 
     case 3:         /* string copyFrom:to: */
-      bp = charPtr(firstarg);
+      bp = objectRef(firstarg).charPtr();
       i = intValue(secondarg);
       j = intValue(thirdarg);
       tp = buffer;
@@ -283,7 +283,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
 
     case 9:         /* compile method */
       setInstanceVariables(firstarg);
-      if (parse(thirdarg, charPtr(secondarg), false)) {
+      if (parse(thirdarg, objectRef(secondarg).charPtr(), false)) {
         flushCache(basicAt(thirdarg, messageInMethod), firstarg);
         basicAtPut(thirdarg, methodClassInMethod, firstarg);
         returnedObject = trueobj;
@@ -597,7 +597,7 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
 
     case 8:         /* string unary */
-      returnedObject = strUnary(primitiveNumber-80, charPtr(arguments[0]));
+      returnedObject = strUnary(primitiveNumber-80, objectRef(arguments[0]).charPtr());
       break;
 
     case 10:        /* float unary */

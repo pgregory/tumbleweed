@@ -163,7 +163,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
   object sclass = globalSymbol("Symbol");
   object vclass = getClass(value);
   if(vclass == sclass)
-    realValue = globalSymbol(charPtr(value));
+    realValue = globalSymbol(objectRef(value).charPtr());
   else
     realValue = value;
   switch(argMap)
@@ -192,7 +192,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_STRING_OUT:
     case FFI_SYMBOL:
     case FFI_SYMBOL_OUT:
-      data->charPtr = charPtr(realValue);
+      data->charPtr = objectRef(realValue).charPtr();
       ptr = &data->charPtr;
       break;
     case FFI_INT:
@@ -342,7 +342,7 @@ object ffiPrimitive(int number, object* arguments)
   switch(number - 180) {
     case 0: /* dlopen */
       {
-        char* p = charPtr(arguments[0]);
+        char* p = objectRef(arguments[0]).charPtr();
         sprintf(libName, "%s.%s", p, SO_EXT);
         FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
@@ -360,7 +360,7 @@ object ffiPrimitive(int number, object* arguments)
       {
         // \todo: Check type.
         FFI_LibraryHandle lib = cPointerValue(arguments[0]);
-        char* p = charPtr(arguments[1]);
+        char* p = objectRef(arguments[1]).charPtr();
         if(NULL != lib)
         {
           FFI_FunctionHandle func = dlsym(lib, p);
@@ -384,8 +384,8 @@ object ffiPrimitive(int number, object* arguments)
         FFI_FunctionHandle func = cPointerValue(arguments[0]);
         object rtype = arguments[1];
         int retMap = mapType(rtype);
-        int cargTypes = sizeField(arguments[2]);
-        int cargs = sizeField(arguments[3]);
+        int cargTypes = objectRef(arguments[2]).sizeField();
+        int cargs = objectRef(arguments[3]).sizeField();
         int cOutArgs = 0;
 
         assert(cargTypes <= cargs);
@@ -455,7 +455,7 @@ object ffiPrimitive(int number, object* arguments)
 
         object rtype = arguments[0];
         int retMap = mapType(rtype);
-        int cargTypes = sizeField(arguments[1]);
+        int cargTypes = objectRef(arguments[1]).sizeField();
         ffi_closure* closure;
         ffi_cif *cif = static_cast<ffi_cif*>(calloc(1, sizeof(ffi_cif)));
         object block = arguments[2];
@@ -510,7 +510,7 @@ object ffiPrimitive(int number, object* arguments)
       {
         // \todo: Check type.
         FFI_LibraryHandle lib = cPointerValue(arguments[0]);
-        char* p = charPtr(arguments[1]);
+        char* p = objectRef(arguments[1]).charPtr();
         if(NULL != lib)
         {
           int result = dlclose(lib);

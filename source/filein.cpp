@@ -58,7 +58,7 @@ static object findClassWithMeta(const char* name, object metaObj)
   {
     size = intValue(basicAt(metaObj, sizeInClass));
     newObj = allocObject(size);
-    setClass(newObj, metaObj);
+    objectRef(newObj).setClass(metaObj);
 
     /* now make name */
     nameObj = newSymbol(name);
@@ -84,7 +84,7 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
 
   metaObj = findClass(metaclass);
     classObj = findClassWithMeta(_class, metaObj);
-  setClass(classObj, metaObj);
+  objectRef(classObj).setClass(metaObj);
 
   //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
 
@@ -193,7 +193,7 @@ static void readClassDeclaration()
 
   metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
   classObj = createRawClass(className, metaClassName, superName);
-  setClass(classObj, metaObj);
+  objectRef(classObj).setClass(metaObj);
 
   size = intValue(basicAt(metaObj, sizeInClass));
   instanceVariables[0] = newSymbol("theInstance");
@@ -245,7 +245,7 @@ static void readMethods(FILE* fd, boolean printit)
     classObj = findClass(tokenString);
     setInstanceVariables(classObj);
     if (printit)
-        cp = charPtr(basicAt(classObj, nameInClass));
+        cp = objectRef(basicAt(classObj, nameInClass)).charPtr();
 
     /* now find or create a method table */
     methTable = basicAt(classObj, methodsInClass);
@@ -281,7 +281,7 @@ static void readMethods(FILE* fd, boolean printit)
             basicAtPut(theMethod, methodClassInMethod, classObj);
       basicAtPut(theMethod, protocolInMethod, protocol);
             if (printit)
-                dspMethod(cp, charPtr(selector));
+                dspMethod(cp, objectRef(selector).charPtr());
             nameTableInsert(methTable, (int) selector, selector, theMethod);
             }
         else {

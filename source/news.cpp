@@ -25,7 +25,7 @@ void ncopy(register char* p, register char* q, register int n)      /* ncopy - c
 
 object getClass(register object obj)    /* getClass - get the class of an object */
 {
-    return (classField(obj));
+    return objectRef(obj).classField();
 }
 
 object newArray(int size)
@@ -35,7 +35,7 @@ object newArray(int size)
     newObj = allocObject(size);
     if (arrayClass == nilobj)
         arrayClass = globalSymbol("Array");
-    setClass(newObj, arrayClass);
+    objectRef(newObj).setClass(arrayClass);
     return newObj;
 }
 
@@ -44,7 +44,7 @@ object newBlock()
     object newObj;
 
     newObj = allocObject(blockSize);
-    setClass(newObj, globalSymbol("Block"));
+    objectRef(newObj).setClass(globalSymbol("Block"));
     return newObj;
 }
 
@@ -53,7 +53,7 @@ object newByteArray(int size)
     object newobj;
 
     newobj = allocByte(size);
-    setClass(newobj, globalSymbol("ByteArray"));
+    objectRef(newobj).setClass(globalSymbol("ByteArray"));
     return newobj;
 }
 
@@ -63,7 +63,7 @@ object newChar(int value)
 
     newobj = allocObject(1);
     basicAtPut(newobj, 1, newInteger(value));
-    setClass(newobj, globalSymbol("Char"));
+    objectRef(newobj).setClass(globalSymbol("Char"));
     return(newobj);
 }
 
@@ -72,7 +72,7 @@ object newClass(const char* name)
   object newObj, nameObj, methTable;
 
     newObj = allocObject(classSize);
-    setClass(newObj, globalSymbol("Class"));
+    objectRef(newObj).setClass(globalSymbol("Class"));
 
     /* now make name */
     nameObj = newSymbol(name);
@@ -105,7 +105,7 @@ object newContext(int link, object method, object args, object temp)
     object newObj;
 
     newObj = allocObject(contextSize);
-    setClass(newObj, globalSymbol("Context"));
+    objectRef(newObj).setClass(globalSymbol("Context"));
     basicAtPut(newObj, linkPtrInContext, newInteger(link));
     basicAtPut(newObj, methodInContext, method);
     basicAtPut(newObj, argumentsInContext, args);
@@ -118,7 +118,7 @@ object newDictionary(int size)
     object newObj;
 
     newObj = allocObject(1);
-    setClass(newObj, globalSymbol("Dictionary"));
+    objectRef(newObj).setClass(globalSymbol("Dictionary"));
     basicAtPut(newObj, 1, newArray(size));
     return newObj;
 }
@@ -128,8 +128,8 @@ object newFloat(double d)
     object newObj;
 
     newObj = allocByte((int) sizeof (double));
-    ncopy(charPtr(newObj), (char *) &d, (int) sizeof (double));
-    setClass(newObj, globalSymbol("Float"));
+    ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
+    objectRef(newObj).setClass(globalSymbol("Float"));
     return newObj;
 }
 
@@ -138,8 +138,8 @@ object newInteger(int i)
     object newObj;
 
     newObj = allocByte((int) sizeof (int));
-    ncopy(charPtr(newObj), (char *) &i, (int) sizeof (int));
-    setClass(newObj, globalSymbol("Integer"));
+    ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
+    objectRef(newObj).setClass(globalSymbol("Integer"));
     return newObj;
 }
 
@@ -147,7 +147,7 @@ double floatValue(object o)
 {   
     double d;
 
-    ncopy((char *) &d, charPtr(o), (int) sizeof(double));
+    ncopy((char *) &d, objectRef(o).charPtr(), (int) sizeof(double));
     return d;
 }
 
@@ -157,7 +157,7 @@ int intValue(object o)
 
   if(o == nilobj)
     return 0;
-    ncopy((char *) &d, charPtr(o), (int) sizeof(int));
+    ncopy((char *) &d, objectRef(o).charPtr(), (int) sizeof(int));
     return d;
 }
 
@@ -167,20 +167,20 @@ object newCPointer(void* l)
 
   int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
-    ncopy(charPtr(newObj), (char *) &l, (int) sizeof (void*));
-    setClass(newObj, globalSymbol("CPointer"));
+    ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
+    objectRef(newObj).setClass(globalSymbol("CPointer"));
     return newObj;
 }
 
 void* cPointerValue(object o)
 {   
-  if(NULL == charPtr(o))
+  if(NULL == objectRef(o).charPtr())
     sysError("invalid cPointer","cPointerValue");
 
   void* l;
 
   int s = sizeof(void*);
-    ncopy((char *) &l, charPtr(o), (int) sizeof(void*));
+    ncopy((char *) &l, objectRef(o).charPtr(), (int) sizeof(void*));
     return l;
 }
 
@@ -189,7 +189,7 @@ object newLink(object key, object value)
     object newObj;
 
     newObj = allocObject(3);
-    setClass(newObj, globalSymbol("Link"));
+    objectRef(newObj).setClass(globalSymbol("Link"));
     basicAtPut(newObj, 1, key);
     basicAtPut(newObj, 2, value);
     return newObj;
@@ -199,7 +199,7 @@ object newMethod()
 {   object newObj;
 
     newObj = allocObject(methodSize);
-    setClass(newObj, globalSymbol("Method"));
+    objectRef(newObj).setClass(globalSymbol("Method"));
     return newObj;
 }
 
@@ -210,7 +210,7 @@ object newStString(const char* value)
     newObj = allocStr(value);
     if (stringClass == nilobj)
         stringClass = globalSymbol("String");
-    setClass(newObj, stringClass);
+    objectRef(newObj).setClass(stringClass);
     return(newObj);
 }
 
@@ -227,7 +227,7 @@ object newSymbol(const char* str)
     newObj = allocStr(str);
     if (symbolClass == nilobj)
         symbolClass = globalSymbol("Symbol");
-    setClass(newObj, symbolClass);
+    objectRef(newObj).setClass(symbolClass);
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
     return newObj;
 }

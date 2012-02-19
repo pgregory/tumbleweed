@@ -80,9 +80,9 @@ void setInstanceVariables(object aClass)
         setInstanceVariables(basicAt(aClass, superClassInClass));
         vars = basicAt(aClass, variablesInClass);
         if (vars != nilobj) {
-            limit = sizeField(vars);
+            limit = objectRef(vars).sizeField();
             for (i = 1; i <= limit; i++)
-                instanceName[++instanceTop] = charPtr(basicAt(vars, i));
+                instanceName[++instanceTop] = objectRef(basicAt(vars, i)).charPtr();
             }
         }
 }
@@ -666,7 +666,7 @@ void block()
                 compilError(selector,"too many temporaries in method","");
             else {
                 tempsym = newSymbol(tokenString);
-                temporaryName[temporaryTop] = charPtr(tempsym);
+                temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
                 }
             ignore nextToken();
             }
@@ -714,7 +714,7 @@ void temporaries()
                 compilError(selector,"too many temporaries in method","");
             else {
                 tempsym = newSymbol(tokenString);
-                temporaryName[temporaryTop] = charPtr(tempsym);
+                temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
                 }
             ignore nextToken();
             }
@@ -738,7 +738,7 @@ void messagePattern()
         if (token != nameconst) 
             compilError(selector,"binary message pattern not followed by name",selector);
         argsym = newSymbol(tokenString);
-        argumentName[++argumentTop] = charPtr(argsym);
+        argumentName[++argumentTop] = objectRef(argsym).charPtr();
         ignore nextToken();
         }
     else if (token == namecolon) {  /* keyword message pattern */
@@ -752,7 +752,7 @@ void messagePattern()
             if (++argumentTop > argumentLimit)
                 compilError(selector,"too many arguments in method","");
             argsym = newSymbol(tokenString);
-            argumentName[argumentTop] = charPtr(argsym);
+            argumentName[argumentTop] = objectRef(argsym).charPtr();
             ignore nextToken();
             }
         }
@@ -788,7 +788,7 @@ boolean parse(object method, const char* text, boolean savetext)
         }
     else {
         bytecodes = newByteArray(codeTop);
-        bp = bytePtr(bytecodes);
+        bp = objectRef(bytecodes).bytePtr();
         for (i = 0; i < codeTop; i++) {
             bp[i] = codeArray[i];
             }

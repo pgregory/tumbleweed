@@ -41,6 +41,16 @@ struct objectStruct
     object* memoryPtr();
     byte* bytePtr();
     char* charPtr();
+
+    void simpleAtPut(object o, int i, object v);
+    void basicAtPut(int, object);
+    void simpleAtPut(int, object);
+    void incr();
+    void decr();
+    void fieldAtPut(int, object);
+    int byteAt(int);
+    void byteAtPut(int, int);
+    object basicAt(int i);
 };
 # define ObjectTableMax 32500
 
@@ -92,19 +102,6 @@ extern object allocStr( CSTR );
 
 extern object newCPointer(void* l);
 extern void* cPointerValue(object);
-/*
-    Finally, a few routines (or macros) are used to access or set
-  _class fields and size fields of objects
-*/
-
-extern object classField(object x);
-extern void setClass(object x, object y);
-extern short sizeField(object x);
-extern void setSizeField(object x, short size);
-extern object* sysMemPtr(object x);
-extern object* memoryPtr(object x);
-extern byte* bytePtr(object x);
-extern char* charPtr(object x);
 
 extern object sysobj;
 # define nilobj (object) 0
@@ -149,34 +146,15 @@ void setFreeLists();
 int garbageCollect(int verbose);
 
 
-# ifndef basicAtPut
 extern void basicAtPut(object, int, object);
-# endif
-# ifndef simpleAtPut
 extern void simpleAtPut(object, int, object);
-# endif
-# ifndef incr
 extern void incr(object);
-# endif
-# ifndef decr
 extern void decr(object);
-# endif
-# ifdef fieldAtPut
 extern int f_i;
-#else
 extern void fieldAtPut(object, int, object);
-# endif
-# ifndef byteAt
 extern int byteAt(object, int);
-# endif
-# ifndef byteAtPut
 extern void byteAtPut(object, int, int);
-# endif
-
-# ifndef basicAt
 extern object basicAt(object o, int i);
-# endif
-
 
 
 #include <map>
@@ -200,7 +178,7 @@ class MemoryManager
         void setFreeLists(); 
         int garbageCollect(int verbose);
 
-        objectStruct& objectAt(object id);
+        objectStruct& objectFromID(object id);
 
     private:
         TObjectFreeList objectFreeList;
@@ -209,4 +187,6 @@ class MemoryManager
 };
 
 extern MemoryManager* theMemoryManager;
+
+#define objectRef(x) (theMemoryManager->objectFromID(x))
 

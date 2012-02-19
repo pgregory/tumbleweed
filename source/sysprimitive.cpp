@@ -69,12 +69,12 @@ object sysPrimitive(int number, object* arguments)
   switch(number - 150) {
     case 0:     /* do a system() call */
       returnedObject = newInteger(system(
-            charPtr(arguments[0])));
+            objectRef(arguments[0]).charPtr()));
       break;
 
     case 1: /* readline, with history support */
 /*      {
-        char* p = readline(charPtr(arguments[0]));
+        char* p = readline(objectRef(arguments[0]).charPtr());
         add_history(p);
         returnedObject = newStString(p);
       }*/

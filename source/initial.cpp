@@ -104,16 +104,16 @@ void makeInitialImage()
     symbolObj = newSymbol("Symbol");
     symbolClass = newClass("Symbol");
     integerClass = newClass("Integer");
-    setClass(symbolObj, symbolClass);
+    objectRef(symbolObj).setClass(symbolClass);
     classClass = newClass("Class");
-    setClass(symbolClass, classClass);
-    setClass(integerClass, classClass);
+    objectRef(symbolClass).setClass(classClass);
+    objectRef(integerClass).setClass(classClass);
   metaClassClass = newClass("MetaClass");
-    setClass(classClass, metaClassClass);
+    objectRef(classClass).setClass(metaClassClass);
   objectClass = newClass("Object");
   metaObjectClass = newClass("MetaObject");
-  setClass(objectClass, metaObjectClass);
-  setClass(metaObjectClass, classClass);
+  objectRef(objectClass).setClass(metaObjectClass);
+  objectRef(metaObjectClass).setClass(classClass);
 
   basicAtPut(metaClassClass, superClassInClass, metaObjectClass);
   basicAtPut(metaObjectClass, superClassInClass, classClass);
@@ -123,9 +123,9 @@ void makeInitialImage()
     /* and make a couple common classes, just to hold their places */
     ignore newClass("Link");
     ignore newClass("ByteArray");
-    setClass(hashTable, newClass("Array"));
-    setClass(symbols, newClass("Dictionary"));
-    setClass(nilobj, newClass("UndefinedObject"));
+    objectRef(hashTable).setClass(newClass("Array"));
+    objectRef(symbols).setClass(newClass("Dictionary"));
+    objectRef(nilobj).setClass(newClass("UndefinedObject"));
     ignore newClass("String");
     nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
 

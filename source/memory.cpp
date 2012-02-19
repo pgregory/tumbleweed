@@ -84,7 +84,7 @@ object allocByte(int size)
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    setSizeField(newObj, -size);
+    objectRef(newObj).setSizeField(-size);
     return newObj;
 }
 
@@ -96,13 +96,13 @@ object allocStr(register const char* str)
     if(NULL != str)
     {
         newSym = allocByte(1 + strlen(str));
-        t = charPtr(newSym);
+        t = objectRef(newSym).charPtr();
         ignore strcpy(t, str);
     }
     else
     {
         newSym = allocByte(1);
-        charPtr(newSym)[0] = '\0';
+        objectRef(newSym).charPtr()[0] = '\0';
     }
     return(newSym);
 }
@@ -132,20 +132,20 @@ void sysDecr(object z, int visit)
 
 object basicAt(object o, int i)
 {
-    if(( i <= 0) || (i > sizeField(o)))
+    if(( i <= 0) || (i > objectRef(o).sizeField()))
         sysError("index out of range", "basicAt");
     else
-        return (sysMemPtr(o)[i-1]);
+        return (objectRef(o).sysMemPtr()[i-1]);
 
     return nilobj;
 }
 
 void simpleAtPut(object o, int i, object v)
 {
-    if((i <= 0) || (i > sizeField(o)))
+    if((i <= 0) || (i > objectRef(o).sizeField()))
         sysError("index out of range", "simpleAtPut");
     else
-        sysMemPtr(o)[i-1] = v;
+        objectRef(o).sysMemPtr()[i-1] = v;
 }
 
 void basicAtPut(object o, int i, object v)
@@ -165,11 +165,11 @@ int byteAt(object o, int i)
     byte* bp;
     unsigned char t;
 
-    if((i <= 0) || (i > 2 * - sizeField(o)))
+    if((i <= 0) || (i > 2 * - objectRef(o).sizeField()))
         sysError("index out of range", "byteAt");
     else
     {
-        bp = bytePtr(o);
+        bp = objectRef(o).bytePtr();
         t = bp[i-1];
         i = (int) t;
     }
@@ -179,14 +179,14 @@ int byteAt(object o, int i)
 void byteAtPut(object z, int i, int x)
 {      
     byte *bp;
-    if ((i <= 0) || (i > 2 * - sizeField(z))) 
+    if ((i <= 0) || (i > 2 * - objectRef(z).sizeField())) 
     {
-        fprintf(stderr,"index %d size %d\n", i, sizeField(z));
+        fprintf(stderr,"index %d size %d\n", i, objectRef(z).sizeField());
         sysError("index out of range", "byteAtPut");
     }
     else 
     {
-        bp = bytePtr(z);
+        bp = objectRef(z).bytePtr();
         bp[i-1] = x;
     }
 }
@@ -216,7 +216,7 @@ void visit(register object x)
     //      {
                 /* then it's the first time we've visited it, so: */
                 visit(theMemoryManager->objectTable[x>>1]._class);
-                s = sizeField(x);
+                s = objectRef(x).sizeField();
                 if (s>0) 
                 {
                     p = theMemoryManager->objectTable[x>>1].memory;
@@ -283,39 +283,6 @@ int garbageCollect(int verbose)
 
 
 
-
-object classField(object x)
-{
-    return theMemoryManager->objectAt(x).classField();
-}
-void setClass(object x, object y)
-{
-    theMemoryManager->objectAt(x).setClass(y);
-}
-short sizeField(object x)
-{
-    return theMemoryManager->objectAt(x).sizeField();
-}
-void setSizeField(object x, short size)
-{
-    theMemoryManager->objectAt(x).setSizeField(size);
-}
-object* sysMemPtr(object x)
-{
-    return theMemoryManager->objectAt(x).sysMemPtr();
-}
-object* memoryPtr(object x)
-{
-    return theMemoryManager->objectAt(x).memoryPtr();
-}
-byte* bytePtr(object x)
-{
-    return theMemoryManager->objectAt(x).bytePtr();
-}
-char* charPtr(object x)
-{
-    return theMemoryManager->objectAt(x).charPtr();
-}
 
 
 MemoryManager::MemoryManager()
@@ -426,7 +393,7 @@ object MemoryManager::allocByte(size_t size)
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    setSizeField(newObj, -size);
+    objectRef(newObj).setSizeField(-size);
     return newObj;
 }
 
@@ -438,13 +405,13 @@ object MemoryManager::allocStr(register const char* str)
     if(NULL != str)
     {
         newSym = allocByte(1 + strlen(str));
-        t = charPtr(newSym);
+        t = objectRef(newSym).charPtr();
         ignore strcpy(t, str);
     }
     else
     {
         newSym = allocByte(1);
-        charPtr(newSym)[0] = '\0';
+        objectRef(newSym).charPtr()[0] = '\0';
     }
     return(newSym);
 }
@@ -499,7 +466,7 @@ int MemoryManager::garbageCollect(int verbose)
      int c=1,f=0;
 }
 
-objectStruct& MemoryManager::objectAt(object id)
+objectStruct& MemoryManager::objectFromID(object id)
 {
     return objectTable[id>>1];
 }
@@ -513,33 +480,81 @@ object objectStruct::classField()
 {
     return _class;
 }
+
 void objectStruct::setClass(object y)
 {
     _class = y;
-    incr(y);
+    ::incr(y);
 }
+
 short objectStruct::sizeField()
 {
     return size;
 }
+
 void objectStruct::setSizeField(short _size)
 {
     size = _size;
 }
+
 object* objectStruct::sysMemPtr()
 {
     return memory;
 }
+
 object* objectStruct::memoryPtr()
 {
     return sysMemPtr();
 }
+
 byte* objectStruct::bytePtr()
 {
     return (byte *)memoryPtr();
 }
+
 char* objectStruct::charPtr()
 {
     return (char *)memoryPtr();
+}
+
+
+void objectStruct::simpleAtPut(object o, int i, object v)
+{
+    if((i <= 0) || (i > objectRef(o).sizeField()))
+        sysError("index out of range", "simpleAtPut");
+    else
+        objectRef(o).sysMemPtr()[i-1] = v;
+}
+
+void objectStruct::basicAtPut(int, object)
+{
+}
+
+void objectStruct::simpleAtPut(int, object)
+{
+}
+
+void objectStruct::incr()
+{
+}
+
+void objectStruct::decr()
+{
+}
+
+void objectStruct::fieldAtPut(int, object)
+{
+}
+
+int objectStruct::byteAt(int)
+{
+}
+
+void objectStruct::byteAtPut(int, int)
+{
+}
+
+object objectStruct::basicAt(int i)
+{
 }
 
