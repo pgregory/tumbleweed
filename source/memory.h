@@ -115,9 +115,7 @@ extern object sysobj;
     This can, and should, be replaced by a better memory management
     algorithm.
 */
-# ifndef mBlockAlloc
-extern object *mBlockAlloc(INT);
-# endif
+# define mBlockAlloc(size) (object *) calloc((unsigned) size, sizeof(object))
 
 /*
     the dictionary symbols is the source of all symbols in the system
@@ -169,4 +167,34 @@ extern void byteAtPut(object, int, int);
 # ifndef basicAt
 extern object basicAt(object o, int i);
 # endif
+
+
+
+#include <map>
+#include <vector>
+
+typedef std::map<size_t, object>    TObjectFreeList;
+typedef TObjectFreeList::iterator   TObjectFreeListIterator;
+typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
+typedef std::vector<objectStruct> TObjectTable;
+
+class MemoryManager
+{
+    public:
+        MemoryManager();
+        ~MemoryManager();
+
+        object allocObject(size_t memorySize);
+        object allocByte(size_t size);
+        object allocStr(register const char* str);
+        void sysDecr(object z, int visit);
+        void setFreeLists(); 
+        int garbageCollect(int verbose);
+
+    private:
+        TObjectFreeList objectFreeList;
+        //TObjectTable    objectTable;
+};
+
+extern MemoryManager* theMemoryManager;
 

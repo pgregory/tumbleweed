@@ -48,6 +48,7 @@ object symbols;     /* table of all symbols created */
 */
 
 struct objectStruct *objectTable;
+MemoryManager* theMemoryManager;
 
 /*
     The following variables are strictly local to the memory
@@ -59,193 +60,23 @@ struct objectStruct *objectTable;
 # define FREELISTMAX 2000
 static object objectFreeList[FREELISTMAX];/* free list of objects */
 
-# ifndef mBlockAlloc
-
-# define MemoryBlockSize 6000   /* the current memory block being hacked up */
-static object *memoryBlock;     /* malloc'ed chunck of memory */
-static int    currentMemoryPosition;    /* last used position in above */
-
-# endif
-
 
 /* initialize the memory management module */
 noreturn initMemoryManager() 
 {
-    int i;
-
-  objectTable = static_cast<objectStruct*>(calloc(ObjectTableMax, sizeof(struct objectStruct)));
-  if (! objectTable)
-    sysError("cannot allocate","object table");
-
-  /* set all the free list pointers to zero */
-  for (i = 0; i < FREELISTMAX; i++)
-    objectFreeList[i] = nilobj;
-
-    /* set all the reference counts to zero */
-    for (i = 0; i < ObjectTableMax; i++) 
-    {
-        objectTable[i].referenceCount = 0;
-        objectTable[i].size = 0;
-    }
-
-  /* make up the initial free lists */
-  setFreeLists();
-
-# ifndef mBlockAlloc
-  /* force an allocation on first object assignment */
-  currentMemoryPosition = MemoryBlockSize + 1;
-# endif
-
-  /* object at location 0 is the nil object, so give it nonzero ref */
-  objectTable[0].referenceCount = 1;
-  objectTable[0].size = 0;
+    theMemoryManager = new MemoryManager();
 }
 
 /* setFreeLists - initialise the free lists */
 void setFreeLists() 
 {
-#if 0
-    int i, size;
-    register int z;
-    register struct objectStruct *p;
-
-    objectFreeList[0] = nilobj;
-
-    for (z=ObjectTableMax-1; z>0; z--) {
-        if (objectTable[z].referenceCount == 0){
-      sysDecr(z, 0);
-            /* Unreferenced, so do a sort of sysDecr: */
-            p= &objectTable[z];
-            size = p->size;
-            if (size < 0) size = ((-size) + 1)/2;
-            p->_class = objectFreeList[size];
-            objectFreeList[size]= z;
-            for (i= size; i>0; )
-                p->memory[--i] = nilobj;
-            }
-        }
-#endif
-    register unsigned int z;
-
-    /* set all the free list pointers to zero */
-    for (z = 0; z < FREELISTMAX; z++)
-        objectFreeList[z] = nilobj;
-
-    /* add free objects */
-    for (z=ObjectTableMax-1; z>0; z--)
-        if (objectTable[z].referenceCount == 0)
-        sysDecr(z<<1, 0);
+    theMemoryManager->setFreeLists();
 }
-
-/*
-  mBlockAlloc - rip out a block (array) of object of the given size from
-    the current malloc block 
-*/
-# ifndef mBlockAlloc
-
-object *mBlockAlloc(int memorySize)
-{   
-    object *objptr;
-
-    if (currentMemoryPosition + memorySize >= MemoryBlockSize) 
-    {
-        /* we toss away space here.  Space-Frugal users may want to
-        fix this by making a new object of size
-        MemoryBlockSize - currentMemoryPositon - 1
-        and putting it on the free list, but I think
-        the savings is potentially small */
-
-        memoryBlock = (object *) calloc((unsigned) MemoryBlockSize, sizeof(object));
-        if (! memoryBlock)
-            sysError("out of memory","malloc failed");
-        currentMemoryPosition = 0;
-    }
-    objptr = (object *) &memoryBlock[currentMemoryPosition];
-    currentMemoryPosition += memorySize;
-    return(objptr);
-}
-# endif
 
 /* allocate a new memory object */
 object allocObject(int memorySize)
 {   
-    int i;
-    register int position;
-    boolean done;
-
-    if (memorySize >= FREELISTMAX) 
-    {
-        fprintf(stderr,"size %d\n", memorySize);
-        sysError("allocation bigger than permitted","allocObject");
-    }
-
-    /* first try the free lists, this is fastest */
-    if ((position = objectFreeList[memorySize]) != 0) 
-    {
-        objectFreeList[memorySize] = objectTable[position]._class;
-    }
-
-    /* if not there, next try making a size zero object and
-        making it bigger */
-    else if ((position = objectFreeList[0]) != 0) 
-    {
-        objectFreeList[0] = objectTable[position]._class;
-        objectTable[position].size = memorySize;
-        objectTable[position].memory = mBlockAlloc(memorySize);
-    }
-
-    else 
-    {      /* not found, must work a bit harder */
-        done = false;
-
-        /* first try making a bigger object smaller */
-        for (i = memorySize + 1; i < FREELISTMAX; i++)
-        {
-            if ((position = objectFreeList[i]) != 0) 
-            {
-                objectFreeList[i] = objectTable[position]._class;
-                /* just trim it a bit */
-                objectTable[position].size = memorySize;
-                done = true;
-                break;
-            }
-        }
-
-        /* next try making a smaller object bigger */
-        if (! done)
-        {
-            for (i = 1; i < memorySize; i++)
-            {
-                if ((position = objectFreeList[i]) != 0) 
-                {
-                    objectFreeList[i] =
-                        objectTable[position]._class;
-                    objectTable[position].size = memorySize;
-# ifdef mBlockAlloc
-                    free(objectTable[position].memory);
-# endif
-                    objectTable[position].memory = 
-                        mBlockAlloc(memorySize);
-                    done = true;
-                    break;
-                }
-            }
-        }
-
-        /* if we STILL don't have it then there is nothing */
-        /* more we can do */
-        if (! done)
-        {
-            printf("Object count: %d\n", objectCount());
-            sysError("out of objects","alloc");
-        }
-    }
-
-    /* set class and type */
-    objectTable[position].referenceCount = 0;
-    objectTable[position]._class = nilobj;
-    objectTable[position].size = memorySize;
-    return(position << 1);
+    return theMemoryManager->allocObject(memorySize);
 }
 
 object allocByte(int size)
@@ -295,32 +126,7 @@ void decr(object o)
 /* do the real work in the decr procedure */
 void sysDecr(object z, int visit)
 {   
-    register struct objectStruct *p;
-    register int i;
-    int size;
-
-    p = &objectTable[z>>1];
-    if (p->referenceCount < 0) 
-    {
-        fprintf(stderr,"object %d\n", static_cast<int>(z));
-        sysError("negative reference count","");
-    }
-    if(visit) decr(p->_class);
-    size = p->size;
-    if (size < 0) size = ((- size) + 1) /2;
-    p->_class = objectFreeList[size];
-    objectFreeList[size] = z>>1;
-    if (size > 0) 
-    {
-        if (visit && p->size > 0)
-        {
-            for (i = size; i; )
-                decr(p->memory[--i]);
-        }
-        for (i = size; i > 0; )
-            p->memory[--i] = nilobj;
-    }
-    p->size = size;
+    theMemoryManager->sysDecr(z, visit);
 }
 
 
@@ -474,4 +280,187 @@ int garbageCollect(int verbose)
     if (verbose)
         fprintf(stderr," %d objects.\n",c);
     return c;
+}
+
+
+
+MemoryManager::MemoryManager()
+{
+    int i;
+
+    objectTable = static_cast<objectStruct*>(calloc(ObjectTableMax,
+        sizeof(struct objectStruct))); if (! objectTable)
+        sysError("cannot allocate","object table");
+    //objectTable.resize(ObjectTableMax);
+
+
+    /* set all the reference counts to zero */
+    for (i = 0; i < ObjectTableMax; i++) {
+        objectTable[i].referenceCount = 0; objectTable[i].size = 0; }
+
+    /* make up the initial free lists */
+    setFreeLists();
+
+    /* object at location 0 is the nil object, so give it nonzero ref */
+    objectTable[0].referenceCount = 1; objectTable[0].size = 0;
+}
+
+MemoryManager::~MemoryManager()
+{
+}
+
+object MemoryManager::allocObject(size_t memorySize)
+{
+    int i;
+    size_t position;
+    boolean done;
+    TObjectFreeListIterator tpos;
+
+    /* first try the free lists, this is fastest */
+    if((tpos = objectFreeList.find(memorySize)) != objectFreeList.end() &&
+            tpos->second != nilobj)
+    {
+        position = tpos->second;
+        tpos->second = objectTable[position]._class;
+    }
+
+    /* if not there, next try making a size zero object and
+        making it bigger */
+    else if ((tpos = objectFreeList.find(0)) != objectFreeList.end() &&
+            tpos->second != nilobj) 
+    {
+        position = tpos->second;
+        objectFreeList[0] = objectTable[position]._class;
+        objectTable[position].size = memorySize;
+        objectTable[position].memory = mBlockAlloc(memorySize);
+    }
+
+    else 
+    {      /* not found, must work a bit harder */
+        done = false;
+
+        /* first try making a bigger object smaller */
+        TObjectFreeListIterator tbigger = objectFreeList.upper_bound(memorySize);
+        if(tbigger != objectFreeList.end() &&
+                tbigger->second != nilobj)
+        {
+            position = tbigger->second;
+            tbigger->second = objectTable[position]._class;
+            /* just trim it a bit */
+            objectTable[position].size = memorySize;
+            done = true;
+        }
+
+        /* next try making a smaller object bigger */
+        if (! done)
+        {
+            TObjectFreeListIterator tsmaller = objectFreeList.lower_bound(memorySize);
+            if(tsmaller != objectFreeList.begin() &&
+                    (--tsmaller != objectFreeList.begin()) &&
+                     tsmaller->second != nilobj)
+            {
+                position = tsmaller->second;
+                tsmaller->second = objectTable[position]._class;
+                objectTable[position].size = memorySize;
+
+                free(objectTable[position].memory);
+
+                objectTable[position].memory = mBlockAlloc(memorySize);
+                done = true;
+            }
+        }
+
+        /* if we STILL don't have it then there is nothing */
+        /* more we can do */
+        if (! done)
+        {
+            printf("Object count: %d\n", objectCount());
+            sysError("out of objects","alloc");
+        }
+    }
+
+    /* set class and type */
+    objectTable[position].referenceCount = 0;
+    objectTable[position]._class = nilobj;
+    objectTable[position].size = memorySize;
+    return(position << 1);
+}
+
+object MemoryManager::allocByte(size_t size)
+{
+    object newObj;
+
+    newObj = allocObject((size + 1) / 2);
+    /* negative size fields indicate bit objects */
+    setSizeField(newObj, -size);
+    return newObj;
+}
+
+object MemoryManager::allocStr(register const char* str)
+{
+    register object newSym;
+    char* t;
+
+    if(NULL != str)
+    {
+        newSym = allocByte(1 + strlen(str));
+        t = charPtr(newSym);
+        ignore strcpy(t, str);
+    }
+    else
+    {
+        newSym = allocByte(1);
+        charPtr(newSym)[0] = '\0';
+    }
+    return(newSym);
+}
+
+void MemoryManager::sysDecr(object z, int visit)
+{
+    register struct objectStruct *p;
+    register int i;
+    int size;
+
+    p = &objectTable[z>>1];
+    if (p->referenceCount < 0) 
+    {
+        fprintf(stderr,"object %d\n", static_cast<int>(z));
+        sysError("negative reference count","");
+    }
+    if(visit) decr(p->_class);
+    size = p->size;
+    if (size < 0) size = ((- size) + 1) /2;
+    p->_class = objectFreeList[size];
+    objectFreeList[size] = z>>1;
+    if (size > 0) 
+    {
+        if (visit && p->size > 0)
+        {
+            for (i = size; i; )
+                decr(p->memory[--i]);
+        }
+        for (i = size; i > 0; )
+            p->memory[--i] = nilobj;
+    }
+    p->size = size;
+}
+
+void MemoryManager::setFreeLists() 
+{
+    objectFreeList.clear();
+
+    /* add free objects */
+    for(int z=ObjectTableMax-1; z>0; z--)
+    {
+        // If really unused, sysDecr will take care
+        // of cleaning up and adding to the free list.
+        if (objectTable[z].referenceCount == 0)
+            sysDecr(z<<1, 0);
+    }
+}
+
+int MemoryManager::garbageCollect(int verbose)
+{
+     register int j;
+     int c=1,f=0;
 }
