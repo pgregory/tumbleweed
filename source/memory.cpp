@@ -47,7 +47,6 @@ object symbols;     /* table of all symbols created */
     calloc during the initialization of the memory manager.
 */
 
-struct objectStruct *objectTable;
 MemoryManager* theMemoryManager;
 
 /*
@@ -85,7 +84,7 @@ object allocByte(int size)
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    sizeField(newObj) = - size;
+    setSizeField(newObj, -size);
     return newObj;
 }
 
@@ -111,14 +110,14 @@ object allocStr(register const char* str)
 void incr(object o)
 {
     if(nilobj != o)
-        objectTable[o>>1].referenceCount++;
+        theMemoryManager->objectTable[o>>1].referenceCount++;
 }
 
 void decr(object o)
 {
   if(nilobj != o)
   {
-    if( --objectTable[o>>1].referenceCount <= 0)
+    if( --theMemoryManager->objectTable[o>>1].referenceCount <= 0)
       sysDecr(o, 1);
   }
 }
@@ -209,18 +208,18 @@ void visit(register object x)
 
     if (x) 
     {
-        if (objectTable[x>>1].referenceCount > 0)
-            objectTable[x>>1].referenceCount = 0;
-        if (--(objectTable[x>>1].referenceCount) == -1) 
+        if (theMemoryManager->objectTable[x>>1].referenceCount > 0)
+            theMemoryManager->objectTable[x>>1].referenceCount = 0;
+        if (--(theMemoryManager->objectTable[x>>1].referenceCount) == -1) 
         {
-    //      if (++(objectTable[x>>1].referenceCount) == 1) 
+    //      if (++(theMemoryManager->objectTable[x>>1].referenceCount) == 1) 
     //      {
                 /* then it's the first time we've visited it, so: */
-                visit(objectTable[x>>1]._class);
+                visit(theMemoryManager->objectTable[x>>1]._class);
                 s = sizeField(x);
                 if (s>0) 
                 {
-                    p = objectTable[x>>1].memory;
+                    p = theMemoryManager->objectTable[x>>1].memory;
                     for (i=s; i; --i) visit(*p++);
                 }
     //      }
@@ -233,7 +232,7 @@ int objectCount()
     register int i, j;
     j = 0;
     for (i = 0; i < ObjectTableMax; i++)
-        if (objectTable[i].referenceCount > 0)
+        if (theMemoryManager->objectTable[i].referenceCount > 0)
             j++;
     return j;
 }
@@ -263,16 +262,16 @@ int garbageCollect(int verbose)
 
     for (j=ObjectTableMax-1; j>0; j--) 
     {
-        if (objectTable[j].referenceCount > 0) 
+        if (theMemoryManager->objectTable[j].referenceCount > 0) 
         {
-            objectTable[j].referenceCount = 0;
+            theMemoryManager->objectTable[j].referenceCount = 0;
             sysDecr(j<<1,0);
             f++;
         } 
         else
         {
-            if (0!=(objectTable[j].referenceCount =
-                -objectTable[j].referenceCount))
+            if (0!=(theMemoryManager->objectTable[j].referenceCount =
+                -theMemoryManager->objectTable[j].referenceCount))
             c++;
         }
     }
@@ -282,6 +281,41 @@ int garbageCollect(int verbose)
     return c;
 }
 
+
+
+
+object classField(object x)
+{
+    return theMemoryManager->objectAt(x).classField();
+}
+void setClass(object x, object y)
+{
+    theMemoryManager->objectAt(x).setClass(y);
+}
+short sizeField(object x)
+{
+    return theMemoryManager->objectAt(x).sizeField();
+}
+void setSizeField(object x, short size)
+{
+    theMemoryManager->objectAt(x).setSizeField(size);
+}
+object* sysMemPtr(object x)
+{
+    return theMemoryManager->objectAt(x).sysMemPtr();
+}
+object* memoryPtr(object x)
+{
+    return theMemoryManager->objectAt(x).memoryPtr();
+}
+byte* bytePtr(object x)
+{
+    return theMemoryManager->objectAt(x).bytePtr();
+}
+char* charPtr(object x)
+{
+    return theMemoryManager->objectAt(x).charPtr();
+}
 
 
 MemoryManager::MemoryManager()
@@ -464,3 +498,48 @@ int MemoryManager::garbageCollect(int verbose)
      register int j;
      int c=1,f=0;
 }
+
+objectStruct& MemoryManager::objectAt(object id)
+{
+    return objectTable[id>>1];
+}
+
+
+
+
+
+
+object objectStruct::classField()
+{
+    return _class;
+}
+void objectStruct::setClass(object y)
+{
+    _class = y;
+    incr(y);
+}
+short objectStruct::sizeField()
+{
+    return size;
+}
+void objectStruct::setSizeField(short _size)
+{
+    size = _size;
+}
+object* objectStruct::sysMemPtr()
+{
+    return memory;
+}
+object* objectStruct::memoryPtr()
+{
+    return sysMemPtr();
+}
+byte* objectStruct::bytePtr()
+{
+    return (byte *)memoryPtr();
+}
+char* objectStruct::charPtr()
+{
+    return (char *)memoryPtr();
+}
+

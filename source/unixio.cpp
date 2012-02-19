@@ -51,23 +51,23 @@ void imageRead(FILE* fp)
 
     if ((i < 0) || (i > ObjectTableMax))
       sysError("reading index out of range","");
-    objectTable[i]._class = dummyObject.cl;
-    if ((objectTable[i]._class < 0) || 
-        ((objectTable[i]._class>>1) > ObjectTableMax)) {
+    theMemoryManager->objectTable[i]._class = dummyObject.cl;
+    if ((theMemoryManager->objectTable[i]._class < 0) || 
+        ((theMemoryManager->objectTable[i]._class>>1) > ObjectTableMax)) {
       fprintf(stderr,"index %d\n", static_cast<int>(dummyObject.cl));
       sysError("class out of range","imageRead");
     }
-    objectTable[i].size = size = dummyObject.ds;
+    theMemoryManager->objectTable[i].size = size = dummyObject.ds;
     if (size < 0) size = ((- size) + 1) / 2;
     if (size != 0) {
-      objectTable[i].memory = mBlockAlloc((int) size);
-      ignore fr(fp, (char *) objectTable[i].memory,
+      theMemoryManager->objectTable[i].memory = mBlockAlloc((int) size);
+      ignore fr(fp, (char *) theMemoryManager->objectTable[i].memory,
           sizeof(object) * (int) size);
     }
     else
-      objectTable[i].memory = (object *) 0;
+      theMemoryManager->objectTable[i].memory = (object *) 0;
 
-        objectTable[i].referenceCount = 666;
+        theMemoryManager->objectTable[i].referenceCount = 666;
   }
 
   /* now restore ref counts, getting rid of unneeded junk */
@@ -97,14 +97,14 @@ void imageWrite(FILE* fp)
   fw(fp, (char *) &symbols, sizeof(object));
 
   for (i = 0; i < ObjectTableMax; i++) {
-    if (objectTable[i].referenceCount > 0) {
+    if (theMemoryManager->objectTable[i].referenceCount > 0) {
       dummyObject.di = i;
-      dummyObject.cl = objectTable[i]._class;
-      dummyObject.ds = size = objectTable[i].size;
+      dummyObject.cl = theMemoryManager->objectTable[i]._class;
+      dummyObject.ds = size = theMemoryManager->objectTable[i].size;
       fw(fp, (char *) &dummyObject, sizeof(dummyObject));
       if (size < 0) size = ((- size) + 1) / 2;
       if (size != 0)
-        fw(fp, (char *) objectTable[i].memory,
+        fw(fp, (char *) theMemoryManager->objectTable[i].memory,
             sizeof(object) * size);
     }
   }

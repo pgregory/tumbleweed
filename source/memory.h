@@ -26,15 +26,24 @@ file make use of this structure: therefore modifications or even complete
 replacement is possible as long as the interface remains consistent
 */
 
-struct objectStruct {
+struct objectStruct 
+{
     object _class;
     short referenceCount;
     short size;
     object *memory;
-    };
+
+    object classField();
+    void setClass(object y);
+    short sizeField();
+    void setSizeField(short size);
+    object* sysMemPtr();
+    object* memoryPtr();
+    byte* bytePtr();
+    char* charPtr();
+};
 # define ObjectTableMax 32500
 
-extern struct objectStruct *objectTable;
 
 /*
     The most basic routines to the memory manager are incr and decr,
@@ -88,16 +97,16 @@ extern void* cPointerValue(object);
   _class fields and size fields of objects
 */
 
-# define classField(x) objectTable[x>>1]._class
-# define setClass(x,y) incr(classField(x)=y)
-# define sizeField(x) objectTable[x>>1].size
+extern object classField(object x);
+extern void setClass(object x, object y);
+extern short sizeField(object x);
+extern void setSizeField(object x, short size);
+extern object* sysMemPtr(object x);
+extern object* memoryPtr(object x);
+extern byte* bytePtr(object x);
+extern char* charPtr(object x);
 
-# define sysMemPtr(x) objectTable[x>>1].memory
 extern object sysobj;
-# define memoryPtr(x) sysMemPtr(x)
-# define bytePtr(x) ((byte *) memoryPtr(x))
-# define charPtr(x) ((char *) memoryPtr(x))
-
 # define nilobj (object) 0
 
 /*
@@ -176,7 +185,7 @@ extern object basicAt(object o, int i);
 typedef std::map<size_t, object>    TObjectFreeList;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
-typedef std::vector<objectStruct> TObjectTable;
+typedef struct objectStruct* TObjectTable;
 
 class MemoryManager
 {
@@ -191,9 +200,12 @@ class MemoryManager
         void setFreeLists(); 
         int garbageCollect(int verbose);
 
+        objectStruct& objectAt(object id);
+
     private:
         TObjectFreeList objectFreeList;
-        //TObjectTable    objectTable;
+    public:
+        TObjectTable    objectTable;
 };
 
 extern MemoryManager* theMemoryManager;
