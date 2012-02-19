@@ -77,12 +77,12 @@ void setInstanceVariables(object aClass)
     if (aClass == nilobj)
         instanceTop = 0;
     else {
-        setInstanceVariables(basicAt(aClass, superClassInClass));
-        vars = basicAt(aClass, variablesInClass);
+        setInstanceVariables(objectRef(aClass).basicAt(superClassInClass));
+        vars = objectRef(aClass).basicAt(variablesInClass);
         if (vars != nilobj) {
             limit = objectRef(vars).sizeField();
             for (i = 1; i <= limit; i++)
-                instanceName[++instanceTop] = objectRef(basicAt(vars, i)).charPtr();
+                instanceName[++instanceTop] = objectRef(objectRef(vars).basicAt(i)).charPtr();
             }
         }
 }
@@ -264,7 +264,7 @@ boolean nameTerm(char *name)
     newLit = newArray(size);
     for (i = size; i >= 1; i--) {
         obj = literalArray[literalTop];
-        basicAtPut(newLit, i, obj);
+        objectRef(newLit).basicAtPut(i, obj);
         decr(obj);
         literalArray[literalTop] = nilobj;
         literalTop = literalTop - 1;
@@ -676,8 +676,8 @@ void block()
         ignore nextToken();
         }
     newBlk = newBlock();
-    basicAtPut(newBlk, argumentCountInBlock, newInteger(argumentCount));
-    basicAtPut(newBlk, argumentLocationInBlock, 
+    objectRef(newBlk).basicAtPut(argumentCountInBlock, newInteger(argumentCount));
+    objectRef(newBlk).basicAtPut(argumentLocationInBlock, 
         newInteger(saveTemporary + 1));
     genInstruction(PushLiteral, genLiteral(newBlk));
     genInstruction(PushConstant, contextConst);
@@ -687,7 +687,7 @@ void block()
     fixLocation = codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    basicAtPut(newBlk, bytecountPositionInBlock, newInteger(codeTop+1));
+    objectRef(newBlk).basicAtPut(bytecountPositionInBlock, newInteger(codeTop+1));
     blockstat = InBlock;
     body();
     if ((token == closing) && streq(tokenString, "]"))
@@ -784,7 +784,7 @@ boolean parse(object method, const char* text, boolean savetext)
         }
 
     if (! parseok) {
-        basicAtPut(method, bytecodesInMethod, nilobj);
+        objectRef(method).basicAtPut(bytecodesInMethod, nilobj);
         }
     else {
         bytecodes = newByteArray(codeTop);
@@ -792,24 +792,24 @@ boolean parse(object method, const char* text, boolean savetext)
         for (i = 0; i < codeTop; i++) {
             bp[i] = codeArray[i];
             }
-        basicAtPut(method, messageInMethod, newSymbol(selector));
-        basicAtPut(method, bytecodesInMethod, bytecodes);
+        objectRef(method).basicAtPut(messageInMethod, newSymbol(selector));
+        objectRef(method).basicAtPut(bytecodesInMethod, bytecodes);
         if (literalTop > 0) {
             theLiterals = newArray(literalTop);
             for (i = 1; i <= literalTop; i++) {
-                basicAtPut(theLiterals, i, literalArray[i]);
+                objectRef(theLiterals).basicAtPut(i, literalArray[i]);
                 decr(literalArray[i]);
                 }
-            basicAtPut(method, literalsInMethod, theLiterals);
+            objectRef(method).basicAtPut(literalsInMethod, theLiterals);
             }
         else {
-            basicAtPut(method, literalsInMethod, nilobj);
+            objectRef(method).basicAtPut(literalsInMethod, nilobj);
             }
-        basicAtPut(method, stackSizeInMethod, newInteger(6));
-        basicAtPut(method, temporarySizeInMethod,
+        objectRef(method).basicAtPut(stackSizeInMethod, newInteger(6));
+        objectRef(method).basicAtPut(temporarySizeInMethod,
             newInteger(1 + maxTemporary));
         if (savetext) {
-            basicAtPut(method, textInMethod, newStString(text));
+            objectRef(method).basicAtPut(textInMethod, newStString(text));
             }
         return(true);
         }

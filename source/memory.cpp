@@ -129,68 +129,6 @@ void sysDecr(object z, int visit)
 }
 
 
-
-object basicAt(object o, int i)
-{
-    if(( i <= 0) || (i > objectRef(o).sizeField()))
-        sysError("index out of range", "basicAt");
-    else
-        return (objectRef(o).sysMemPtr()[i-1]);
-
-    return nilobj;
-}
-
-void simpleAtPut(object o, int i, object v)
-{
-    if((i <= 0) || (i > objectRef(o).sizeField()))
-        sysError("index out of range", "simpleAtPut");
-    else
-        objectRef(o).sysMemPtr()[i-1] = v;
-}
-
-void basicAtPut(object o, int i, object v)
-{
-    simpleAtPut(o, i, v);
-    incr(v);
-}
-
-void fieldAtPut(object o, int i, object v)
-{
-    decr(basicAt(o, i));
-    basicAtPut(o, i, v);
-}
-
-int byteAt(object o, int i)
-{
-    byte* bp;
-    unsigned char t;
-
-    if((i <= 0) || (i > 2 * - objectRef(o).sizeField()))
-        sysError("index out of range", "byteAt");
-    else
-    {
-        bp = objectRef(o).bytePtr();
-        t = bp[i-1];
-        i = (int) t;
-    }
-    return i;
-}
-
-void byteAtPut(object z, int i, int x)
-{      
-    byte *bp;
-    if ((i <= 0) || (i > 2 * - objectRef(z).sizeField())) 
-    {
-        fprintf(stderr,"index %d size %d\n", i, objectRef(z).sizeField());
-        sysError("index out of range", "byteAtPut");
-    }
-    else 
-    {
-        bp = objectRef(z).bytePtr();
-        bp[i-1] = x;
-    }
-}
-
 /*
   Written by Steven Pemberton:
   The following routine assures that objects read in are really referenced,
@@ -518,43 +456,73 @@ char* objectStruct::charPtr()
 }
 
 
-void objectStruct::simpleAtPut(object o, int i, object v)
+void objectStruct::simpleAtPut(int i, object v)
 {
-    if((i <= 0) || (i > objectRef(o).sizeField()))
+    if((i <= 0) || (i > sizeField()))
         sysError("index out of range", "simpleAtPut");
     else
-        objectRef(o).sysMemPtr()[i-1] = v;
+        sysMemPtr()[i-1] = v;
 }
 
-void objectStruct::basicAtPut(int, object)
+void objectStruct::basicAtPut(int i, object v)
 {
-}
-
-void objectStruct::simpleAtPut(int, object)
-{
+    simpleAtPut(i, v);
+    objectRef(v).incr();
 }
 
 void objectStruct::incr()
 {
+    ++referenceCount;
 }
 
-void objectStruct::decr()
+//void objectStruct::decr()
+//{
+//}
+
+void objectStruct::fieldAtPut(int i, object v)
 {
+    ::decr(basicAt(i));
+    basicAtPut(i, v);
 }
 
-void objectStruct::fieldAtPut(int, object)
+int objectStruct::byteAt(int i)
 {
+    byte* bp;
+    unsigned char t;
+
+    if((i <= 0) || (i > 2 * - sizeField()))
+        sysError("index out of range", "byteAt");
+    else
+    {
+        bp = bytePtr();
+        t = bp[i-1];
+        i = (int) t;
+    }
+    return i;
 }
 
-int objectStruct::byteAt(int)
+void objectStruct::byteAtPut(int i, int x)
 {
-}
-
-void objectStruct::byteAtPut(int, int)
-{
+    byte *bp;
+    if ((i <= 0) || (i > 2 * - sizeField())) 
+    {
+        fprintf(stderr,"index %d size %d\n", i, sizeField());
+        sysError("index out of range", "byteAtPut");
+    }
+    else 
+    {
+        bp = bytePtr();
+        bp[i-1] = x;
+    }
 }
 
 object objectStruct::basicAt(int i)
 {
+    if(( i <= 0) || (i > sizeField()))
+        sysError("index out of range", "basicAt");
+    else
+        return (sysMemPtr()[i-1]);
+
+    return nilobj;
 }
 

@@ -96,8 +96,8 @@ int x, y;
 
     newObj = allocObject(2);
     objectRef(newObj).setClass(globalSymbol("Point"));
-    basicAtPut(newObj, 1, newInteger(x));
-    basicAtPut(newObj, 2, newInteger(y));
+    objectRef(newObj).basicAtPut(1, newInteger(x));
+    objectRef(newObj).basicAtPut(2, newInteger(y));
     return newObj;
 }
 

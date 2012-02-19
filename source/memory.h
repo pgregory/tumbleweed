@@ -42,7 +42,6 @@ struct objectStruct
     byte* bytePtr();
     char* charPtr();
 
-    void simpleAtPut(object o, int i, object v);
     void basicAtPut(int, object);
     void simpleAtPut(int, object);
     void incr();
@@ -146,15 +145,8 @@ void setFreeLists();
 int garbageCollect(int verbose);
 
 
-extern void basicAtPut(object, int, object);
-extern void simpleAtPut(object, int, object);
 extern void incr(object);
 extern void decr(object);
-extern int f_i;
-extern void fieldAtPut(object, int, object);
-extern int byteAt(object, int);
-extern void byteAtPut(object, int, int);
-extern object basicAt(object o, int i);
 
 
 #include <map>

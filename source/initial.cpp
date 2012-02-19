@@ -66,18 +66,18 @@ void goDoIt(const char * text)
     incr(stack);
 
     /* make a process */
-    basicAtPut(firstProcess, stackInProcess, stack);
-    basicAtPut(firstProcess, stackTopInProcess, newInteger(10));
-    basicAtPut(firstProcess, linkPtrInProcess, newInteger(2));
+    objectRef(firstProcess).basicAtPut(stackInProcess, stack);
+    objectRef(firstProcess).basicAtPut(stackTopInProcess, newInteger(10));
+    objectRef(firstProcess).basicAtPut(linkPtrInProcess, newInteger(2));
 
     /* put argument on stack */
-    basicAtPut(stack, 1, nilobj);   /* argument */
+    objectRef(stack).basicAtPut(1, nilobj);   /* argument */
     /* now make a linkage area in stack */
-    basicAtPut(stack, 2, nilobj);   /* previous link */
-    basicAtPut(stack, 3, nilobj);   /* context object (nil = stack) */
-    basicAtPut(stack, 4, newInteger(1));    /* return point */
-    basicAtPut(stack, 5, method);   /* method */
-    basicAtPut(stack, 6, newInteger(1));    /* byte offset */
+    objectRef(stack).basicAtPut(2, nilobj);   /* previous link */
+    objectRef(stack).basicAtPut(3, nilobj);   /* context object (nil = stack) */
+    objectRef(stack).basicAtPut(4, newInteger(1));    /* return point */
+    objectRef(stack).basicAtPut(5, method);   /* method */
+    objectRef(stack).basicAtPut(6, newInteger(1));    /* byte offset */
 
     /* now go execute it */
     while (execute(firstProcess, 15000)) fprintf(stderr,"..");
@@ -98,7 +98,7 @@ void makeInitialImage()
     symbols = allocObject(1);
     incr(symbols);
     hashTable = allocObject(3 * 53);
-    basicAtPut(symbols, 1, hashTable);
+    objectRef(symbols).basicAtPut(1, hashTable);
 
     /* next create #Symbol, Symbol and Class */
     symbolObj = newSymbol("Symbol");
@@ -115,9 +115,9 @@ void makeInitialImage()
   objectRef(objectClass).setClass(metaObjectClass);
   objectRef(metaObjectClass).setClass(classClass);
 
-  basicAtPut(metaClassClass, superClassInClass, metaObjectClass);
-  basicAtPut(metaObjectClass, superClassInClass, classClass);
-    basicAtPut(metaObjectClass, sizeInClass, newInteger(classSize));
+  objectRef(metaClassClass).basicAtPut(superClassInClass, metaObjectClass);
+  objectRef(metaObjectClass).basicAtPut(superClassInClass, classClass);
+    objectRef(metaObjectClass).basicAtPut(sizeInClass, newInteger(classSize));
 
     /* now fix up classes for symbol table */
     /* and make a couple common classes, just to hold their places */
@@ -129,7 +129,7 @@ void makeInitialImage()
     ignore newClass("String");
     nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
 
-  basicAtPut(classClass, methodsInClass, newDictionary(39));
+  objectRef(classClass).basicAtPut(methodsInClass, newDictionary(39));
 
     /* finally at least make true and false to be distinct */
     trueobj = newSymbol("true");

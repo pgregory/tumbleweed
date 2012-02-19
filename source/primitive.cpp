@@ -123,19 +123,19 @@ static int unaryPrims(int number, object firstarg)
 
     case 8:     /* change return point - block return */
       /* first get previous link pointer */
-      i = intValue(basicAt(processStack, linkPointer));
+      i = intValue(objectRef(processStack).basicAt(linkPointer));
       /* then creating context pointer */
-      j = intValue(basicAt(firstarg, 1));
-      if (basicAt(processStack, j+1) != firstarg) {
+      j = intValue(objectRef(firstarg).basicAt(1));
+      if (objectRef(processStack).basicAt(j+1) != firstarg) {
         returnedObject = falseobj;
         break;
       }
       /* first change link pointer to that of creator */
-      fieldAtPut(processStack, i, 
-          basicAt(processStack, j));
+      objectRef(processStack).fieldAtPut(i, 
+          objectRef(processStack).basicAt(j));
       /* then change return point to that of creator */
-      fieldAtPut(processStack, i+2, 
-          basicAt(processStack, j+2));
+      objectRef(processStack).fieldAtPut(i+2, 
+          objectRef(processStack).basicAt(j+2));
       returnedObject = trueobj;
       break;
 
@@ -213,11 +213,11 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 5:     /* basicAt: */
-      returnedObject = basicAt(firstarg, intValue(secondarg));
+      returnedObject = objectRef(firstarg).basicAt(intValue(secondarg));
       break;
 
     case 6:     /* byteAt: */
-      i = byteAt(firstarg, intValue(secondarg));
+      i = objectRef(firstarg).byteAt(intValue(secondarg));
       if (i < 0) i += 256;
       returnedObject = newInteger(i);
       break;
@@ -229,18 +229,18 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 
     case 8:     /* block start */
       /* first get previous link */
-      i = intValue(basicAt(processStack, linkPointer));
+      i = intValue(objectRef(processStack).basicAt(linkPointer));
       /* change context and byte pointer */
-      fieldAtPut(processStack, i+1, firstarg);
-      fieldAtPut(processStack, i+4, secondarg);
+      objectRef(processStack).fieldAtPut(i+1, firstarg);
+      objectRef(processStack).fieldAtPut(i+4, secondarg);
       break;
 
     case 9:     /* duplicate a block, adding a new context to it */
       returnedObject = newBlock();
-      basicAtPut(returnedObject, 1, secondarg);
-      basicAtPut(returnedObject, 2, basicAt(firstarg, 2));
-      basicAtPut(returnedObject, 3, basicAt(firstarg, 3));
-      basicAtPut(returnedObject, 4, basicAt(firstarg, 4));
+      objectRef(returnedObject).basicAtPut(1, secondarg);
+      objectRef(returnedObject).basicAtPut(2, objectRef(firstarg).basicAt(2));
+      objectRef(returnedObject).basicAtPut(3, objectRef(firstarg).basicAt(3));
+      objectRef(returnedObject).basicAtPut(4, objectRef(firstarg).basicAt(4));
       break;
 
     default:        /* unknown primitive */
@@ -262,11 +262,11 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   switch(number) {
     case 1:         /* basicAt:Put: */
       fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), intValue(secondarg), static_cast<int>(thirdarg));
-      fieldAtPut(firstarg, intValue(secondarg), thirdarg);
+      objectRef(firstarg).fieldAtPut(intValue(secondarg), thirdarg);
       break;
 
     case 2:         /* basicAt:Put: for bytes */
-      byteAtPut(firstarg, intValue(secondarg), intValue(thirdarg));
+      objectRef(firstarg).byteAtPut(intValue(secondarg), intValue(thirdarg));
       break;
 
     case 3:         /* string copyFrom:to: */
@@ -284,8 +284,8 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
     case 9:         /* compile method */
       setInstanceVariables(firstarg);
       if (parse(thirdarg, objectRef(secondarg).charPtr(), false)) {
-        flushCache(basicAt(thirdarg, messageInMethod), firstarg);
-        basicAtPut(thirdarg, methodClassInMethod, firstarg);
+        flushCache(objectRef(thirdarg).basicAt(messageInMethod), firstarg);
+        objectRef(thirdarg).basicAtPut(methodClassInMethod, firstarg);
         returnedObject = trueobj;
       }
       else
@@ -486,8 +486,8 @@ static int floatUnary(int number, double firstarg)
       else { i -= ndif; temp = ldexp(temp, ndif); }
       j = (int) temp;
       returnedObject = newArray(2);
-      basicAtPut(returnedObject, 1, newInteger(j));
-      basicAtPut(returnedObject, 2, newInteger(i));
+      objectRef(returnedObject).basicAtPut(1, newInteger(j));
+      objectRef(returnedObject).basicAtPut(2, newInteger(i));
 # ifdef trynew
       /* if number is too big it can't be integer anyway */
       if (firstarg > 2e9)

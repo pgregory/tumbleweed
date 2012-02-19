@@ -23,8 +23,8 @@
 # define methodClassInMethod 7
 # define watchInMethod 8
 # define protocolInMethod 9
-# define methodStackSize(x) intValue(basicAt(x, stackSizeInMethod))
-# define methodTempSize(x) intValue(basicAt(x, temporarySizeInMethod))
+# define methodStackSize(x) intValue(objectRef(x).basicAt(stackSizeInMethod))
+# define methodTempSize(x) intValue(objectRef(x).basicAt(temporarySizeInMethod))
 
 # define contextSize 6
 # define linkPtrInContext 1

@@ -36,32 +36,32 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
     object table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
-    table = basicAt(dict, 1);
+    table = objectRef(dict).basicAt(1);
 
     if (objectRef(table).sizeField() < 3)
         sysError("attempt to insert into","too small name table");
     else {
         hash = 3 * ( hash % (objectRef(table).sizeField() / 3));
-        tablentry = basicAt(table, hash+1);
+        tablentry = objectRef(table).basicAt(hash+1);
         if ((tablentry == nilobj) || (tablentry == key)) {
-            basicAtPut(table, hash+1, key);
-            basicAtPut(table, hash+2, value);
+            objectRef(table).basicAtPut(hash+1, key);
+            objectRef(table).basicAtPut(hash+2, value);
             }
         else {
             nwLink = newLink(key, value);
             incr(nwLink);
-            link = basicAt(table, hash+3);
+            link = objectRef(table).basicAt(hash+3);
             if (link == nilobj) {
-                basicAtPut(table, hash+3, nwLink);
+                objectRef(table).basicAtPut(hash+3, nwLink);
                 }
             else
                 while(1)
-                    if (basicAt(link,1) == key) {
-                        basicAtPut(link, 2, value);
+                    if (objectRef(link).basicAt(1) == key) {
+                        objectRef(link).basicAtPut(2, value);
                         break;
                         }
-                    else if ((nextLink = basicAt(link, 3)) == nilobj) {
-                        basicAtPut(link, 3, nwLink);
+                    else if ((nextLink = objectRef(link).basicAt(3)) == nilobj) {
+                        objectRef(link).basicAtPut(3, nwLink);
                         break;
                         }
                     else
@@ -77,7 +77,7 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     register object *hp;
     int tablesize;
 
-    table = basicAt(dict, 1);
+    table = objectRef(dict).basicAt(1);
 
     /* now see if table is valid */
     if ((tablesize = objectRef(table).sizeField()) < 3)

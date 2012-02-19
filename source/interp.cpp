@@ -67,11 +67,11 @@ static boolean findMethod(object* methodClassLocation)
 
 //  printf("Looking for %s starting at %d\n", objectRef(messageToSend).charPtr(), methodClass);
   for (; methodClass != nilobj; methodClass = 
-      basicAt(methodClass, superClassInClass)) {
-//    printf("Looking for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(basicAt(methodClass, nameInClass)).charPtr());
-    methodTable = basicAt(methodClass, methodsInClass);
+      objectRef(methodClass).basicAt(superClassInClass)) {
+//    printf("Looking for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
+    methodTable = objectRef(methodClass).basicAt(methodsInClass);
     if(methodTable == 0)
-      printf("Null method table on %s\n", objectRef(basicAt(methodClass, nameInClass)).charPtr());
+      printf("Null method table on %s\n", objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
     method = hashEachElement(methodTable, messageToSend, messTest);
     if (method != nilobj)
     {
@@ -121,7 +121,7 @@ static object growProcessStack(int top, int toadd)
   size = objectRef(processStack).sizeField() + toadd;
   newStack = newArray(size);
   for (i = 1; i <= top; i++) {
-    basicAtPut(newStack, i, basicAt(processStack, i));
+    objectRef(newStack).basicAtPut(i, objectRef(processStack).basicAt(i));
   }
   return newStack;
 }
@@ -142,11 +142,11 @@ boolean execute(object aProcess, int maxsteps)
   object intClass = globalSymbol("Integer");
 
   /* unpack the instance variables from the process */
-  processStack    = basicAt(aProcess, stackInProcess);
+  processStack    = objectRef(aProcess).basicAt(stackInProcess);
   psb = objectRef(processStack).sysMemPtr();
-  j = intValue(basicAt(aProcess, stackTopInProcess));
+  j = intValue(objectRef(aProcess).basicAt(stackTopInProcess));
   pst = psb + (j-1);
-  linkPointer     = intValue(basicAt(aProcess, linkPtrInProcess));
+  linkPointer     = intValue(objectRef(aProcess).basicAt(linkPtrInProcess));
 
   /* set the process time-slice counter before entering loop */
   timeSliceCounter = maxsteps;
@@ -165,16 +165,16 @@ readLinkageBlock:
   }
   else {    /* read from context object */
     cntx = objectRef(contextObject).sysMemPtr();
-    method = basicAt(contextObject, methodInContext);
-    arg = objectRef(basicAt(contextObject, argumentsInContext)).sysMemPtr();
-    temps = objectRef(basicAt(contextObject, temporariesInContext)).sysMemPtr();
+    method = objectRef(contextObject).basicAt(methodInContext);
+    arg = objectRef(objectRef(contextObject).basicAt(argumentsInContext)).sysMemPtr();
+    temps = objectRef(objectRef(contextObject).basicAt(temporariesInContext)).sysMemPtr();
   }
 
   rcv = objectRef(argumentsAt(0)).sysMemPtr();
 
 readMethodInfo:
-  lits           = objectRef(basicAt(method, literalsInMethod)).sysMemPtr();
-  bp             = objectRef(basicAt(method, bytecodesInMethod)).bytePtr() - 1;
+  lits           = objectRef(objectRef(method).basicAt(literalsInMethod)).sysMemPtr();
+  bp             = objectRef(objectRef(method).basicAt(bytecodesInMethod)).bytePtr() - 1;
 
   while ( --timeSliceCounter > 0 ) {
     low = (high = nextByte()) & 0x0F;
@@ -186,7 +186,7 @@ readMethodInfo:
 
 # if 0
     if (debugging) {
-      fprintf(stderr,"method %s %d ",objectRef(basicAt(method, messageInMethod)).charPtr(), byteOffset);
+      fprintf(stderr,"method %s %d ",objectRef(objectRef(method).basicAt(messageInMethod)).charPtr(), byteOffset);
       fprintf(stderr,"stack %d %d ",pst, *pst);
       fprintf(stderr,"executing %d %d\n", high, low);
     }
@@ -229,10 +229,10 @@ readMethodInfo:
                     linkPointer - returnPoint),
                   copyFrom(processStack, linkPointer + 5,
                     methodTempSize(method)));
-              basicAtPut(processStack, linkPointer+1, contextObject);
+              objectRef(processStack).basicAtPut(linkPointer+1, contextObject);
               ipush(contextObject);
               /* save byte pointer then restore things properly */
-              fieldAtPut(processStack, linkPointer+4, newInteger(byteOffset));
+              objectRef(processStack).fieldAtPut(linkPointer+4, newInteger(byteOffset));
               goto readLinkageBlock;
 
             }
@@ -284,7 +284,7 @@ doFindMessage:
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
           methodClass = methodCache[i].cacheClass;
-//          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(basicAt(methodClass, nameInClass)).charPtr());
+//          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
         }
         else {
           methodCache[i].lookupClass = methodClass;
@@ -295,12 +295,12 @@ doFindMessage:
             argarray = newArray(j+1);
             for (; j >= 0; j--) {
               ipop(returnedObject);
-              basicAtPut(argarray, j+1, returnedObject);
+              objectRef(argarray).basicAtPut(j+1, returnedObject);
               decr(returnedObject);
             }
-//            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(basicAt(methodClass, nameInClass)).charPtr());
+//            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
             printf("Failed to find %s\n", objectRef(messageToSend).charPtr());
-            ipush(basicAt(argarray, 1)); /* push receiver back */
+            ipush(objectRef(argarray).basicAt(1)); /* push receiver back */
             ipush(messageToSend);
             messageToSend = newSymbol("message:notRecognizedWithArguments:");
             ipush(argarray);
@@ -316,13 +316,13 @@ doFindMessage:
           methodCache[i].cacheClass = methodClass;
         }
 
-        if (watching && (basicAt(method, watchInMethod) != nilobj)) {
+        if (watching && (objectRef(method).basicAt(watchInMethod) != nilobj)) {
           /* being watched, we send to method itself */
           j = processStackTop() - returnPoint;
           argarray = newArray(j+1);
           for (; j >= 0; j--) {
             ipop(returnedObject);
-            basicAtPut(argarray, j+1, returnedObject);
+            objectRef(argarray).basicAtPut(j+1, returnedObject);
             decr(returnedObject);
           }
           ipush(method); /* push method */
@@ -338,7 +338,7 @@ doFindMessage:
         }
 
         /* save the current byte pointer */
-        fieldAtPut(processStack, linkPointer+4, newInteger(byteOffset));
+        objectRef(processStack).fieldAtPut(linkPointer+4, newInteger(byteOffset));
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
@@ -348,7 +348,7 @@ doFindMessage:
           processStack = growProcessStack(j, i);
           psb = objectRef(processStack).sysMemPtr();
           pst = (psb + j);
-          fieldAtPut(aProcess, stackInProcess, processStack);
+          objectRef(aProcess).fieldAtPut(stackInProcess, processStack);
         }
 
         byteOffset = 1;
@@ -433,11 +433,11 @@ doFindMessage:
             break;
           case 25: /* basicAt: */
             j = intValue(*(primargs+1));
-            returnedObject = basicAt(*primargs, j);
+            returnedObject = objectRef(*primargs).basicAt(j);
             break;
           case 31: /* basicAt:Put:*/
             j = intValue(*(primargs+1));
-            fieldAtPut(*primargs, j, *(primargs+2));
+            objectRef(*primargs).fieldAtPut(j, *(primargs+2));
             returnedObject = nilobj;
             break;
           case 53: /* set time slice */
@@ -465,8 +465,8 @@ doFindMessage:
         break;
 
 doReturn:
-        returnPoint = intValue(basicAt(processStack, linkPointer + 2));
-        linkPointer = intValue(basicAt(processStack, linkPointer));
+        returnPoint = intValue(objectRef(processStack).basicAt(linkPointer + 2));
+        linkPointer = intValue(objectRef(processStack).basicAt(linkPointer));
         while (processStackTop() >= returnPoint) {
           stackTopFree();
         }
@@ -551,13 +551,13 @@ doReturn:
             i = nextByte();
             messageToSend = literalsAt(i);
             rcv = objectRef(argumentsAt(0)).sysMemPtr();
-            methodClass = basicAt(method, methodClassInMethod);
+            methodClass = objectRef(method).basicAt(methodClassInMethod);
             /* if there is a superclass, use it
                otherwise for class Object (the only 
                class that doesn't have a superclass) use
                the class again */
             returnedObject = 
-              basicAt(methodClass, superClassInClass);
+              objectRef(methodClass).basicAt(superClassInClass);
             if (returnedObject != nilobj)
               methodClass = returnedObject;
             goto doFindMessage;
@@ -577,9 +577,9 @@ doReturn:
   /* before returning we put back the values in the current process */
   /* object */
 
-  fieldAtPut(processStack, linkPointer+4, newInteger(byteOffset));
-  fieldAtPut(aProcess, stackTopInProcess, newInteger(processStackTop()));
-  fieldAtPut(aProcess, linkPtrInProcess, newInteger(linkPointer));
+  objectRef(processStack).fieldAtPut(linkPointer+4, newInteger(byteOffset));
+  objectRef(aProcess).fieldAtPut(stackTopInProcess, newInteger(processStackTop()));
+  objectRef(aProcess).fieldAtPut(linkPtrInProcess, newInteger(linkPointer));
 
   return true;
 }

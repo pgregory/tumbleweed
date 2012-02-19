@@ -62,7 +62,7 @@ object newChar(int value)
     object newobj;
 
     newobj = allocObject(1);
-    basicAtPut(newobj, 1, newInteger(value));
+    objectRef(newobj).basicAtPut(1, newInteger(value));
     objectRef(newobj).setClass(globalSymbol("Char"));
     return(newobj);
 }
@@ -76,10 +76,10 @@ object newClass(const char* name)
 
     /* now make name */
     nameObj = newSymbol(name);
-    basicAtPut(newObj, nameInClass, nameObj);
+    objectRef(newObj).basicAtPut(nameInClass, nameObj);
   methTable = newDictionary(39);
-  basicAtPut(newObj, methodsInClass, methTable);
-  basicAtPut(newObj, sizeInClass, newInteger(classSize));
+  objectRef(newObj).basicAtPut(methodsInClass, methTable);
+  objectRef(newObj).basicAtPut(sizeInClass, newInteger(classSize));
 
     /* now put in global symbols table */
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -94,7 +94,7 @@ object copyFrom(object obj, int start, int size)
 
     newObj = newArray(size);
     for (i = 1; i <= size; i++) {
-        basicAtPut(newObj, i, basicAt(obj, start));
+        objectRef(newObj).basicAtPut(i, objectRef(obj).basicAt(start));
         start++;
         }
     return newObj;
@@ -106,10 +106,10 @@ object newContext(int link, object method, object args, object temp)
 
     newObj = allocObject(contextSize);
     objectRef(newObj).setClass(globalSymbol("Context"));
-    basicAtPut(newObj, linkPtrInContext, newInteger(link));
-    basicAtPut(newObj, methodInContext, method);
-    basicAtPut(newObj, argumentsInContext, args);
-    basicAtPut(newObj, temporariesInContext, temp);
+    objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
+    objectRef(newObj).basicAtPut(methodInContext, method);
+    objectRef(newObj).basicAtPut(argumentsInContext, args);
+    objectRef(newObj).basicAtPut(temporariesInContext, temp);
     return newObj;
 }
 
@@ -119,7 +119,7 @@ object newDictionary(int size)
 
     newObj = allocObject(1);
     objectRef(newObj).setClass(globalSymbol("Dictionary"));
-    basicAtPut(newObj, 1, newArray(size));
+    objectRef(newObj).basicAtPut(1, newArray(size));
     return newObj;
 }
 
@@ -190,8 +190,8 @@ object newLink(object key, object value)
 
     newObj = allocObject(3);
     objectRef(newObj).setClass(globalSymbol("Link"));
-    basicAtPut(newObj, 1, key);
-    basicAtPut(newObj, 2, value);
+    objectRef(newObj).basicAtPut(1, key);
+    objectRef(newObj).basicAtPut(2, value);
     return newObj;
 }
 

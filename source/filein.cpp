@@ -41,9 +41,9 @@ static object findClass(const char* name)
     newobj = globalSymbol(name);
     if (newobj == nilobj)
         newobj = newClass(name);
-    if (basicAt(newobj, sizeInClass) == nilobj) 
+    if (objectRef(newobj).basicAt(sizeInClass) == nilobj) 
   {
-        basicAtPut(newobj, sizeInClass, newInteger(0));
+        objectRef(newobj).basicAtPut(sizeInClass, newInteger(0));
   }
     return newobj;
 }
@@ -56,16 +56,16 @@ static object findClassWithMeta(const char* name, object metaObj)
     newObj = globalSymbol(name);
     if (newObj == nilobj)
   {
-    size = intValue(basicAt(metaObj, sizeInClass));
+    size = intValue(objectRef(metaObj).basicAt(sizeInClass));
     newObj = allocObject(size);
     objectRef(newObj).setClass(metaObj);
 
     /* now make name */
     nameObj = newSymbol(name);
-    basicAtPut(newObj, nameInClass, nameObj);
+    objectRef(newObj).basicAtPut(nameInClass, nameObj);
     methTable = newDictionary(39);
-    basicAtPut(newObj, methodsInClass, methTable);
-    basicAtPut(newObj, sizeInClass, newInteger(size));
+    objectRef(newObj).basicAtPut(methodsInClass, methTable);
+    objectRef(newObj).basicAtPut(sizeInClass, newInteger(size));
 
     /* now put in global symbols table */
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -93,12 +93,12 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
   if(NULL != superclass)
   {
     superObj = findClass(superclass);
-    basicAtPut(classObj, superClassInClass, superObj);
-    size = intValue(basicAt(superObj, sizeInClass));
+    objectRef(classObj).basicAtPut(superClassInClass, superObj);
+    size = intValue(objectRef(superObj).basicAt(sizeInClass));
   }
 
   // Set the size up to now.
-    basicAtPut(classObj, sizeInClass, newInteger(size));
+    objectRef(classObj).basicAtPut(sizeInClass, newInteger(size));
 
   return classObj;
 }
@@ -136,7 +136,7 @@ static void readRawClassDeclaration()
 
   // Get the current class size, we'll build on this as 
   // we add instance variables.
-  size = intValue(basicAt(classObj, sizeInClass));
+  size = intValue(objectRef(classObj).basicAt(sizeInClass));
 
     if (token == nameconst) 
   {     /* read instance var names */
@@ -150,14 +150,14 @@ static void readRawClassDeclaration()
         vars = newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
     {
-            basicAtPut(vars, i+1, instanceVariables[i]);
+            objectRef(vars).basicAtPut(i+1, instanceVariables[i]);
     }
-        basicAtPut(classObj, variablesInClass, vars);
+        objectRef(classObj).basicAtPut(variablesInClass, vars);
   }
-    basicAtPut(classObj, sizeInClass, newInteger(size));
-  basicAtPut(classObj, methodsInClass, newDictionary(39));
+    objectRef(classObj).basicAtPut(sizeInClass, newInteger(size));
+  objectRef(classObj).basicAtPut(methodsInClass, newDictionary(39));
 
-  object methodsClass = getClass(basicAt(classObj, methodsInClass));
+  object methodsClass = getClass(objectRef(classObj).basicAt(methodsInClass));
 }
 
 /*
@@ -195,16 +195,16 @@ static void readClassDeclaration()
   classObj = createRawClass(className, metaClassName, superName);
   objectRef(classObj).setClass(metaObj);
 
-  size = intValue(basicAt(metaObj, sizeInClass));
+  size = intValue(objectRef(metaObj).basicAt(sizeInClass));
   instanceVariables[0] = newSymbol("theInstance");
   vars = newArray(1);
-  basicAtPut(vars, 1, instanceVariables[0]);
-  basicAtPut(metaObj, variablesInClass, vars);
-    basicAtPut(metaObj, sizeInClass, newInteger(size+1));
+  objectRef(vars).basicAtPut(1, instanceVariables[0]);
+  objectRef(metaObj).basicAtPut(variablesInClass, vars);
+    objectRef(metaObj).basicAtPut(sizeInClass, newInteger(size+1));
 
   // Get the current class size, we'll build on this as 
   // we add instance variables.
-  size = intValue(basicAt(classObj, sizeInClass));
+  size = intValue(objectRef(classObj).basicAt(sizeInClass));
 
     if (token == nameconst) 
   {     /* read instance var names */
@@ -218,12 +218,12 @@ static void readClassDeclaration()
         vars = newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
     {
-            basicAtPut(vars, i+1, instanceVariables[i]);
+            objectRef(vars).basicAtPut(i+1, instanceVariables[i]);
     }
-        basicAtPut(classObj, variablesInClass, vars);
+        objectRef(classObj).basicAtPut(variablesInClass, vars);
   }
-    basicAtPut(classObj, sizeInClass, newInteger(size));
-  basicAtPut(classObj, methodsInClass, newDictionary(39));
+    objectRef(classObj).basicAtPut(sizeInClass, newInteger(size));
+  objectRef(classObj).basicAtPut(methodsInClass, newDictionary(39));
 
   free(className);
   free(superName);
@@ -245,13 +245,13 @@ static void readMethods(FILE* fd, boolean printit)
     classObj = findClass(tokenString);
     setInstanceVariables(classObj);
     if (printit)
-        cp = objectRef(basicAt(classObj, nameInClass)).charPtr();
+        cp = objectRef(objectRef(classObj).basicAt(nameInClass)).charPtr();
 
     /* now find or create a method table */
-    methTable = basicAt(classObj, methodsInClass);
+    methTable = objectRef(classObj).basicAt(methodsInClass);
     if (methTable == nilobj) {  /* must make */
         methTable = newDictionary(MethodTableSize);
-        basicAtPut(classObj, methodsInClass, methTable);
+        objectRef(classObj).basicAtPut(methodsInClass, methTable);
         }
 
   if(nextToken() == strconst) {
@@ -277,9 +277,9 @@ static void readMethods(FILE* fd, boolean printit)
         /* now we have a method */
         theMethod = newMethod();
         if (parse(theMethod, textBuffer, savetext)) {
-            selector = basicAt(theMethod, messageInMethod);
-            basicAtPut(theMethod, methodClassInMethod, classObj);
-      basicAtPut(theMethod, protocolInMethod, protocol);
+            selector = objectRef(theMethod).basicAt(messageInMethod);
+            objectRef(theMethod).basicAtPut(methodClassInMethod, classObj);
+      objectRef(theMethod).basicAtPut(protocolInMethod, protocol);
             if (printit)
                 dspMethod(cp, objectRef(selector).charPtr());
             nameTableInsert(methTable, (int) selector, selector, theMethod);

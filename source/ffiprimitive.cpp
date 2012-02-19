@@ -303,32 +303,32 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   FFI_CallbackData* data = (FFI_CallbackData*)ud;
 
   object block = data->block;
-  object context = basicAt(block, contextInBlock);
-  object bytePointer = basicAt(block, bytecountPositionInBlock);
+  object context = objectRef(block).basicAt(contextInBlock);
+  object bytePointer = objectRef(block).basicAt(bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
   object process = allocObject(processSize);
   object stack = newArray(50);
-  basicAtPut(process, stackInProcess, stack);
-  basicAtPut(process, stackTopInProcess, newInteger(10));
-  basicAtPut(process, linkPtrInProcess, newInteger(2));
-  basicAtPut(stack, 3, context);
-  basicAtPut(stack, 4, newInteger(1));
-  basicAtPut(stack, 6, bytePointer);
+  objectRef(process).basicAtPut(stackInProcess, stack);
+  objectRef(process).basicAtPut(stackTopInProcess, newInteger(10));
+  objectRef(process).basicAtPut(linkPtrInProcess, newInteger(2));
+  objectRef(stack).basicAtPut(3, context);
+  objectRef(stack).basicAtPut(4, newInteger(1));
+  objectRef(stack).basicAtPut(6, bytePointer);
 
   /* change context and byte pointer */
-  int argLoc = intValue(basicAt(block, argumentLocationInBlock));
-  object temps = basicAt(context, temporariesInContext);
+  int argLoc = intValue(objectRef(block).basicAt(argumentLocationInBlock));
+  object temps = objectRef(context).basicAt(temporariesInContext);
   for(arg = 0; arg < data->numArgs; ++arg)
-    basicAtPut(temps, argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
+    objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
 
   object saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
   while(execute(process, 15000));
   // Re-read the stack object, in case it had to grow during execution and 
   // was replaced.
-  stack = basicAt(process, stackInProcess);
-  object ro = basicAt(stack, 1);
+  stack = objectRef(process).basicAt(stackInProcess);
+  object ro = objectRef(stack).basicAt(1);
   valueOut(data->retType, ro, static_cast<FFI_DataType*>(ret)); 
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
@@ -404,10 +404,10 @@ object ffiPrimitive(int number, object* arguments)
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
-              object argType = basicAt(arguments[2], i+1);
+              object argType = objectRef(arguments[2]).basicAt(i+1);
               int argMap = mapType(argType);
               args[i] = static_cast<ffi_type*>(ffiLSTTypes[argMap]);
-              values[i] = valueOut(argMap, basicAt(arguments[3], i+1), &dataValues[i]);
+              values[i] = valueOut(argMap, objectRef(arguments[3]).basicAt(i+1), &dataValues[i]);
             }
           }
 
@@ -422,7 +422,7 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = newArray(cargTypes + 1);
 
             ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
-            basicAtPut(returnedObject, 1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
+            objectRef(returnedObject).basicAtPut(1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
           }
           // Now fill in the rest of the result array with the arguments
           // thus getting any 'out' values back to the system in a controlled 
@@ -435,11 +435,11 @@ object ffiPrimitive(int number, object* arguments)
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
-              object argType = basicAt(arguments[2], i+1);
+              object argType = objectRef(arguments[2]).basicAt(i+1);
               int argMap = mapType(argType);
               // Get a new value out of the arguments array.
               object newVal = valueIn(argMap, static_cast<FFI_DataType*>(values[i]));
-              basicAtPut(returnedObject, i+2, newVal); 
+              objectRef(returnedObject).basicAtPut(i+2, newVal); 
             }
           }
         }
@@ -477,7 +477,7 @@ object ffiPrimitive(int number, object* arguments)
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
-              object argType = basicAt(arguments[1], i+1);
+              object argType = objectRef(arguments[1]).basicAt(i+1);
               int argMap = mapType(argType);
               data->argTypeArray[i] = static_cast<FFI_Symbols_E>(argMap);
               args[i] = static_cast<ffi_type*>(ffiLSTTypes[argMap]);
