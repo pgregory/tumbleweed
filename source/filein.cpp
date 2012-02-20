@@ -282,7 +282,7 @@ static void readMethods(FILE* fd, boolean printit)
       objectRef(theMethod).basicAtPut(protocolInMethod, protocol);
             if (printit)
                 dspMethod(cp, objectRef(selector).charPtr());
-            nameTableInsert(methTable, (int) selector, selector, theMethod);
+            nameTableInsert(methTable, objectRefHash(selector), selector, theMethod);
             }
         else {
             /* get rid of unwanted method */

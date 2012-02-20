@@ -48,7 +48,7 @@ void flushCache(object messageToSend, object _class)
 {   
   int hash;
 
-  hash = (((int) messageToSend) + ((int) _class)) / cacheSize;
+  hash = ((objectRefHash(messageToSend)) + (objectRefHash(_class))) / cacheSize;
   methodCache[hash].cacheMessage = nilobj;
 }
 
@@ -72,7 +72,7 @@ static boolean findMethod(object* methodClassLocation)
     methodTable = objectRef(methodClass).basicAt(methodsInClass);
     if(methodTable == 0)
       printf("Null method table on %s\n", objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-    method = hashEachElement(methodTable, messageToSend, messTest);
+    method = hashEachElement(methodTable, objectRefHash(messageToSend), messTest);
     if (method != nilobj)
     {
 //      printf("...found\n");
@@ -279,7 +279,7 @@ doSendMessage:
 
 doFindMessage:
         /* look up method in cache */
-        i = (((int) messageToSend) + ((int) methodClass)) % cacheSize;
+        i = ((objectRefHash(messageToSend)) + (objectRefHash(methodClass))) % cacheSize;
         if ((methodCache[i].cacheMessage == messageToSend) &&
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
@@ -473,7 +473,7 @@ doReturn:
         /* returned object has already been incremented */
         ipush(returnedObject); decr(returnedObject);
         /* now go restart old routine */
-        if (linkPointer != nilobj)
+        if (linkPointer != 0)
           goto readLinkageBlock;
         else
           return false /* all done */;

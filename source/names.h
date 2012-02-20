@@ -69,6 +69,7 @@ extern object unSyms[], binSyms[];
 extern noreturn nameTableInsert( OBJ X INT X OBJ X OBJ );
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/
 extern int strHash ( CSTR );
+extern int objectRefHash ( OBJ );
 extern object globalKey ( CSTR );
 extern object nameTableLookup ( OBJ X CSTR );
 # define globalSymbol(s) nameTableLookup(symbols, s)

@@ -115,6 +115,11 @@ int strHash(const char* str)    /* compute hash value of string ---- strHash */
     return hash;
 }
 
+int objectRefHash(object o)
+{
+    return o;
+}
+
 static object objBuffer;
 static const char   *charBuffer;
 
