@@ -56,14 +56,14 @@ void goDoIt(const char * text)
   object stack, method;
 
     method = newMethod();
-    incr(method);
+    objectRef(method).incr();
     setInstanceVariables(nilobj);
     ignore parse(method, text, false);
 
     firstProcess = allocObject(processSize);
-    incr(firstProcess);
+    objectRef(firstProcess).incr();
     stack = allocObject(50);
-    incr(stack);
+    objectRef(stack).incr();
 
     /* make a process */
     objectRef(firstProcess).basicAtPut(stackInProcess, stack);
@@ -96,7 +96,7 @@ void makeInitialImage()
 
     /* first create the table, without class links */
     symbols = allocObject(1);
-    incr(symbols);
+    objectRef(symbols).incr();
     hashTable = allocObject(3 * 53);
     objectRef(symbols).basicAtPut(1, hashTable);
 

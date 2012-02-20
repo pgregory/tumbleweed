@@ -90,18 +90,18 @@ static boolean findMethod(object* methodClassLocation)
 }
 
 # define nextByte() *(bp + byteOffset++)
-# define ipush(x) incr(*++pst=(x))
+# define ipush(x) objectRef(*++pst=(x)).incr()
 # define stackTop() *pst
-# define stackTopPut(x) decr((*pst)); incr((*pst = x))
+# define stackTopPut(x) decr((*pst)); objectRef((*pst = x)).incr()
 # define stackTopFree() decr((*pst)); *pst-- = nilobj
 /* note that ipop leaves x with excess reference count */
 # define ipop(x) x = stackTop(); *pst-- = nilobj
 # define processStackTop() ((pst-psb)+1)
 # define receiverAt(n) *(rcv+n)
-# define receiverAtPut(n,x) decr(receiverAt(n)); incr(receiverAt(n)=(x))
+# define receiverAtPut(n,x) decr(receiverAt(n)); objectRef(receiverAt(n)=(x)).incr()
 # define argumentsAt(n) *(arg+n)
 # define temporaryAt(n) *(temps+n)
-# define temporaryAtPut(n,x) decr(temporaryAt(n)); incr(temporaryAt(n)=(x))
+# define temporaryAtPut(n,x) decr(temporaryAt(n)); objectRef(temporaryAt(n)=(x)).incr()
 # define literalsAt(n) *(lits+n)
 # define contextAt(n) *(cntx+n)
 # define contextAtPut(n,x) incr(contextAt(n-1)=(x))
@@ -455,7 +455,7 @@ doFindMessage:
             returnedObject = primitive(i, primargs); break;
         }
         /* increment returned object in case pop would destroy it */
-        incr(returnedObject);
+        objectRef(returnedObject).incr();
         /* pop off arguments */
         while (low-- > 0) {
           stackTopFree();
@@ -481,7 +481,8 @@ doReturn:
       case DoSpecial:
         switch(low) {
           case SelfReturn:
-            incr(returnedObject = argumentsAt(0));
+            returnedObject = argumentsAt(0);
+            objectRef(returnedObject).incr();
             goto doReturn;
 
           case StackReturn:

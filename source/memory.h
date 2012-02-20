@@ -145,7 +145,7 @@ void setFreeLists();
 int garbageCollect(int verbose);
 
 
-extern void incr(object);
+//extern void incr(object);
 extern void decr(object);
 
 

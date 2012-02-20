@@ -49,7 +49,7 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
             }
         else {
             nwLink = newLink(key, value);
-            incr(nwLink);
+            objectRef(nwLink).incr();
             link = objectRef(table).basicAt(hash+3);
             if (link == nilobj) {
                 objectRef(table).basicAtPut(hash+3, nwLink);

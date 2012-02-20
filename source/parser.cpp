@@ -111,7 +111,7 @@ int genLiteral(object aLiteral)
         compilError(selector,"too many literals in method","");
     else {
         literalArray[++literalTop] = aLiteral;
-        incr(aLiteral);
+        objectRef(aLiteral).incr();
         }
     return(literalTop - 1);
 }

@@ -107,11 +107,11 @@ object allocStr(register const char* str)
     return(newSym);
 }
 
-void incr(object o)
-{
-    if(nilobj != o)
-        theMemoryManager->objectFromID(o).referenceCount++;
-}
+//void incr(object o)
+//{
+//    if(nilobj != o)
+//        theMemoryManager->objectFromID(o).referenceCount++;
+//}
 
 void decr(object o)
 {
@@ -418,7 +418,7 @@ object objectStruct::classField()
 void objectStruct::setClass(object y)
 {
     _class = y;
-    ::incr(y);
+    objectRef(y).incr();
 }
 
 short objectStruct::sizeField()
