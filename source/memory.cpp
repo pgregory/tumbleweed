@@ -110,14 +110,14 @@ object allocStr(register const char* str)
 void incr(object o)
 {
     if(nilobj != o)
-        theMemoryManager->objectTable[o>>1].referenceCount++;
+        theMemoryManager->objectFromID(o).referenceCount++;
 }
 
 void decr(object o)
 {
   if(nilobj != o)
   {
-    if( --theMemoryManager->objectTable[o>>1].referenceCount <= 0)
+    if( --theMemoryManager->objectFromID(o).referenceCount <= 0)
       sysDecr(o, 1);
   }
 }
@@ -146,18 +146,18 @@ void visit(register object x)
 
     if (x) 
     {
-        if (theMemoryManager->objectTable[x>>1].referenceCount > 0)
-            theMemoryManager->objectTable[x>>1].referenceCount = 0;
-        if (--(theMemoryManager->objectTable[x>>1].referenceCount) == -1) 
+        if (theMemoryManager->objectFromID(x).referenceCount > 0)
+            theMemoryManager->objectFromID(x).referenceCount = 0;
+        if (--(theMemoryManager->objectFromID(x).referenceCount) == -1) 
         {
-    //      if (++(theMemoryManager->objectTable[x>>1].referenceCount) == 1) 
+    //      if (++(theMemoryManager->objectTable[x].referenceCount) == 1) 
     //      {
                 /* then it's the first time we've visited it, so: */
-                visit(theMemoryManager->objectTable[x>>1]._class);
+                visit(theMemoryManager->objectFromID(x)._class);
                 s = objectRef(x).sizeField();
                 if (s>0) 
                 {
-                    p = theMemoryManager->objectTable[x>>1].memory;
+                    p = theMemoryManager->objectFromID(x).memory;
                     for (i=s; i; --i) visit(*p++);
                 }
     //      }
@@ -170,7 +170,7 @@ int objectCount()
     register int i, j;
     j = 0;
     for (i = 0; i < ObjectTableMax; i++)
-        if (theMemoryManager->objectTable[i].referenceCount > 0)
+        if (theMemoryManager->objectFromID(i).referenceCount > 0)
             j++;
     return j;
 }
@@ -200,16 +200,16 @@ int garbageCollect(int verbose)
 
     for (j=ObjectTableMax-1; j>0; j--) 
     {
-        if (theMemoryManager->objectTable[j].referenceCount > 0) 
+        if (theMemoryManager->objectFromID(j).referenceCount > 0) 
         {
-            theMemoryManager->objectTable[j].referenceCount = 0;
-            sysDecr(j<<1,0);
+            theMemoryManager->objectFromID(j).referenceCount = 0;
+            sysDecr(j,0);
             f++;
         } 
         else
         {
-            if (0!=(theMemoryManager->objectTable[j].referenceCount =
-                -theMemoryManager->objectTable[j].referenceCount))
+            if (0!=(theMemoryManager->objectFromID(j).referenceCount =
+                -theMemoryManager->objectFromID(j).referenceCount))
             c++;
         }
     }
@@ -227,11 +227,7 @@ MemoryManager::MemoryManager()
 {
     int i;
 
-    objectTable = static_cast<objectStruct*>(calloc(ObjectTableMax,
-        sizeof(struct objectStruct))); if (! objectTable)
-        sysError("cannot allocate","object table");
-    //objectTable.resize(ObjectTableMax);
-
+    objectTable.resize(ObjectTableMax);
 
     /* set all the reference counts to zero */
     for (i = 0; i < ObjectTableMax; i++) {
@@ -322,7 +318,7 @@ object MemoryManager::allocObject(size_t memorySize)
     objectTable[position].referenceCount = 0;
     objectTable[position]._class = nilobj;
     objectTable[position].size = memorySize;
-    return(position << 1);
+    return(position);
 }
 
 object MemoryManager::allocByte(size_t size)
@@ -360,7 +356,7 @@ void MemoryManager::sysDecr(object z, int visit)
     register int i;
     int size;
 
-    p = &objectTable[z>>1];
+    p = &objectTable[z];
     if (p->referenceCount < 0) 
     {
         fprintf(stderr,"object %d\n", static_cast<int>(z));
@@ -370,7 +366,7 @@ void MemoryManager::sysDecr(object z, int visit)
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
     p->_class = objectFreeList[size];
-    objectFreeList[size] = z>>1;
+    objectFreeList[size] = z;
     if (size > 0) 
     {
         if (visit && p->size > 0)
@@ -394,7 +390,7 @@ void MemoryManager::setFreeLists()
         // If really unused, sysDecr will take care
         // of cleaning up and adding to the free list.
         if (objectTable[z].referenceCount == 0)
-            sysDecr(z<<1, 0);
+            sysDecr(z, 0);
     }
 }
 
@@ -406,7 +402,7 @@ int MemoryManager::garbageCollect(int verbose)
 
 objectStruct& MemoryManager::objectFromID(object id)
 {
-    return objectTable[id>>1];
+    return objectTable[id];
 }
 
 

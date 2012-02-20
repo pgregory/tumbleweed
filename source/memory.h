@@ -155,7 +155,7 @@ extern void decr(object);
 typedef std::map<size_t, object>    TObjectFreeList;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
-typedef struct objectStruct* TObjectTable;
+typedef std::vector<objectStruct>     TObjectTable;
 
 class MemoryManager
 {
@@ -174,7 +174,6 @@ class MemoryManager
 
     private:
         TObjectFreeList objectFreeList;
-    public:
         TObjectTable    objectTable;
 };
 
