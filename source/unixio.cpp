@@ -94,6 +94,8 @@ void imageWrite(FILE* fp)
 {   
   short i, size;
 
+  theMemoryManager->garbageCollect(false);
+
   fw(fp, (char *) &symbols, sizeof(object));
 
   for (i = 0; i < ObjectTableMax; i++) {

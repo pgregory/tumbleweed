@@ -56,10 +56,6 @@ MemoryManager* theMemoryManager;
     FREELISTMAX defines the maximum size of any object.
 */
 
-# define FREELISTMAX 2000
-static object objectFreeList[FREELISTMAX];/* free list of objects */
-
-
 /* initialize the memory management module */
 noreturn initMemoryManager() 
 {
@@ -131,8 +127,6 @@ void visit(register object x)
 
     if (x) 
     {
-        if (theMemoryManager->objectFromID(x).referenceCount > 0)
-            theMemoryManager->objectFromID(x).referenceCount = 0;
         if (--(theMemoryManager->objectFromID(x).referenceCount) == -1) 
         {
             /* then it's the first time we've visited it, so: */
@@ -189,6 +183,8 @@ MemoryManager::~MemoryManager()
 {
 }
 
+static long numAllocated;
+
 object MemoryManager::allocObject(size_t memorySize)
 {
     int i;
@@ -201,7 +197,10 @@ object MemoryManager::allocObject(size_t memorySize)
             tpos->second != nilobj)
     {
         position = tpos->second;
-        tpos->second = objectTable[position]._class;
+        if(objectTable[position]._class != nilobj)
+            tpos->second = objectTable[position]._class;
+        else
+            objectFreeList.erase(tpos);
     }
 
     /* if not there, next try making a size zero object and
@@ -210,7 +209,10 @@ object MemoryManager::allocObject(size_t memorySize)
             tpos->second != nilobj) 
     {
         position = tpos->second;
-        objectFreeList[0] = objectTable[position]._class;
+        if(objectTable[position]._class != nilobj)
+            tpos->second = objectTable[position]._class;
+        else
+            objectFreeList.erase(tpos);
         objectTable[position].size = memorySize;
         objectTable[position].memory = mBlockAlloc(memorySize);
     }
@@ -225,7 +227,10 @@ object MemoryManager::allocObject(size_t memorySize)
                 tbigger->second != nilobj)
         {
             position = tbigger->second;
-            tbigger->second = objectTable[position]._class;
+            if(objectTable[position]._class != nilobj)
+                tbigger->second = objectTable[position]._class;
+            else
+                objectFreeList.erase(tbigger);
             /* just trim it a bit */
             objectTable[position].size = memorySize;
             done = true;
@@ -240,7 +245,10 @@ object MemoryManager::allocObject(size_t memorySize)
                      tsmaller->second != nilobj)
             {
                 position = tsmaller->second;
-                tsmaller->second = objectTable[position]._class;
+                if(objectTable[position]._class != nilobj)
+                    tsmaller->second = objectTable[position]._class;
+                else
+                    objectFreeList.erase(tsmaller);
                 objectTable[position].size = memorySize;
 
                 free(objectTable[position].memory);
@@ -266,6 +274,7 @@ object MemoryManager::allocObject(size_t memorySize)
         }
     }
 
+    numAllocated++;
     /* set class and type */
     objectTable[position].referenceCount = 0;
     objectTable[position]._class = nilobj;
@@ -316,7 +325,13 @@ void MemoryManager::sysDecr(object z, int visit)
     }
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
-    p->_class = objectFreeList[size];
+
+    TObjectFreeListIterator tpos;
+    if((tpos = objectFreeList.find(size)) != objectFreeList.end())
+        p->_class = tpos->second;
+    else
+        p->_class = nilobj;
+    
     objectFreeList[size] = z;
     if (size > 0) 
     {
@@ -357,11 +372,10 @@ int MemoryManager::garbageCollect(int verbose)
     int c=1,f=0;
 
     if (verbose) 
-    {
         fprintf(stderr,"\ngarbage collecting ... ");
-        fprintf(stderr,"%d objects ...", objectCount());
-    }
 
+    for(int x = ObjectTableMax-1; x>0; --x)
+        objectFromID(x).referenceCount = 0;
     /* visit symbols and firstProcess to toggle their referenceCount */
 
     visit(symbols);
@@ -376,9 +390,8 @@ int MemoryManager::garbageCollect(int verbose)
 
     for (j=ObjectTableMax-1; j>0; j--) 
     {
-        if (objectFromID(j).referenceCount > 0) 
+        if (objectFromID(j).referenceCount == 0) 
         {
-            objectFromID(j).referenceCount = 0;
             sysDecr(j,0);
             f++;
         } 
@@ -390,7 +403,9 @@ int MemoryManager::garbageCollect(int verbose)
     }
 
     if (verbose)
-        fprintf(stderr," %d objects.\n",c);
+        fprintf(stderr," %d objects - %d freed.\n",c,f);
+
+    numAllocated = 0;
     return f;
 }
 
@@ -461,7 +476,7 @@ void objectStruct::basicAtPut(int i, object v)
 
 void objectStruct::incr()
 {
-    ++referenceCount;
+    //++referenceCount;
 }
 
 void objectStruct::fieldAtPut(int i, object v)
