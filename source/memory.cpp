@@ -26,7 +26,7 @@
 #include <string.h>
 #include "env.h"
 #include "memory.h"
-
+#include "interp.h"
 
 boolean debugging = false;
 object sysobj;  /* temporary used to avoid rereference in macros */
@@ -107,21 +107,6 @@ object allocStr(register const char* str)
     return(newSym);
 }
 
-//void incr(object o)
-//{
-//    if(nilobj != o)
-//        theMemoryManager->objectFromID(o).referenceCount++;
-//}
-
-void decr(object o)
-{
-  if(nilobj != o)
-  {
-    if( --theMemoryManager->objectFromID(o).referenceCount <= 0)
-      sysDecr(o, 1);
-  }
-}
-
 /* do the real work in the decr procedure */
 void sysDecr(object z, int visit)
 {   
@@ -150,17 +135,15 @@ void visit(register object x)
             theMemoryManager->objectFromID(x).referenceCount = 0;
         if (--(theMemoryManager->objectFromID(x).referenceCount) == -1) 
         {
-    //      if (++(theMemoryManager->objectTable[x].referenceCount) == 1) 
-    //      {
-                /* then it's the first time we've visited it, so: */
-                visit(theMemoryManager->objectFromID(x)._class);
-                s = objectRef(x).sizeField();
-                if (s>0) 
-                {
-                    p = theMemoryManager->objectFromID(x).memory;
-                    for (i=s; i; --i) visit(*p++);
-                }
-    //      }
+            /* then it's the first time we've visited it, so: */
+            visit(theMemoryManager->objectFromID(x)._class);
+            s = objectRef(x).sizeField();
+            if (s>0) 
+            {
+                p = theMemoryManager->objectFromID(x).memory;
+                for (i=s; i; --i) 
+                    visit(*p++);
+            }
         }
     }
 }
@@ -178,45 +161,7 @@ int objectCount()
 
 int garbageCollect(int verbose)
 {
-    register int j;
-    int c=1,f=0;
-
-    if (verbose) 
-    {
-        fprintf(stderr,"\ngarbage collecting ... ");
-        fprintf(stderr,"%d objects ...", objectCount());
-    }
-
-    /* visit symbols and firstProcess to toggle their referenceCount */
-
-    visit(symbols);
-    if(firstProcess) 
-    visit(firstProcess);
-
-    /* add new garbage to objectFreeList 
-    * toggle referenceCount 
-    * count the objects
-    */
-
-    for (j=ObjectTableMax-1; j>0; j--) 
-    {
-        if (theMemoryManager->objectFromID(j).referenceCount > 0) 
-        {
-            theMemoryManager->objectFromID(j).referenceCount = 0;
-            sysDecr(j,0);
-            f++;
-        } 
-        else
-        {
-            if (0!=(theMemoryManager->objectFromID(j).referenceCount =
-                -theMemoryManager->objectFromID(j).referenceCount))
-            c++;
-        }
-    }
-
-    if (verbose)
-        fprintf(stderr," %d objects.\n",c);
-    return c;
+    return theMemoryManager->garbageCollect(verbose);
 }
 
 
@@ -309,8 +254,15 @@ object MemoryManager::allocObject(size_t memorySize)
         /* more we can do */
         if (! done)
         {
-            printf("Object count: %d\n", objectCount());
-            sysError("out of objects","alloc");
+            if(garbageCollect(false) > 0)
+            {
+                return allocObject(memorySize);
+            }
+            else
+            {
+                printf("Object count: %d\n", objectCount());
+                sysError("out of objects","alloc");
+            }
         }
     }
 
@@ -362,18 +314,12 @@ void MemoryManager::sysDecr(object z, int visit)
         fprintf(stderr,"object %d\n", static_cast<int>(z));
         sysError("negative reference count","");
     }
-    if(visit) decr(p->_class);
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
     p->_class = objectFreeList[size];
     objectFreeList[size] = z;
     if (size > 0) 
     {
-        if (visit && p->size > 0)
-        {
-            for (i = size; i; )
-                decr(p->memory[--i]);
-        }
         for (i = size; i > 0; )
             p->memory[--i] = nilobj;
     }
@@ -394,10 +340,58 @@ void MemoryManager::setFreeLists()
     }
 }
 
+void MemoryManager::visitMethodCache()
+{
+    for(int i = 0; i < cacheSize; ++i)
+    {
+        visit(methodCache[i].cacheMessage);
+        visit(methodCache[i].lookupClass);
+        visit(methodCache[i].cacheClass);
+        visit(methodCache[i].cacheMethod);
+    }
+}
+
 int MemoryManager::garbageCollect(int verbose)
 {
-     register int j;
-     int c=1,f=0;
+    register int j;
+    int c=1,f=0;
+
+    if (verbose) 
+    {
+        fprintf(stderr,"\ngarbage collecting ... ");
+        fprintf(stderr,"%d objects ...", objectCount());
+    }
+
+    /* visit symbols and firstProcess to toggle their referenceCount */
+
+    visit(symbols);
+    if(firstProcess) 
+        visit(firstProcess);
+    visitMethodCache();
+
+    /* add new garbage to objectFreeList 
+    * toggle referenceCount 
+    * count the objects
+    */
+
+    for (j=ObjectTableMax-1; j>0; j--) 
+    {
+        if (objectFromID(j).referenceCount > 0) 
+        {
+            objectFromID(j).referenceCount = 0;
+            sysDecr(j,0);
+            f++;
+        } 
+        else
+        {
+            if (0!=(objectFromID(j).referenceCount = -objectFromID(j).referenceCount))
+                c++;
+        }
+    }
+
+    if (verbose)
+        fprintf(stderr," %d objects.\n",c);
+    return f;
 }
 
 objectStruct& MemoryManager::objectFromID(object id)
@@ -418,7 +412,6 @@ object objectStruct::classField()
 void objectStruct::setClass(object y)
 {
     _class = y;
-    objectRef(y).incr();
 }
 
 short objectStruct::sizeField()
@@ -471,13 +464,8 @@ void objectStruct::incr()
     ++referenceCount;
 }
 
-//void objectStruct::decr()
-//{
-//}
-
 void objectStruct::fieldAtPut(int i, object v)
 {
-    ::decr(basicAt(i));
     basicAtPut(i, v);
 }
 

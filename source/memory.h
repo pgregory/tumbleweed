@@ -169,6 +169,7 @@ class MemoryManager
         void sysDecr(object z, int visit);
         void setFreeLists(); 
         int garbageCollect(int verbose);
+        void visitMethodCache();
 
         objectStruct& objectFromID(object id);
 

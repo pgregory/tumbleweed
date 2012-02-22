@@ -485,7 +485,6 @@ object ffiPrimitive(int number, object* arguments)
           }
           data->retType = static_cast<FFI_Symbols>(retMap);
           data->block = block;
-          objectRef(block).incr();
 
           ffi_type* ret;
           ret = static_cast<ffi_type*>(ffiLSTTypes[retMap]); 

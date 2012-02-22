@@ -197,7 +197,6 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 2:     /* set class of object */
-      decr(objectRef(firstarg).classField());
       objectRef(firstarg).setClass(secondarg);
       returnedObject = firstarg;
       break;

@@ -36,12 +36,7 @@ static int messTest(object obj)
 
 /* a cache of recently executed methods is used for fast lookup */
 # define cacheSize 211
-static struct {
-  object cacheMessage;  /* the message being requested */
-  object lookupClass;   /* the class of the receiver */
-  object cacheClass;    /* the class of the method */
-  object cacheMethod;   /* the method itself */
-} methodCache[cacheSize];
+struct CachedMethod methodCache[cacheSize];
 
 /* flush an entry from the cache (usually when its been recompiled) */
 void flushCache(object messageToSend, object _class)
@@ -92,16 +87,16 @@ static boolean findMethod(object* methodClassLocation)
 # define nextByte() *(bp + byteOffset++)
 # define ipush(x) objectRef(*++pst=(x)).incr()
 # define stackTop() *pst
-# define stackTopPut(x) decr((*pst)); objectRef((*pst = x)).incr()
-# define stackTopFree() decr((*pst)); *pst-- = nilobj
+# define stackTopPut(x) objectRef((*pst = x)).incr()
+# define stackTopFree() *pst-- = nilobj
 /* note that ipop leaves x with excess reference count */
 # define ipop(x) x = stackTop(); *pst-- = nilobj
 # define processStackTop() ((pst-psb)+1)
 # define receiverAt(n) *(rcv+n)
-# define receiverAtPut(n,x) decr(receiverAt(n)); objectRef(receiverAt(n)=(x)).incr()
+# define receiverAtPut(n,x) objectRef(receiverAt(n)=(x)).incr()
 # define argumentsAt(n) *(arg+n)
 # define temporaryAt(n) *(temps+n)
-# define temporaryAtPut(n,x) decr(temporaryAt(n)); objectRef(temporaryAt(n)=(x)).incr()
+# define temporaryAtPut(n,x) objectRef(temporaryAt(n)=(x)).incr()
 # define literalsAt(n) *(lits+n)
 # define contextAt(n) *(cntx+n)
 # define contextAtPut(n,x) incr(contextAt(n-1)=(x))
@@ -137,7 +132,6 @@ boolean execute(object aProcess, int maxsteps)
   int i, j;
   register int low;
   int high;
-  register object incrobj;  /* speed up increments and decrements */
   byte *bp;
   object intClass = globalSymbol("Integer");
 
@@ -296,7 +290,6 @@ doFindMessage:
             for (; j >= 0; j--) {
               ipop(returnedObject);
               objectRef(argarray).basicAtPut(j+1, returnedObject);
-              decr(returnedObject);
             }
 //            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
             printf("Failed to find %s\n", objectRef(messageToSend).charPtr());
@@ -323,7 +316,6 @@ doFindMessage:
           for (; j >= 0; j--) {
             ipop(returnedObject);
             objectRef(argarray).basicAtPut(j+1, returnedObject);
-            decr(returnedObject);
           }
           ipush(method); /* push method */
           ipush(argarray);
@@ -461,7 +453,7 @@ doFindMessage:
           stackTopFree();
         }
         /* returned object has already been incremented */
-        ipush(returnedObject); decr(returnedObject);
+        ipush(returnedObject); 
         break;
 
 doReturn:
@@ -471,7 +463,7 @@ doReturn:
           stackTopFree();
         }
         /* returned object has already been incremented */
-        ipush(returnedObject); decr(returnedObject);
+        ipush(returnedObject); 
         /* now go restart old routine */
         if (linkPointer != 0)
           goto readLinkageBlock;
@@ -497,7 +489,6 @@ doReturn:
 
           case PopTop:
             ipop(returnedObject);
-            decr(returnedObject);
             break;
 
           case Branch:
@@ -514,7 +505,6 @@ doReturn:
               pst++;
               byteOffset = i;
             }
-            decr(returnedObject);
             break;
 
           case BranchIfFalse:
@@ -525,7 +515,6 @@ doReturn:
               pst++;
               byteOffset = i;
             }
-            decr(returnedObject);
             break;
 
           case AndBranch:
@@ -535,7 +524,6 @@ doReturn:
               ipush(returnedObject);
               byteOffset = i;
             }
-            decr(returnedObject);
             break;
 
           case OrBranch:
@@ -545,7 +533,6 @@ doReturn:
               ipush(returnedObject);
               byteOffset = i;
             }
-            decr(returnedObject);
             break;
 
           case SendToSuper:

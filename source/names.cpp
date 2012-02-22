@@ -66,7 +66,6 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
                         }
                     else
                         link = nextLink;
-            decr(nwLink);
             }
     }
 }

@@ -265,7 +265,6 @@ boolean nameTerm(char *name)
     for (i = size; i >= 1; i--) {
         obj = literalArray[literalTop];
         objectRef(newLit).basicAtPut(i, obj);
-        decr(obj);
         literalArray[literalTop] = nilobj;
         literalTop = literalTop - 1;
         }
@@ -798,7 +797,6 @@ boolean parse(object method, const char* text, boolean savetext)
             theLiterals = newArray(literalTop);
             for (i = 1; i <= literalTop; i++) {
                 objectRef(theLiterals).basicAtPut(i, literalArray[i]);
-                decr(literalArray[i]);
                 }
             objectRef(method).basicAtPut(literalsInMethod, theLiterals);
             }

@@ -286,8 +286,6 @@ static void readMethods(FILE* fd, boolean printit)
             }
         else {
             /* get rid of unwanted method */
-            objectRef(theMethod).incr();
-            decr(theMethod);
             givepause();
             }
         
