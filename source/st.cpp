@@ -36,7 +36,7 @@ int main(int argc, char** argv)
         exit(1);
     }
 
-    imageRead(fp);
+    MemoryManager::Instance()->imageRead(fp);
     MemoryManager::Instance()->garbageCollect();
 
     initCommonSymbols();

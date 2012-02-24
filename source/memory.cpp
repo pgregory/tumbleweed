@@ -73,15 +73,13 @@ MemoryManager* MemoryManager::Instance()
 
 MemoryManager::MemoryManager()
 {
-    int i;
-
     objectTable.resize(ObjectTableMax);
 
     /* set all the reference counts to zero */
-    for (i = 0; i < ObjectTableMax; i++) 
+    for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
     {
-        objectTable[i].referenceCount = 0; 
-        objectTable[i].size = 0; 
+        i->referenceCount = 0; 
+        i->size = 0; 
     }
 
     /* make up the initial free lists */
@@ -254,7 +252,7 @@ void MemoryManager::setFreeLists()
     objectFreeListInv.clear();
 
     /* add free objects */
-    for(int z=ObjectTableMax-1; z>0; z--)
+    for(int z=objectTable.size()-1; z>0; z--)
     {
         // If really unused, destroyObject will take care
         // of cleaning up and adding to the free list.
@@ -305,8 +303,9 @@ int MemoryManager::garbageCollect()
     if (debugging) 
         fprintf(stderr,"\ngarbage collecting ... ");
 
-    for(int x = ObjectTableMax-1; x>0; --x)
-        objectFromID(x).referenceCount = 0;
+    for(TObjectTableIterator x = objectTable.begin(), xend = objectTable.end(); x != xend; ++x)
+        x->referenceCount = 0;
+    objectTable[0].referenceCount = 1;
     /* visit symbols and firstProcess to toggle their referenceCount */
 
     visit(symbols);
@@ -319,7 +318,7 @@ int MemoryManager::garbageCollect()
     * count the objects
     */
 
-    for (j=ObjectTableMax-1; j>0; j--) 
+    for (j=objectTable.size()-1; j>0; j--) 
     {
         if (objectFromID(j).referenceCount == 0) 
         {
@@ -348,10 +347,9 @@ objectStruct& MemoryManager::objectFromID(object id)
 
 int MemoryManager::objectCount()
 {   
-    register int i, j;
-    j = 0;
-    for (i = 0; i < ObjectTableMax; i++)
-        if (objectFromID(i).referenceCount > 0)
+    register int j = 0;
+    for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
+        if (i->referenceCount > 0)
             j++;
     return j;
 }
@@ -531,6 +529,103 @@ object MemoryManager::copyFrom(object obj, int start, int size)
     }
     return newObj;
 }
+
+
+struct SDummy
+{
+  int di;
+  object cl;
+  short ds;
+} dummyObject;
+
+/*
+   imageRead - read in an object image
+   we toss out the free lists built initially,
+   reconstruct the linkages, then rebuild the free
+   lists around the new objects.
+   The only objects with nonzero reference counts
+   will be those reachable from either symbols
+   */
+static int fr(FILE* fp, char* p, int s)
+{   
+  int r;
+
+  r = fread(p, s, 1, fp);
+  if (r && (r != 1))
+    sysError("imageRead count error","");
+  return r;
+}
+
+void MemoryManager::imageRead(FILE* fp)
+{   
+  long i, size;
+
+  ignore fr(fp, (char *) &symbols, sizeof(object));
+  i = 0;
+
+  while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) 
+  {
+    i = dummyObject.di;
+
+    if ((i < 0) || (i >= objectTable.size()))
+      sysError("reading index out of range","");
+    MemoryManager::Instance()->objectFromID(i)._class = dummyObject.cl;
+    if ((MemoryManager::Instance()->objectFromID(i)._class < 0) || 
+        ((MemoryManager::Instance()->objectFromID(i)._class) >= objectTable.size())) {
+      fprintf(stderr,"index %d\n", static_cast<int>(dummyObject.cl));
+      sysError("class out of range","imageRead");
+    }
+    MemoryManager::Instance()->objectFromID(i).size = size = dummyObject.ds;
+    if (size < 0) size = ((- size) + 1) / 2;
+    if (size != 0) {
+      MemoryManager::Instance()->objectFromID(i).memory = mBlockAlloc((int) size);
+      ignore fr(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
+          sizeof(object) * (int) size);
+    }
+    else
+      MemoryManager::Instance()->objectFromID(i).memory = (object *) 0;
+
+        MemoryManager::Instance()->objectFromID(i).referenceCount = 666;
+  }
+  MemoryManager::Instance()->setFreeLists();
+}
+
+/*
+   imageWrite - write out an object image
+   */
+
+static void fw(FILE* fp, char* p, int s)
+{
+  if (fwrite(p, s, 1, fp) != 1) {
+    sysError("imageWrite size error","");
+  }
+}
+
+void MemoryManager::imageWrite(FILE* fp)
+{   
+  long i, size;
+
+  MemoryManager::Instance()->garbageCollect();
+
+  fw(fp, (char *) &symbols, sizeof(object));
+
+  for (i = 0; i < objectTable.size(); i++) 
+  {
+    if (MemoryManager::Instance()->objectFromID(i).referenceCount > 0) 
+    {
+      dummyObject.di = i;
+      dummyObject.cl = MemoryManager::Instance()->objectFromID(i)._class;
+      dummyObject.ds = size = MemoryManager::Instance()->objectFromID(i).size;
+      fw(fp, (char *) &dummyObject, sizeof(dummyObject));
+      if (size < 0) size = ((- size) + 1) / 2;
+      if (size != 0)
+        fw(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
+            sizeof(object) * size);
+    }
+  }
+}
+
+
 
 
 

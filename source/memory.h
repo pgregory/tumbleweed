@@ -98,12 +98,13 @@ void givepause();
 #include <map>
 #include <vector>
 
+typedef std::vector<objectStruct>     TObjectTable;
+typedef TObjectTable::iterator  TObjectTableIterator;
 typedef std::multimap<size_t, object>    TObjectFreeList;
 typedef std::map<object, size_t>    TObjectFreeListInv;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
 typedef TObjectFreeListInv::iterator   TObjectFreeListInvIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
-typedef std::vector<objectStruct>     TObjectTable;
 
 class MemoryManager
 {
@@ -141,6 +142,8 @@ class MemoryManager
         object newSymbol(const char*);
         object newCPointer(void* l);
 
+        void imageRead(FILE* fp);
+        void imageWrite(FILE* fp);
 
     private:
         TObjectFreeList objectFreeList;

@@ -14,98 +14,6 @@
 
 void fileIn(FILE* fd, boolean printit);
 
-struct SDummy
-{
-  int di;
-  object cl;
-  short ds;
-} dummyObject;
-
-/*
-   imageRead - read in an object image
-   we toss out the free lists built initially,
-   reconstruct the linkages, then rebuild the free
-   lists around the new objects.
-   The only objects with nonzero reference counts
-   will be those reachable from either symbols
-   */
-static int fr(FILE* fp, char* p, int s)
-{   
-  int r;
-
-  r = fread(p, s, 1, fp);
-  if (r && (r != 1))
-    sysError("imageRead count error","");
-  return r;
-}
-
-void imageRead(FILE* fp)
-{   
-  long i, size;
-
-  ignore fr(fp, (char *) &symbols, sizeof(object));
-  i = 0;
-
-  while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) 
-  {
-    i = dummyObject.di;
-
-    if ((i < 0) || (i > ObjectTableMax))
-      sysError("reading index out of range","");
-    MemoryManager::Instance()->objectFromID(i)._class = dummyObject.cl;
-    if ((MemoryManager::Instance()->objectFromID(i)._class < 0) || 
-        ((MemoryManager::Instance()->objectFromID(i)._class) > ObjectTableMax)) {
-      fprintf(stderr,"index %d\n", static_cast<int>(dummyObject.cl));
-      sysError("class out of range","imageRead");
-    }
-    MemoryManager::Instance()->objectFromID(i).size = size = dummyObject.ds;
-    if (size < 0) size = ((- size) + 1) / 2;
-    if (size != 0) {
-      MemoryManager::Instance()->objectFromID(i).memory = mBlockAlloc((int) size);
-      ignore fr(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
-          sizeof(object) * (int) size);
-    }
-    else
-      MemoryManager::Instance()->objectFromID(i).memory = (object *) 0;
-
-        MemoryManager::Instance()->objectFromID(i).referenceCount = 666;
-  }
-  MemoryManager::Instance()->setFreeLists();
-}
-
-/*
-   imageWrite - write out an object image
-   */
-
-static void fw(FILE* fp, char* p, int s)
-{
-  if (fwrite(p, s, 1, fp) != 1) {
-    sysError("imageWrite size error","");
-  }
-}
-
-void imageWrite(FILE* fp)
-{   
-  long i, size;
-
-  MemoryManager::Instance()->garbageCollect();
-
-  fw(fp, (char *) &symbols, sizeof(object));
-
-  for (i = 0; i < ObjectTableMax; i++) {
-    if (MemoryManager::Instance()->objectFromID(i).referenceCount > 0) {
-      dummyObject.di = i;
-      dummyObject.cl = MemoryManager::Instance()->objectFromID(i)._class;
-      dummyObject.ds = size = MemoryManager::Instance()->objectFromID(i).size;
-      fw(fp, (char *) &dummyObject, sizeof(dummyObject));
-      if (size < 0) size = ((- size) + 1) / 2;
-      if (size != 0)
-        fw(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
-            sizeof(object) * size);
-    }
-  }
-}
-
 /* i/o primitives - necessarily rather UNIX dependent;
    basically, files are all kept in a large array.
    File operations then just give an index into this array 
@@ -182,7 +90,7 @@ object ioPrimitive(int number, object* arguments)
       break;
 
     case 7:     /* write an object image */
-      if (fp[i]) imageWrite(fp[i]);
+      if (fp[i]) MemoryManager::Instance()->imageWrite(fp[i]);
       returnedObject = trueobj;
       break;
 
