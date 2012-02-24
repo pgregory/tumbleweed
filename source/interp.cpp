@@ -85,21 +85,21 @@ static boolean findMethod(object* methodClassLocation)
 }
 
 # define nextByte() *(bp + byteOffset++)
-# define ipush(x) objectRef(*++pst=(x)).incr()
+# define ipush(x) (*++pst=(x))
 # define stackTop() *pst
-# define stackTopPut(x) objectRef((*pst = x)).incr()
+# define stackTopPut(x) (*pst = x)
 # define stackTopFree() *pst-- = nilobj
 /* note that ipop leaves x with excess reference count */
 # define ipop(x) x = stackTop(); *pst-- = nilobj
 # define processStackTop() ((pst-psb)+1)
 # define receiverAt(n) *(rcv+n)
-# define receiverAtPut(n,x) objectRef(receiverAt(n)=(x)).incr()
+# define receiverAtPut(n,x) (receiverAt(n)=(x))
 # define argumentsAt(n) *(arg+n)
 # define temporaryAt(n) *(temps+n)
-# define temporaryAtPut(n,x) objectRef(temporaryAt(n)=(x)).incr()
+# define temporaryAtPut(n,x) (temporaryAt(n)=(x))
 # define literalsAt(n) *(lits+n)
 # define contextAt(n) *(cntx+n)
-# define contextAtPut(n,x) incr(contextAt(n-1)=(x))
+# define contextAtPut(n,x) (contextAt(n-1)=(x))
 # define processStackAt(n) *(psb+(n-1))
 
 
@@ -438,7 +438,7 @@ doFindMessage:
             break;
           case 58: /* allocObject */
             j = intValue(*primargs);
-            returnedObject = allocObject(j);
+            returnedObject = theMemoryManager->allocObject(j);
             break;
           case 87: /* value of symbol */
             returnedObject = globalSymbol(objectRef(*primargs).charPtr());
@@ -446,13 +446,10 @@ doFindMessage:
           default: 
             returnedObject = primitive(i, primargs); break;
         }
-        /* increment returned object in case pop would destroy it */
-        objectRef(returnedObject).incr();
         /* pop off arguments */
         while (low-- > 0) {
           stackTopFree();
         }
-        /* returned object has already been incremented */
         ipush(returnedObject); 
         break;
 
@@ -462,7 +459,6 @@ doReturn:
         while (processStackTop() >= returnPoint) {
           stackTopFree();
         }
-        /* returned object has already been incremented */
         ipush(returnedObject); 
         /* now go restart old routine */
         if (linkPointer != 0)
@@ -474,7 +470,6 @@ doReturn:
         switch(low) {
           case SelfReturn:
             returnedObject = argumentsAt(0);
-            objectRef(returnedObject).incr();
             goto doReturn;
 
           case StackReturn:

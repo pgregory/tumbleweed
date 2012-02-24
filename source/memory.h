@@ -44,8 +44,6 @@ struct objectStruct
 
     void basicAtPut(int, object);
     void simpleAtPut(int, object);
-    void incr();
-    void decr();
     void fieldAtPut(int, object);
     int byteAt(int);
     void byteAtPut(int, int);
@@ -53,51 +51,6 @@ struct objectStruct
 };
 # define ObjectTableMax 32500
 
-
-/*
-    The most basic routines to the memory manager are incr and decr,
-  which increment and decrement reference counts in objects.  By separating
-  decrement from memory freeing, we could replace these as procedure calls
-  by using the following macros (thereby saving procedure calls):
-*/
-
-/*
-  notice that the argument x is first assigned to a global variable; this is
-  in case evaluation of x results in side effects (such as assignment) which
-  should not be repeated. 
-*/
-
-/*
-    The next most basic routines in the memory module are those that
-  allocate blocks of storage.  There are three routines:
-    allocObject(size) - allocate an array of objects
-    allocByte(size) - allocate an array of bytes
-    allocStr(str) - allocate a string and fill it in
-  again, these may be macros, or they may be actual procedure calls
-*/
-
-extern object allocObject( INT );
-extern object allocByte( INT );
-extern object allocStr( CSTR );
-
-/*
-    integer objects are (but need not be) treated specially.
-  In this memory manager, negative integers are just left as is, but
-  positive integers are changed to x*2+1.  Either a negative or an odd
-  number is therefore an integer, while a nonzero even number is an
-  object pointer (multiplied by two).  Zero is reserved for the object ``nil''
-  Since newInteger does not fill in the _class field, it can be given here.
-  If it was required to use the _class field, it would have to be deferred
-  until names.h
-*/
-
-/*
-    there are four routines used to access fields within an object.
-  Again, some of these could be replaced by macros, for efficiency
-    basicAt(x, i) - ith field (start at 1) of object x
-    basicAtPut(x, i, v) - put value v in object x
-    byteAt(x, i) - ith field (start at 0) of object x
-    byteAtPut(x, i, v) - put value v in object x*/
 
 extern object newCPointer(void* l);
 extern void* cPointerValue(object);
@@ -135,18 +88,10 @@ extern void dspMethod(char*, char*);
 extern void initMemoryManager();
 extern void imageWrite(FILE*);
 extern void imageRead(FILE*);
-extern void sysDecr(object, int);
 extern boolean debugging;
 void setInstanceVariables(object aClass);
 boolean parse(object method, const char* text, boolean savetext);
 void givepause();
-int objectCount();
-void setFreeLists();
-int garbageCollect(int verbose);
-
-
-//extern void incr(object);
-extern void decr(object);
 
 
 #include <map>
@@ -168,11 +113,13 @@ class MemoryManager
         object allocObject(size_t memorySize);
         object allocByte(size_t size);
         object allocStr(register const char* str);
-        bool sysDecr(object z, int visit);
+        bool destroyObject(object z);
         void setFreeLists(); 
-        int garbageCollect(int verbose);
+        int garbageCollect();
+        void visit(register object x);
         void visitMethodCache();
 
+        int objectCount();
         objectStruct& objectFromID(object id);
 
         bool isObjectDeleted(object i)

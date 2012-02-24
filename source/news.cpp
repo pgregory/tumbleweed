@@ -32,7 +32,7 @@ object newArray(int size)
 {   
     object newObj;
 
-    newObj = allocObject(size);
+    newObj = theMemoryManager->allocObject(size);
     if (arrayClass == nilobj)
         arrayClass = globalSymbol("Array");
     objectRef(newObj).setClass(arrayClass);
@@ -43,7 +43,7 @@ object newBlock()
 {   
     object newObj;
 
-    newObj = allocObject(blockSize);
+    newObj = theMemoryManager->allocObject(blockSize);
     objectRef(newObj).setClass(globalSymbol("Block"));
     return newObj;
 }
@@ -52,7 +52,7 @@ object newByteArray(int size)
 {   
     object newobj;
 
-    newobj = allocByte(size);
+    newobj = theMemoryManager->allocByte(size);
     objectRef(newobj).setClass(globalSymbol("ByteArray"));
     return newobj;
 }
@@ -61,7 +61,7 @@ object newChar(int value)
 {   
     object newobj;
 
-    newobj = allocObject(1);
+    newobj = theMemoryManager->allocObject(1);
     objectRef(newobj).basicAtPut(1, newInteger(value));
     objectRef(newobj).setClass(globalSymbol("Char"));
     return(newobj);
@@ -71,7 +71,7 @@ object newClass(const char* name)
 {   
   object newObj, nameObj, methTable;
 
-    newObj = allocObject(classSize);
+    newObj = theMemoryManager->allocObject(classSize);
     objectRef(newObj).setClass(globalSymbol("Class"));
 
     /* now make name */
@@ -104,7 +104,7 @@ object newContext(int link, object method, object args, object temp)
 {   
     object newObj;
 
-    newObj = allocObject(contextSize);
+    newObj = theMemoryManager->allocObject(contextSize);
     objectRef(newObj).setClass(globalSymbol("Context"));
     objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
     objectRef(newObj).basicAtPut(methodInContext, method);
@@ -117,7 +117,7 @@ object newDictionary(int size)
 {   
     object newObj;
 
-    newObj = allocObject(1);
+    newObj = theMemoryManager->allocObject(1);
     objectRef(newObj).setClass(globalSymbol("Dictionary"));
     objectRef(newObj).basicAtPut(1, newArray(size));
     return newObj;
@@ -127,7 +127,7 @@ object newFloat(double d)
 {   
     object newObj;
 
-    newObj = allocByte((int) sizeof (double));
+    newObj = theMemoryManager->allocByte((int) sizeof (double));
     ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
     objectRef(newObj).setClass(globalSymbol("Float"));
     return newObj;
@@ -137,7 +137,7 @@ object newInteger(int i)
 {   
     object newObj;
 
-    newObj = allocByte((int) sizeof (int));
+    newObj = theMemoryManager->allocByte((int) sizeof (int));
     ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
     objectRef(newObj).setClass(globalSymbol("Integer"));
     return newObj;
@@ -166,7 +166,7 @@ object newCPointer(void* l)
   object newObj;
 
   int s = sizeof(void*);
-    newObj = allocByte((int) sizeof (void*));
+    newObj = theMemoryManager->allocByte((int) sizeof (void*));
     ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
     objectRef(newObj).setClass(globalSymbol("CPointer"));
     return newObj;
@@ -188,7 +188,7 @@ object newLink(object key, object value)
 {   
     object newObj;
 
-    newObj = allocObject(3);
+    newObj = theMemoryManager->allocObject(3);
     objectRef(newObj).setClass(globalSymbol("Link"));
     objectRef(newObj).basicAtPut(1, key);
     objectRef(newObj).basicAtPut(2, value);
@@ -198,7 +198,7 @@ object newLink(object key, object value)
 object newMethod()
 {   object newObj;
 
-    newObj = allocObject(methodSize);
+    newObj = theMemoryManager->allocObject(methodSize);
     objectRef(newObj).setClass(globalSymbol("Method"));
     return newObj;
 }
@@ -207,7 +207,7 @@ object newStString(const char* value)
 {   
   object newObj;
 
-    newObj = allocStr(value);
+    newObj = theMemoryManager->allocStr(value);
     if (stringClass == nilobj)
         stringClass = globalSymbol("String");
     objectRef(newObj).setClass(stringClass);
@@ -224,7 +224,7 @@ object newSymbol(const char* str)
         return newObj;
 
     /* not found, must make */
-    newObj = allocStr(str);
+    newObj = theMemoryManager->allocStr(str);
     if (symbolClass == nilobj)
         symbolClass = globalSymbol("Symbol");
     objectRef(newObj).setClass(symbolClass);

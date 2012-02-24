@@ -59,8 +59,8 @@ void goDoIt(const char * text)
     setInstanceVariables(nilobj);
     ignore parse(method, text, false);
 
-    firstProcess = allocObject(processSize);
-    stack = allocObject(50);
+    firstProcess = theMemoryManager->allocObject(processSize);
+    stack = theMemoryManager->allocObject(50);
 
     /* make a process */
     objectRef(firstProcess).basicAtPut(stackInProcess, stack);
@@ -92,8 +92,8 @@ void makeInitialImage()
   object objectClass, metaObjectClass;
 
     /* first create the table, without class links */
-    symbols = allocObject(1);
-    hashTable = allocObject(3 * 53);
+    symbols = theMemoryManager->allocObject(1);
+    hashTable = theMemoryManager->allocObject(3 * 53);
     objectRef(symbols).basicAtPut(1, hashTable);
 
     /* next create #Symbol, Symbol and Class */

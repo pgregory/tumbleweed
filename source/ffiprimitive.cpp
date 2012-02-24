@@ -307,7 +307,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object bytePointer = objectRef(block).basicAt(bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
-  object process = allocObject(processSize);
+  object process = theMemoryManager->allocObject(processSize);
   object stack = newArray(50);
   objectRef(process).basicAtPut(stackInProcess, stack);
   objectRef(process).basicAtPut(stackTopInProcess, newInteger(10));

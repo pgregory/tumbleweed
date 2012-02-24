@@ -57,7 +57,7 @@ static object findClassWithMeta(const char* name, object metaObj)
     if (newObj == nilobj)
   {
     size = intValue(objectRef(metaObj).basicAt(sizeInClass));
-    newObj = allocObject(size);
+    newObj = theMemoryManager->allocObject(size);
     objectRef(newObj).setClass(metaObj);
 
     /* now make name */

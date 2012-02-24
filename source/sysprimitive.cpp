@@ -88,7 +88,7 @@ object sysPrimitive(int number, object* arguments)
 
     case 3: /* force garbage collect */
       {
-        garbageCollect(1);
+        theMemoryManager->garbageCollect();
       }
       break;
 

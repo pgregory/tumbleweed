@@ -29,10 +29,7 @@
 #include "interp.h"
 
 boolean debugging = false;
-object sysobj;  /* temporary used to avoid rereference in macros */
-object intobj;
 
-extern object processStack;
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
 
@@ -58,105 +55,9 @@ MemoryManager* theMemoryManager;
 */
 
 /* initialize the memory management module */
-noreturn initMemoryManager() 
+void initMemoryManager() 
 {
     theMemoryManager = new MemoryManager();
-}
-
-/* setFreeLists - initialise the free lists */
-void setFreeLists() 
-{
-    theMemoryManager->setFreeLists();
-}
-
-/* allocate a new memory object */
-object allocObject(int memorySize)
-{   
-    return theMemoryManager->allocObject(memorySize);
-}
-
-object allocByte(int size)
-{  
-    object newObj;
-
-    newObj = allocObject((size + 1) / 2);
-    /* negative size fields indicate bit objects */
-    objectRef(newObj).setSizeField(-size);
-    return newObj;
-}
-
-object allocStr(register const char* str)
-{   
-    register object newSym;
-    char* t;
-
-    if(NULL != str)
-    {
-        newSym = allocByte(1 + strlen(str));
-        t = objectRef(newSym).charPtr();
-        ignore strcpy(t, str);
-    }
-    else
-    {
-        newSym = allocByte(1);
-        objectRef(newSym).charPtr()[0] = '\0';
-    }
-    return(newSym);
-}
-
-/* do the real work in the decr procedure */
-void sysDecr(object z, int visit)
-{   
-    theMemoryManager->sysDecr(z, visit);
-}
-
-
-/*
-  Written by Steven Pemberton:
-  The following routine assures that objects read in are really referenced,
-  eliminating junk that may be in the object file but not referenced.
-  It is essentially a marking garbage collector algorithm using the 
-  reference counts as the mark
-  
-  Modified by Paul Gregory based on ideas by Michael Koehne
-*/
-
-void visit(register object x)
-{
-    int i, s;
-    object *p;
-
-    if (x) 
-    {
-        if (--(theMemoryManager->objectFromID(x).referenceCount) == -1) 
-        {
-            /* then it's the first time we've visited it, so: */
-            visit(theMemoryManager->objectFromID(x)._class);
-            s = objectRef(x).sizeField();
-            if (s>0) 
-            {
-                p = theMemoryManager->objectFromID(x).memory;
-                for (i=s; i; --i) 
-                    visit(*p++);
-            }
-        }
-    }
-}
-
-int objectCount()
-{   
-    register int i, j;
-    j = 0;
-    for (i = 0; i < ObjectTableMax; i++)
-        if (theMemoryManager->objectFromID(i).referenceCount > 0)
-            j++;
-    return j;
-}
-
-
-int garbageCollect(int verbose)
-{
-    return theMemoryManager->garbageCollect(verbose);
 }
 
 
@@ -258,7 +159,7 @@ object MemoryManager::allocObject(size_t memorySize)
         /* more we can do */
         if (! done)
         {
-            if(garbageCollect(false) > 0)
+            if(garbageCollect() > 0)
             {
                 return allocObject(memorySize);
             }
@@ -307,7 +208,7 @@ object MemoryManager::allocStr(register const char* str)
     return(newSym);
 }
 
-bool MemoryManager::sysDecr(object z, int visit)
+bool MemoryManager::destroyObject(object z)
 {
     register struct objectStruct *p;
     register int i;
@@ -348,10 +249,10 @@ void MemoryManager::setFreeLists()
     /* add free objects */
     for(int z=ObjectTableMax-1; z>0; z--)
     {
-        // If really unused, sysDecr will take care
+        // If really unused, destroyObject will take care
         // of cleaning up and adding to the free list.
         if (objectTable[z].referenceCount == 0)
-            sysDecr(z, 0);
+            destroyObject(z);
     }
 }
 
@@ -366,12 +267,35 @@ void MemoryManager::visitMethodCache()
     }
 }
 
-int MemoryManager::garbageCollect(int verbose)
+void MemoryManager::visit(register object x)
+{
+    int i, s;
+    object *p;
+
+    if (x) 
+    {
+        if (--(theMemoryManager->objectFromID(x).referenceCount) == -1) 
+        {
+            /* then it's the first time we've visited it, so: */
+            visit(objectFromID(x)._class);
+            s = objectRef(x).sizeField();
+            if (s>0) 
+            {
+                p = objectFromID(x).memory;
+                for (i=s; i; --i) 
+                    visit(*p++);
+            }
+        }
+    }
+}
+
+
+int MemoryManager::garbageCollect()
 {
     register int j;
     int c=1,f=0;
 
-    if (verbose) 
+    if (debugging) 
         fprintf(stderr,"\ngarbage collecting ... ");
 
     for(int x = ObjectTableMax-1; x>0; --x)
@@ -392,7 +316,7 @@ int MemoryManager::garbageCollect(int verbose)
     {
         if (objectFromID(j).referenceCount == 0) 
         {
-            if(sysDecr(j,0))
+            if(destroyObject(j))
                 f++;
         } 
         else
@@ -402,7 +326,7 @@ int MemoryManager::garbageCollect(int verbose)
         }
     }
 
-    if (verbose)
+    if (debugging)
         fprintf(stderr," %d objects - %d freed.\n",c,f);
 
     numAllocated = 0;
@@ -414,6 +338,16 @@ objectStruct& MemoryManager::objectFromID(object id)
     return objectTable[id];
 }
 
+
+int MemoryManager::objectCount()
+{   
+    register int i, j;
+    j = 0;
+    for (i = 0; i < ObjectTableMax; i++)
+        if (theMemoryManager->objectFromID(i).referenceCount > 0)
+            j++;
+    return j;
+}
 
 
 
@@ -471,13 +405,8 @@ void objectStruct::simpleAtPut(int i, object v)
 void objectStruct::basicAtPut(int i, object v)
 {
     simpleAtPut(i, v);
-    objectRef(v).incr();
 }
 
-void objectStruct::incr()
-{
-    //++referenceCount;
-}
 
 void objectStruct::fieldAtPut(int i, object v)
 {

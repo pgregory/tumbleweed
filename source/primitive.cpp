@@ -46,7 +46,6 @@ static object zeroaryPrims(int number)
 {   
   short i;
   object returnedObject;
-  int objectCount();
 
   returnedObject = nilobj;
   switch(number) {
@@ -56,7 +55,7 @@ static object zeroaryPrims(int number)
       break;
 
     case 2:
-      fprintf(stderr,"object count %d\n", objectCount());
+      fprintf(stderr,"object count %d\n", theMemoryManager->objectCount());
       break;
 
     case 3:         /* return a random number */
@@ -320,11 +319,11 @@ static int intUnary(int number, object firstarg)
       break;
 
     case 8:
-      returnedObject = allocObject(firstarg);
+      returnedObject = theMemoryManager->allocObject(firstarg);
       break;
 
     case 9:
-      returnedObject = allocByte(firstarg);
+      returnedObject = theMemoryManager->allocByte(firstarg);
       break;
 
     default:

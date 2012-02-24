@@ -16,7 +16,6 @@
 object firstProcess;
 int initial = 0;    /* not making initial image */
 
-extern int objectCount();
 extern noreturn initFFISymbols();   /* FFI symbols */
 
 int main(int argc, char** argv)
@@ -40,7 +39,7 @@ int main(int argc, char** argv)
     }
 
     imageRead(fp);
-    theMemoryManager->garbageCollect(false);
+    theMemoryManager->garbageCollect();
 
     initCommonSymbols();
     initFFISymbols();

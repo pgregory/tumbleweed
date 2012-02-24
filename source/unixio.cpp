@@ -88,9 +88,7 @@ void imageWrite(FILE* fp)
 {   
   long i, size;
 
-  fprintf(stderr, "Object count before GC: %d\n", objectCount());
-  theMemoryManager->garbageCollect(false);
-  fprintf(stderr, "Object count after GC: %d\n", objectCount());
+  theMemoryManager->garbageCollect();
 
   fw(fp, (char *) &symbols, sizeof(object));
 
