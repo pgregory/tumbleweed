@@ -152,8 +152,10 @@ extern void decr(object);
 #include <map>
 #include <vector>
 
-typedef std::map<size_t, object>    TObjectFreeList;
+typedef std::multimap<size_t, object>    TObjectFreeList;
+typedef std::map<object, size_t>    TObjectFreeListInv;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
+typedef TObjectFreeListInv::iterator   TObjectFreeListInvIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
 typedef std::vector<objectStruct>     TObjectTable;
 
@@ -166,15 +168,22 @@ class MemoryManager
         object allocObject(size_t memorySize);
         object allocByte(size_t size);
         object allocStr(register const char* str);
-        void sysDecr(object z, int visit);
+        bool sysDecr(object z, int visit);
         void setFreeLists(); 
         int garbageCollect(int verbose);
         void visitMethodCache();
 
         objectStruct& objectFromID(object id);
 
+        bool isObjectDeleted(object i)
+        {
+            return objectFreeListInv.find(i) != objectFreeListInv.end();
+        }
+    
+
     private:
         TObjectFreeList objectFreeList;
+        TObjectFreeListInv objectFreeListInv;
         TObjectTable    objectTable;
 };
 

@@ -32,6 +32,7 @@ boolean debugging = false;
 object sysobj;  /* temporary used to avoid rereference in macros */
 object intobj;
 
+extern object processStack;
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
 
@@ -169,8 +170,11 @@ MemoryManager::MemoryManager()
     objectTable.resize(ObjectTableMax);
 
     /* set all the reference counts to zero */
-    for (i = 0; i < ObjectTableMax; i++) {
-        objectTable[i].referenceCount = 0; objectTable[i].size = 0; }
+    for (i = 0; i < ObjectTableMax; i++) 
+    {
+        objectTable[i].referenceCount = 0; 
+        objectTable[i].size = 0; 
+    }
 
     /* make up the initial free lists */
     setFreeLists();
@@ -197,10 +201,8 @@ object MemoryManager::allocObject(size_t memorySize)
             tpos->second != nilobj)
     {
         position = tpos->second;
-        if(objectTable[position]._class != nilobj)
-            tpos->second = objectTable[position]._class;
-        else
-            objectFreeList.erase(tpos);
+        objectFreeList.erase(tpos);
+        objectFreeListInv.erase(position);
     }
 
     /* if not there, next try making a size zero object and
@@ -209,10 +211,8 @@ object MemoryManager::allocObject(size_t memorySize)
             tpos->second != nilobj) 
     {
         position = tpos->second;
-        if(objectTable[position]._class != nilobj)
-            tpos->second = objectTable[position]._class;
-        else
-            objectFreeList.erase(tpos);
+        objectFreeList.erase(tpos);
+        objectFreeListInv.erase(position);
         objectTable[position].size = memorySize;
         objectTable[position].memory = mBlockAlloc(memorySize);
     }
@@ -227,10 +227,8 @@ object MemoryManager::allocObject(size_t memorySize)
                 tbigger->second != nilobj)
         {
             position = tbigger->second;
-            if(objectTable[position]._class != nilobj)
-                tbigger->second = objectTable[position]._class;
-            else
-                objectFreeList.erase(tbigger);
+            objectFreeList.erase(tbigger);
+            objectFreeListInv.erase(position);
             /* just trim it a bit */
             objectTable[position].size = memorySize;
             done = true;
@@ -245,10 +243,8 @@ object MemoryManager::allocObject(size_t memorySize)
                      tsmaller->second != nilobj)
             {
                 position = tsmaller->second;
-                if(objectTable[position]._class != nilobj)
-                    tsmaller->second = objectTable[position]._class;
-                else
-                    objectFreeList.erase(tsmaller);
+                objectFreeList.erase(tsmaller);
+                objectFreeListInv.erase(position);
                 objectTable[position].size = memorySize;
 
                 free(objectTable[position].memory);
@@ -311,11 +307,12 @@ object MemoryManager::allocStr(register const char* str)
     return(newSym);
 }
 
-void MemoryManager::sysDecr(object z, int visit)
+bool MemoryManager::sysDecr(object z, int visit)
 {
     register struct objectStruct *p;
     register int i;
     int size;
+    bool deleted = false;
 
     p = &objectTable[z];
     if (p->referenceCount < 0) 
@@ -326,24 +323,27 @@ void MemoryManager::sysDecr(object z, int visit)
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
 
-    TObjectFreeListIterator tpos;
-    if((tpos = objectFreeList.find(size)) != objectFreeList.end())
-        p->_class = tpos->second;
-    else
-        p->_class = nilobj;
-    
-    objectFreeList[size] = z;
+    if(objectFreeListInv.find(z) == objectFreeListInv.end())
+    {
+        objectFreeList.insert(std::pair<size_t, object>(size, z));
+        objectFreeListInv.insert(std::pair<object, size_t>(z, size));
+        deleted = true;
+    }
+
     if (size > 0) 
     {
         for (i = size; i > 0; )
             p->memory[--i] = nilobj;
     }
     p->size = size;
+
+    return deleted;
 }
 
 void MemoryManager::setFreeLists() 
 {
     objectFreeList.clear();
+    objectFreeListInv.clear();
 
     /* add free objects */
     for(int z=ObjectTableMax-1; z>0; z--)
@@ -392,8 +392,8 @@ int MemoryManager::garbageCollect(int verbose)
     {
         if (objectFromID(j).referenceCount == 0) 
         {
-            sysDecr(j,0);
-            f++;
+            if(sysDecr(j,0))
+                f++;
         } 
         else
         {

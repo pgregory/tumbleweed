@@ -41,12 +41,13 @@ static int fr(FILE* fp, char* p, int s)
 
 void imageRead(FILE* fp)
 {   
-  short i, size;
+  long i, size;
 
   ignore fr(fp, (char *) &symbols, sizeof(object));
   i = 0;
 
-  while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) {
+  while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) 
+  {
     i = dummyObject.di;
 
     if ((i < 0) || (i > ObjectTableMax))
@@ -69,14 +70,7 @@ void imageRead(FILE* fp)
 
         theMemoryManager->objectFromID(i).referenceCount = 666;
   }
-
-  /* now restore ref counts, getting rid of unneeded junk */
-  //visit(symbols);
-  /* toss out the old free lists, build new ones */
-  //setFreeLists();
-    /* toss out the old free lists, build new ones */
-    setFreeLists();
-    garbageCollect(0);
+  theMemoryManager->setFreeLists();
 }
 
 /*
@@ -92,9 +86,11 @@ static void fw(FILE* fp, char* p, int s)
 
 void imageWrite(FILE* fp)
 {   
-  short i, size;
+  long i, size;
 
+  fprintf(stderr, "Object count before GC: %d\n", objectCount());
   theMemoryManager->garbageCollect(false);
+  fprintf(stderr, "Object count after GC: %d\n", objectCount());
 
   fw(fp, (char *) &symbols, sizeof(object));
 

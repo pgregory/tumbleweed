@@ -40,6 +40,8 @@ int main(int argc, char** argv)
     }
 
     imageRead(fp);
+    theMemoryManager->garbageCollect(false);
+
     initCommonSymbols();
     initFFISymbols();
 
