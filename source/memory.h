@@ -29,14 +29,14 @@ replacement is possible as long as the interface remains consistent
 struct objectStruct 
 {
     object _class;
-    short referenceCount;
-    short size;
+    long referenceCount;
+    long size;
     object *memory;
 
     object classField();
     void setClass(object y);
-    short sizeField();
-    void setSizeField(short size);
+    long sizeField();
+    void setSizeField(long size);
     object* sysMemPtr();
     object* memoryPtr();
     byte* bytePtr();
@@ -48,14 +48,15 @@ struct objectStruct
     int byteAt(int);
     void byteAtPut(int, int);
     object basicAt(int i);
+
+    double floatValue();
+    int intValue();
+    void* cPointerValue();
+
 };
 # define ObjectTableMax 32500
 
 
-extern object newCPointer(void* l);
-extern void* cPointerValue(object);
-
-extern object sysobj;
 # define nilobj (object) 0
 
 /*
@@ -110,31 +111,46 @@ class MemoryManager
         MemoryManager();
         ~MemoryManager();
 
-        object allocObject(size_t memorySize);
-        object allocByte(size_t size);
-        object allocStr(register const char* str);
-        bool destroyObject(object z);
+        static MemoryManager* Instance();
+
         void setFreeLists(); 
         int garbageCollect();
         void visit(register object x);
         void visitMethodCache();
-
         int objectCount();
         objectStruct& objectFromID(object id);
+        object copyFrom(object obj, int start, int size);
 
-        bool isObjectDeleted(object i)
-        {
-            return objectFreeListInv.find(i) != objectFreeListInv.end();
-        }
-    
+        object allocObject(size_t memorySize);
+        object allocByte(size_t size);
+        object allocStr(register const char* str);
+        bool destroyObject(object z);
+
+        object newArray(int);
+        object newBlock();
+        object newByteArray(int);
+        object newClass(const char*);
+        object newChar(int);
+        object newContext(int, object, object, object);
+        object newDictionary(int);
+        object newInteger(int);
+        object newFloat(double);
+        object newMethod();
+        object newLink(object, object);
+        object newStString(const char*);
+        object newSymbol(const char*);
+        object newCPointer(void* l);
+
 
     private:
         TObjectFreeList objectFreeList;
         TObjectFreeListInv objectFreeListInv;
         TObjectTable    objectTable;
+
+        static MemoryManager* m_pInstance;
 };
 
 extern MemoryManager* theMemoryManager;
 
-#define objectRef(x) (theMemoryManager->objectFromID(x))
+#define objectRef(x) (MemoryManager::Instance()->objectFromID(x))
 

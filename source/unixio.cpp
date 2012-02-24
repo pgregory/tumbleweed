@@ -52,25 +52,25 @@ void imageRead(FILE* fp)
 
     if ((i < 0) || (i > ObjectTableMax))
       sysError("reading index out of range","");
-    theMemoryManager->objectFromID(i)._class = dummyObject.cl;
-    if ((theMemoryManager->objectFromID(i)._class < 0) || 
-        ((theMemoryManager->objectFromID(i)._class) > ObjectTableMax)) {
+    MemoryManager::Instance()->objectFromID(i)._class = dummyObject.cl;
+    if ((MemoryManager::Instance()->objectFromID(i)._class < 0) || 
+        ((MemoryManager::Instance()->objectFromID(i)._class) > ObjectTableMax)) {
       fprintf(stderr,"index %d\n", static_cast<int>(dummyObject.cl));
       sysError("class out of range","imageRead");
     }
-    theMemoryManager->objectFromID(i).size = size = dummyObject.ds;
+    MemoryManager::Instance()->objectFromID(i).size = size = dummyObject.ds;
     if (size < 0) size = ((- size) + 1) / 2;
     if (size != 0) {
-      theMemoryManager->objectFromID(i).memory = mBlockAlloc((int) size);
-      ignore fr(fp, (char *) theMemoryManager->objectFromID(i).memory,
+      MemoryManager::Instance()->objectFromID(i).memory = mBlockAlloc((int) size);
+      ignore fr(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
           sizeof(object) * (int) size);
     }
     else
-      theMemoryManager->objectFromID(i).memory = (object *) 0;
+      MemoryManager::Instance()->objectFromID(i).memory = (object *) 0;
 
-        theMemoryManager->objectFromID(i).referenceCount = 666;
+        MemoryManager::Instance()->objectFromID(i).referenceCount = 666;
   }
-  theMemoryManager->setFreeLists();
+  MemoryManager::Instance()->setFreeLists();
 }
 
 /*
@@ -88,19 +88,19 @@ void imageWrite(FILE* fp)
 {   
   long i, size;
 
-  theMemoryManager->garbageCollect();
+  MemoryManager::Instance()->garbageCollect();
 
   fw(fp, (char *) &symbols, sizeof(object));
 
   for (i = 0; i < ObjectTableMax; i++) {
-    if (theMemoryManager->objectFromID(i).referenceCount > 0) {
+    if (MemoryManager::Instance()->objectFromID(i).referenceCount > 0) {
       dummyObject.di = i;
-      dummyObject.cl = theMemoryManager->objectFromID(i)._class;
-      dummyObject.ds = size = theMemoryManager->objectFromID(i).size;
+      dummyObject.cl = MemoryManager::Instance()->objectFromID(i)._class;
+      dummyObject.ds = size = MemoryManager::Instance()->objectFromID(i).size;
       fw(fp, (char *) &dummyObject, sizeof(dummyObject));
       if (size < 0) size = ((- size) + 1) / 2;
       if (size != 0)
-        fw(fp, (char *) theMemoryManager->objectFromID(i).memory,
+        fw(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
             sizeof(object) * size);
     }
   }
@@ -122,11 +122,11 @@ object ioPrimitive(int number, object* arguments)
 
   returnedObject = nilobj;
 
-  i = intValue(arguments[0]);
+  i = objectRef(arguments[0]).intValue();
 
   switch(number) {
     case 0:     /* file open */
-      i = intValue(arguments[0]);
+      i = objectRef(arguments[0]).intValue();
       p = objectRef(arguments[1]).charPtr();
       if(NULL == p)
         returnedObject = nilobj;
@@ -144,7 +144,7 @@ object ioPrimitive(int number, object* arguments)
         if (fp[i] == NULL)
           returnedObject = nilobj;
         else
-          returnedObject = newInteger(i);
+          returnedObject = MemoryManager::Instance()->newInteger(i);
       }
       break;
 
@@ -178,7 +178,7 @@ object ioPrimitive(int number, object* arguments)
           break;
         /* else we loop again */
       }
-      returnedObject = newStString(buffer);
+      returnedObject = MemoryManager::Instance()->newStString(buffer);
       break;
 
     case 7:     /* write an object image */

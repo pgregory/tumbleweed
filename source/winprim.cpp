@@ -94,7 +94,7 @@ static object newPoint(x, y)
 int x, y;
 {   object newObj;
 
-    newObj = theMemoryManager->allocObject(2);
+    newObj = MemoryManager::Instance()->allocObject(2);
     objectRef(newObj).setClass(globalSymbol("Point"));
     objectRef(newObj).basicAtPut(1, newInteger(x));
     objectRef(newObj).basicAtPut(2, newInteger(y));

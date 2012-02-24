@@ -68,7 +68,7 @@ object sysPrimitive(int number, object* arguments)
   /* someday there will be more here */
   switch(number - 150) {
     case 0:     /* do a system() call */
-      returnedObject = newInteger(system(
+      returnedObject = MemoryManager::Instance()->newInteger(system(
             objectRef(arguments[0]).charPtr()));
       break;
 
@@ -76,19 +76,19 @@ object sysPrimitive(int number, object* arguments)
 /*      {
         char* p = readline(objectRef(arguments[0]).charPtr());
         add_history(p);
-        returnedObject = newStString(p);
+        returnedObject = MemoryManager::Instance()->newStString(p);
       }*/
       break;
 
     case 2: /* get last error */ 
       {
-        returnedObject = newStString(gLastError);
+        returnedObject = MemoryManager::Instance()->newStString(gLastError);
       }
       break;
 
     case 3: /* force garbage collect */
       {
-        theMemoryManager->garbageCollect();
+        MemoryManager::Instance()->garbageCollect();
       }
       break;
 

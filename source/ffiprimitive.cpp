@@ -134,7 +134,7 @@ void initFFISymbols()
   ffiSyms = static_cast<object*>(calloc(ffiNumStrs, sizeof(object)));
   int i;
   for(i = 0; i < ffiNumStrs; ++i)
-    ffiSyms[i] = newSymbol(ffiStrs[i]);
+    ffiSyms[i] = MemoryManager::Instance()->newSymbol(ffiStrs[i]);
 }
 
 void cleanupFFISymbols()
@@ -161,7 +161,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
   object realValue;
 
   object sclass = globalSymbol("Symbol");
-  object vclass = getClass(value);
+  object vclass = objectRef(value).classField();
   if(vclass == sclass)
     realValue = globalSymbol(objectRef(value).charPtr());
   else
@@ -175,17 +175,17 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_CHAR_OUT:
     case FFI_WCHAR_OUT:
       data->outInteger.pointer = &data->outInteger.integer;
-      data->outInteger.integer = intValue(realValue);
+      data->outInteger.integer = objectRef(realValue).intValue();
       ptr = &data->outInteger.pointer;
       break;
     case FFI_DOUBLE_OUT:
     case FFI_LONGDOUBLE_OUT:
       data->outFloat.pointer = &data->outFloat._float;
-      data->outFloat._float = floatValue(realValue);
+      data->outFloat._float = objectRef(realValue).floatValue();
       ptr = &data->outFloat.pointer;
       break;
     case FFI_CHAR:
-      data->integer = intValue(realValue);
+      data->integer = objectRef(realValue).intValue();
       ptr = &data->integer;
       break;
     case FFI_STRING:
@@ -199,16 +199,16 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      if(getClass(realValue) == globalSymbol("Integer"))
-        data->integer = intValue(realValue);
-      else if(getClass(realValue) == globalSymbol("Float"))
-        data->integer = (int)floatValue(realValue);
+      if(objectRef(realValue).classField() == globalSymbol("Integer"))
+        data->integer = objectRef(realValue).intValue();
+      else if(objectRef(realValue).classField() == globalSymbol("Float"))
+        data->integer = (int)objectRef(realValue).floatValue();
       ptr = &data->integer;
       break;
     case FFI_DOUBLE:
     case FFI_LONGDOUBLE:
       // \todo: How to check type.
-      data->_float = floatValue(realValue);
+      data->_float = objectRef(realValue).floatValue();
       ptr = &data->_float;
       break;
     case FFI_VOID:
@@ -222,7 +222,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_COBJECT:
       {
         // \todo: How to check type.
-        void* f = cPointerValue(realValue);
+        void* f = objectRef(realValue).cPointerValue();
         int s = sizeof(f);
         data->cPointer = f;
         ptr = &data->cPointer;
@@ -245,26 +245,26 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_ULONG_OUT:
     case FFI_CHAR_OUT:
     case FFI_WCHAR_OUT:
-      return newInteger(data->outInteger.integer);
+      return MemoryManager::Instance()->newInteger(data->outInteger.integer);
       break;
 
     case FFI_CHAR:
-      return newChar(data->integer);
+      return MemoryManager::Instance()->newChar(data->integer);
       break;
 
     case FFI_STRING:
-      return newStString(data->charPtr);
+      return MemoryManager::Instance()->newStString(data->charPtr);
       break;
 
     case FFI_INT:
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      return newInteger(data->integer);
+      return MemoryManager::Instance()->newInteger(data->integer);
       break;
 
     case FFI_COBJECT:
-      return newCPointer(data->cPointer);
+      return MemoryManager::Instance()->newCPointer(data->cPointer);
       break;
 
     case FFI_VOID:
@@ -307,17 +307,17 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object bytePointer = objectRef(block).basicAt(bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
-  object process = theMemoryManager->allocObject(processSize);
-  object stack = newArray(50);
+  object process = MemoryManager::Instance()->allocObject(processSize);
+  object stack = MemoryManager::Instance()->newArray(50);
   objectRef(process).basicAtPut(stackInProcess, stack);
-  objectRef(process).basicAtPut(stackTopInProcess, newInteger(10));
-  objectRef(process).basicAtPut(linkPtrInProcess, newInteger(2));
+  objectRef(process).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
+  objectRef(process).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
   objectRef(stack).basicAtPut(3, context);
-  objectRef(stack).basicAtPut(4, newInteger(1));
+  objectRef(stack).basicAtPut(4, MemoryManager::Instance()->newInteger(1));
   objectRef(stack).basicAtPut(6, bytePointer);
 
   /* change context and byte pointer */
-  int argLoc = intValue(objectRef(block).basicAt(argumentLocationInBlock));
+  int argLoc = objectRef(objectRef(block).basicAt(argumentLocationInBlock)).intValue();
   object temps = objectRef(context).basicAt(temporariesInContext);
   for(arg = 0; arg < data->numArgs; ++arg)
     objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
@@ -346,7 +346,7 @@ object ffiPrimitive(int number, object* arguments)
         sprintf(libName, "%s.%s", p, SO_EXT);
         FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
-          returnedObject = newCPointer(handle);
+          returnedObject = MemoryManager::Instance()->newCPointer(handle);
         else 
         {
           const char* msg = dlerror();
@@ -359,13 +359,13 @@ object ffiPrimitive(int number, object* arguments)
     case 1: /* dlsym */
       {
         // \todo: Check type.
-        FFI_LibraryHandle lib = cPointerValue(arguments[0]);
+        FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
         char* p = objectRef(arguments[1]).charPtr();
         if(NULL != lib)
         {
           FFI_FunctionHandle func = dlsym(lib, p);
           if(NULL != func)
-            returnedObject = newCPointer(func);
+            returnedObject = MemoryManager::Instance()->newCPointer(func);
           else
           {
             sysWarn("function not found in library", "ffiPrimitive");
@@ -381,7 +381,7 @@ object ffiPrimitive(int number, object* arguments)
     case 2: /* cCall */
       {
         // \todo: Check types.
-        FFI_FunctionHandle func = cPointerValue(arguments[0]);
+        FFI_FunctionHandle func = objectRef(arguments[0]).cPointerValue();
         object rtype = arguments[1];
         int retMap = mapType(rtype);
         int cargTypes = objectRef(arguments[2]).sizeField();
@@ -419,7 +419,7 @@ object ffiPrimitive(int number, object* arguments)
           ffi_cif cif;
           if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
           {
-            returnedObject = newArray(cargTypes + 1);
+            returnedObject = MemoryManager::Instance()->newArray(cargTypes + 1);
 
             ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
             objectRef(returnedObject).basicAtPut(1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
@@ -495,7 +495,7 @@ object ffiPrimitive(int number, object* arguments)
             /* Initialize the closure, setting stream to stdout */
             if(ffi_prep_closure_loc(closure, cif, callBack, data, callback) == FFI_OK)
             {
-              returnedObject = newCPointer(callback);
+              returnedObject = MemoryManager::Instance()->newCPointer(callback);
             }
           }
         }
@@ -508,12 +508,12 @@ object ffiPrimitive(int number, object* arguments)
     case 4: // dlclose
       {
         // \todo: Check type.
-        FFI_LibraryHandle lib = cPointerValue(arguments[0]);
+        FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
         char* p = objectRef(arguments[1]).charPtr();
         if(NULL != lib)
         {
           int result = dlclose(lib);
-          returnedObject = newInteger(result);
+          returnedObject = MemoryManager::Instance()->newInteger(result);
         }
       }
       break;

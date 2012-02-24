@@ -23,8 +23,8 @@
 # define methodClassInMethod 7
 # define watchInMethod 8
 # define protocolInMethod 9
-# define methodStackSize(x) intValue(objectRef(x).basicAt(stackSizeInMethod))
-# define methodTempSize(x) intValue(objectRef(x).basicAt(temporarySizeInMethod))
+# define methodStackSize(x) objectRef(objectRef(x).basicAt(stackSizeInMethod)).intValue()
+# define methodTempSize(x) objectRef(objectRef(x).basicAt(temporarySizeInMethod)).intValue()
 
 # define contextSize 6
 # define linkPtrInContext 1
@@ -46,23 +46,6 @@
 extern object trueobj;      /* the pseudo variable true */
 extern object falseobj;     /* the pseudo variable false */
 
-extern object getClass(OBJ);
-extern object copyFrom( OBJ X INT X INT);
-extern object newArray(INT);
-extern object newBlock();
-extern object newByteArray(INT);
-extern object newClass(CSTR);
-extern object newChar(INT);
-extern object newContext(INT X OBJ X OBJ X OBJ);
-extern object newDictionary(INT);
-extern object newInteger(INT);
-extern object newFloat(FLOAT);
-extern object newMethod();
-extern object newLink(OBJ X OBJ);
-extern object newStString(CSTR);
-extern object newSymbol(CSTR);
-extern double floatValue(OBJ);
-extern int intValue(OBJ);
 extern noreturn initCommonSymbols();    /* common symbols */
 extern object unSyms[], binSyms[];
 

@@ -11,7 +11,6 @@ set(shared_srcs
   source/memory.cpp
   source/names.cpp
   source/parser.cpp
-  source/news.cpp
   source/parser.cpp
   source/primitive.cpp
   source/sysprimitive.cpp

@@ -48,7 +48,7 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
             objectRef(table).basicAtPut(hash+2, value);
             }
         else {
-            nwLink = newLink(key, value);
+            nwLink = MemoryManager::Instance()->newLink(key, value);
             link = objectRef(table).basicAt(hash+3);
             if (link == nilobj) {
                 objectRef(table).basicAtPut(hash+3, nwLink);
@@ -163,7 +163,7 @@ noreturn initCommonSymbols()
     trueobj = globalSymbol("true");
     falseobj = globalSymbol("false");
     for (i = 0; unStrs[i]; i++)
-        unSyms[i] = newSymbol(unStrs[i]);
+        unSyms[i] = MemoryManager::Instance()->newSymbol(unStrs[i]);
     for (i = 0; binStrs[i]; i++)
-        binSyms[i] = newSymbol(binStrs[i]);
+        binSyms[i] = MemoryManager::Instance()->newSymbol(binStrs[i]);
 }

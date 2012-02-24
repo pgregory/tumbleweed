@@ -25,8 +25,6 @@ int main(int argc, char** argv)
   char methbuf[MAX_PATH];
     int i;
 
-    initMemoryManager();
-
     makeInitialImage();
 
     initCommonSymbols();
@@ -55,26 +53,26 @@ void goDoIt(const char * text)
 {   
   object stack, method;
 
-    method = newMethod();
+    method = MemoryManager::Instance()->newMethod();
     setInstanceVariables(nilobj);
     ignore parse(method, text, false);
 
-    firstProcess = theMemoryManager->allocObject(processSize);
-    stack = theMemoryManager->allocObject(50);
+    firstProcess = MemoryManager::Instance()->allocObject(processSize);
+    stack = MemoryManager::Instance()->allocObject(50);
 
     /* make a process */
     objectRef(firstProcess).basicAtPut(stackInProcess, stack);
-    objectRef(firstProcess).basicAtPut(stackTopInProcess, newInteger(10));
-    objectRef(firstProcess).basicAtPut(linkPtrInProcess, newInteger(2));
+    objectRef(firstProcess).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
+    objectRef(firstProcess).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
 
     /* put argument on stack */
     objectRef(stack).basicAtPut(1, nilobj);   /* argument */
     /* now make a linkage area in stack */
     objectRef(stack).basicAtPut(2, nilobj);   /* previous link */
     objectRef(stack).basicAtPut(3, nilobj);   /* context object (nil = stack) */
-    objectRef(stack).basicAtPut(4, newInteger(1));    /* return point */
+    objectRef(stack).basicAtPut(4, MemoryManager::Instance()->newInteger(1));    /* return point */
     objectRef(stack).basicAtPut(5, method);   /* method */
-    objectRef(stack).basicAtPut(6, newInteger(1));    /* byte offset */
+    objectRef(stack).basicAtPut(6, MemoryManager::Instance()->newInteger(1));    /* byte offset */
 
     /* now go execute it */
     while (execute(firstProcess, 15000)) fprintf(stderr,"..");
@@ -92,44 +90,44 @@ void makeInitialImage()
   object objectClass, metaObjectClass;
 
     /* first create the table, without class links */
-    symbols = theMemoryManager->allocObject(1);
-    hashTable = theMemoryManager->allocObject(3 * 53);
+    symbols = MemoryManager::Instance()->allocObject(1);
+    hashTable = MemoryManager::Instance()->allocObject(3 * 53);
     objectRef(symbols).basicAtPut(1, hashTable);
 
     /* next create #Symbol, Symbol and Class */
-    symbolObj = newSymbol("Symbol");
-    symbolClass = newClass("Symbol");
-    integerClass = newClass("Integer");
+    symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
+    symbolClass = MemoryManager::Instance()->newClass("Symbol");
+    integerClass = MemoryManager::Instance()->newClass("Integer");
     objectRef(symbolObj).setClass(symbolClass);
-    classClass = newClass("Class");
+    classClass = MemoryManager::Instance()->newClass("Class");
     objectRef(symbolClass).setClass(classClass);
     objectRef(integerClass).setClass(classClass);
-  metaClassClass = newClass("MetaClass");
+  metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
     objectRef(classClass).setClass(metaClassClass);
-  objectClass = newClass("Object");
-  metaObjectClass = newClass("MetaObject");
+  objectClass = MemoryManager::Instance()->newClass("Object");
+  metaObjectClass = MemoryManager::Instance()->newClass("MetaObject");
   objectRef(objectClass).setClass(metaObjectClass);
   objectRef(metaObjectClass).setClass(classClass);
 
   objectRef(metaClassClass).basicAtPut(superClassInClass, metaObjectClass);
   objectRef(metaObjectClass).basicAtPut(superClassInClass, classClass);
-    objectRef(metaObjectClass).basicAtPut(sizeInClass, newInteger(classSize));
+    objectRef(metaObjectClass).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(classSize));
 
     /* now fix up classes for symbol table */
     /* and make a couple common classes, just to hold their places */
-    ignore newClass("Link");
-    ignore newClass("ByteArray");
-    objectRef(hashTable).setClass(newClass("Array"));
-    objectRef(symbols).setClass(newClass("Dictionary"));
-    objectRef(nilobj).setClass(newClass("UndefinedObject"));
-    ignore newClass("String");
-    nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
+    ignore MemoryManager::Instance()->newClass("Link");
+    ignore MemoryManager::Instance()->newClass("ByteArray");
+    objectRef(hashTable).setClass(MemoryManager::Instance()->newClass("Array"));
+    objectRef(symbols).setClass(MemoryManager::Instance()->newClass("Dictionary"));
+    objectRef(nilobj).setClass(MemoryManager::Instance()->newClass("UndefinedObject"));
+    ignore MemoryManager::Instance()->newClass("String");
+    nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 
-  objectRef(classClass).basicAtPut(methodsInClass, newDictionary(39));
+  objectRef(classClass).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
     /* finally at least make true and false to be distinct */
-    trueobj = newSymbol("true");
+    trueobj = MemoryManager::Instance()->newSymbol("true");
     nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-    falseobj = newSymbol("false");
+    falseobj = MemoryManager::Instance()->newSymbol("false");
     nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
 }

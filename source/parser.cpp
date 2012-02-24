@@ -123,7 +123,7 @@ void genInteger(int val)    /* generate an integer push */
         genInstruction(PushConstant, val);
     else
         genInstruction(PushLiteral,
-            genLiteral(newInteger(val)));
+            genLiteral(MemoryManager::Instance()->newInteger(val)));
 }
 
 const char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
@@ -179,8 +179,8 @@ boolean nameTerm(char *name)
     /* must look it up at run time */
     if (! done) 
     {
-        genInstruction(PushLiteral, genLiteral(newSymbol(name)));
-        genMessage(false, 0, newSymbol("value"));
+        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name)));
+        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
     }
 
     return(isSuper);
@@ -199,17 +199,17 @@ boolean nameTerm(char *name)
                 break;
 
             case intconst:
-                ignore genLiteral(newInteger(tokenInteger));
+                ignore genLiteral(MemoryManager::Instance()->newInteger(tokenInteger));
                 ignore nextToken();
                 break;
 
             case floatconst:
-                ignore genLiteral(newFloat(tokenFloat));
+                ignore genLiteral(MemoryManager::Instance()->newFloat(tokenFloat));
                 ignore nextToken();
                 break;
 
             case nameconst: case namecolon: case symconst:
-                ignore genLiteral(newSymbol(tokenString));
+                ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString));
                 ignore nextToken();
                 break;
 
@@ -221,9 +221,9 @@ boolean nameTerm(char *name)
                 if (streq(tokenString, "-") && isdigit(peek())) {
                     ignore nextToken();
                     if (token == intconst)
-                        ignore genLiteral(newInteger(- tokenInteger));
+                        ignore genLiteral(MemoryManager::Instance()->newInteger(- tokenInteger));
                     else if (token == floatconst) {
-                        ignore genLiteral(newFloat(-tokenFloat));
+                        ignore genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat));
                         }
                     else
                         compilError(selector,"negation not followed",
@@ -231,17 +231,17 @@ boolean nameTerm(char *name)
                     ignore nextToken();
                     break;
                     }
-                ignore genLiteral(newSymbol(tokenString));
+                ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString));
                 ignore nextToken();
                 break;
 
             case charconst:
-                ignore genLiteral(newChar( tokenInteger));
+                ignore genLiteral(MemoryManager::Instance()->newChar( tokenInteger));
                 ignore nextToken();
                 break;
 
             case strconst:
-                ignore genLiteral(newStString(tokenString));
+                ignore genLiteral(MemoryManager::Instance()->newStString(tokenString));
                 ignore nextToken();
                 break;
 
@@ -260,7 +260,7 @@ boolean nameTerm(char *name)
         else
             ignore nextToken();
     size = literalTop - base;
-    newLit = newArray(size);
+    newLit = MemoryManager::Instance()->newArray(size);
     for (i = size; i >= 1; i--) {
         obj = literalArray[literalTop];
         objectRef(newLit).basicAtPut(i, obj);
@@ -282,7 +282,7 @@ boolean nameTerm(char *name)
         ignore nextToken();
         }
     else if (token == floatconst) {
-        genInstruction(PushLiteral, genLiteral(newFloat(tokenFloat)));
+        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newFloat(tokenFloat)));
         ignore nextToken();
         }
     else if ((token == binary) && streq(tokenString, "-")) {
@@ -291,7 +291,7 @@ boolean nameTerm(char *name)
             genInteger(- tokenInteger);
         else if (token == floatconst) {
             genInstruction(PushLiteral,
-                genLiteral(newFloat(-tokenFloat)));
+                genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat)));
             }
         else
             compilError(selector,"negation not followed",
@@ -300,17 +300,17 @@ boolean nameTerm(char *name)
         }
     else if (token == charconst) {
         genInstruction(PushLiteral,
-            genLiteral(newChar(tokenInteger)));
+            genLiteral(MemoryManager::Instance()->newChar(tokenInteger)));
         ignore nextToken();
         }
     else if (token == symconst) {
         genInstruction(PushLiteral,
-            genLiteral(newSymbol(tokenString)));
+            genLiteral(MemoryManager::Instance()->newSymbol(tokenString)));
         ignore nextToken();
         }
     else if (token == strconst) {
         genInstruction(PushLiteral,
-            genLiteral(newStString(tokenString)));
+            genLiteral(MemoryManager::Instance()->newStString(tokenString)));
         ignore nextToken();
         }
     else if (token == arraybegin) {
@@ -407,7 +407,7 @@ boolean unaryContinuation(boolean superReceiver)
 
         if (! sent) 
         {
-            genMessage(superReceiver, 0, newSymbol(tokenString));
+            genMessage(superReceiver, 0, MemoryManager::Instance()->newSymbol(tokenString));
         }
         /* once a message is sent to super, reciever is not super */
         superReceiver = false;
@@ -423,7 +423,7 @@ boolean binaryContinuation(boolean superReceiver)
 
     superReceiver = unaryContinuation(superReceiver);
     while (parseok && (token == binary)) {
-        messagesym = newSymbol(tokenString);
+        messagesym = MemoryManager::Instance()->newSymbol(tokenString);
         ignore nextToken();
         superTerm = term();
         ignore unaryContinuation(superTerm);
@@ -456,7 +456,7 @@ int optimizeBlock(int instruction, boolean dopop)
         }
     else {
         ignore binaryContinuation(term());
-        genMessage(false, 0, newSymbol("value"));
+        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
         }
     codeArray[location] = codeTop+1;
     blockstat = savebstat;
@@ -489,7 +489,7 @@ boolean keyContinuation(boolean superReceiver)
         else if (streq(tokenString, "whileTrue:")) {
             j = codeTop;
             genInstruction(DoSpecial, Duplicate);
-            genMessage(false, 0, newSymbol("value"));
+            genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
             i = optimizeBlock(BranchIfFalse, false);
             genInstruction(DoSpecial, PopTop);
             genInstruction(DoSpecial, Branch);
@@ -514,7 +514,7 @@ boolean keyContinuation(boolean superReceiver)
             sent = false;
 
             /* check for predefined messages */
-            messagesym = newSymbol(pattern);
+            messagesym = MemoryManager::Instance()->newSymbol(pattern);
 
             if (! sent) {
                 genMessage(superReceiver, argumentCount, messagesym);
@@ -586,9 +586,9 @@ void assignment(char* name)
 
     if (! done) {   /* not known, handle at run time */
         genInstruction(PushArgument, 0);
-        genInstruction(PushLiteral, genLiteral(newSymbol(name)));
+        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name)));
         expression();
-        genMessage(false, 2, newSymbol("assign:value:"));
+        genMessage(false, 2, MemoryManager::Instance()->newSymbol("assign:value:"));
         }
 }
 
@@ -601,7 +601,7 @@ void statement()
         if (blockstat == InBlock) {
             /* change return point before returning */
             genInstruction(PushConstant, contextConst);
-            genMessage(false, 0, newSymbol("blockReturn"));
+            genMessage(false, 0, MemoryManager::Instance()->newSymbol("blockReturn"));
             genInstruction(DoSpecial, PopTop);
             }
         genInstruction(DoSpecial, StackReturn);
@@ -663,7 +663,7 @@ void block()
             if (temporaryTop > temporaryLimit)
                 compilError(selector,"too many temporaries in method","");
             else {
-                tempsym = newSymbol(tokenString);
+                tempsym = MemoryManager::Instance()->newSymbol(tokenString);
                 temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
                 }
             ignore nextToken();
@@ -673,10 +673,10 @@ void block()
                     "by |");
         ignore nextToken();
         }
-    newBlk = newBlock();
-    objectRef(newBlk).basicAtPut(argumentCountInBlock, newInteger(argumentCount));
+    newBlk = MemoryManager::Instance()->newBlock();
+    objectRef(newBlk).basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
     objectRef(newBlk).basicAtPut(argumentLocationInBlock, 
-        newInteger(saveTemporary + 1));
+        MemoryManager::Instance()->newInteger(saveTemporary + 1));
     genInstruction(PushLiteral, genLiteral(newBlk));
     genInstruction(PushConstant, contextConst);
     genInstruction(DoPrimitive, 2);
@@ -685,7 +685,7 @@ void block()
     fixLocation = codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    objectRef(newBlk).basicAtPut(bytecountPositionInBlock, newInteger(codeTop+1));
+    objectRef(newBlk).basicAtPut(bytecountPositionInBlock, MemoryManager::Instance()->newInteger(codeTop+1));
     blockstat = InBlock;
     body();
     if ((token == closing) && streq(tokenString, "]"))
@@ -711,7 +711,7 @@ void temporaries()
             if (temporaryTop > temporaryLimit)
                 compilError(selector,"too many temporaries in method","");
             else {
-                tempsym = newSymbol(tokenString);
+                tempsym = MemoryManager::Instance()->newSymbol(tokenString);
                 temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
                 }
             ignore nextToken();
@@ -735,7 +735,7 @@ void messagePattern()
         ignore nextToken();
         if (token != nameconst) 
             compilError(selector,"binary message pattern not followed by name",selector);
-        argsym = newSymbol(tokenString);
+        argsym = MemoryManager::Instance()->newSymbol(tokenString);
         argumentName[++argumentTop] = objectRef(argsym).charPtr();
         ignore nextToken();
         }
@@ -749,7 +749,7 @@ void messagePattern()
                     "not followed by a name");
             if (++argumentTop > argumentLimit)
                 compilError(selector,"too many arguments in method","");
-            argsym = newSymbol(tokenString);
+            argsym = MemoryManager::Instance()->newSymbol(tokenString);
             argumentName[argumentTop] = objectRef(argsym).charPtr();
             ignore nextToken();
             }
@@ -785,15 +785,15 @@ boolean parse(object method, const char* text, boolean savetext)
         objectRef(method).basicAtPut(bytecodesInMethod, nilobj);
         }
     else {
-        bytecodes = newByteArray(codeTop);
+        bytecodes = MemoryManager::Instance()->newByteArray(codeTop);
         bp = objectRef(bytecodes).bytePtr();
         for (i = 0; i < codeTop; i++) {
             bp[i] = codeArray[i];
             }
-        objectRef(method).basicAtPut(messageInMethod, newSymbol(selector));
+        objectRef(method).basicAtPut(messageInMethod, MemoryManager::Instance()->newSymbol(selector));
         objectRef(method).basicAtPut(bytecodesInMethod, bytecodes);
         if (literalTop > 0) {
-            theLiterals = newArray(literalTop);
+            theLiterals = MemoryManager::Instance()->newArray(literalTop);
             for (i = 1; i <= literalTop; i++) {
                 objectRef(theLiterals).basicAtPut(i, literalArray[i]);
                 }
@@ -802,11 +802,11 @@ boolean parse(object method, const char* text, boolean savetext)
         else {
             objectRef(method).basicAtPut(literalsInMethod, nilobj);
             }
-        objectRef(method).basicAtPut(stackSizeInMethod, newInteger(6));
+        objectRef(method).basicAtPut(stackSizeInMethod, MemoryManager::Instance()->newInteger(6));
         objectRef(method).basicAtPut(temporarySizeInMethod,
-            newInteger(1 + maxTemporary));
+            MemoryManager::Instance()->newInteger(1 + maxTemporary));
         if (savetext) {
-            objectRef(method).basicAtPut(textInMethod, newStString(text));
+            objectRef(method).basicAtPut(textInMethod, MemoryManager::Instance()->newStString(text));
             }
         return(true);
         }

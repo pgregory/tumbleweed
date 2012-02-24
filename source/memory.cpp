@@ -27,11 +27,18 @@
 #include "env.h"
 #include "memory.h"
 #include "interp.h"
+#include "names.h"
 
 boolean debugging = false;
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
+
+static object arrayClass = nilobj;  /* the class Array */
+static object intClass = nilobj;    /* the class Integer */
+static object stringClass = nilobj; /* the class String */
+static object symbolClass = nilobj; /* the class Symbol */
+
 
 /*
     in theory the objectTable should only be accessible to the memory
@@ -45,22 +52,22 @@ object symbols;     /* table of all symbols created */
     calloc during the initialization of the memory manager.
 */
 
-MemoryManager* theMemoryManager;
+MemoryManager* MemoryManager::m_pInstance = NULL;
 
-/*
-    The following variables are strictly local to the memory
-    manager module
-
-    FREELISTMAX defines the maximum size of any object.
-*/
-
-/* initialize the memory management module */
-void initMemoryManager() 
-{
-    theMemoryManager = new MemoryManager();
+void ncopy(register char* p, register char* q, register int n)      /* ncopy - copy exactly n bytes from place to place */
+{   
+    for (; n>0; n--)
+        *p++ = *q++;
 }
 
 
+MemoryManager* MemoryManager::Instance()
+{
+    if(NULL == m_pInstance)
+        m_pInstance = new MemoryManager();
+
+    return m_pInstance;
+}
 
 
 
@@ -274,7 +281,7 @@ void MemoryManager::visit(register object x)
 
     if (x) 
     {
-        if (--(theMemoryManager->objectFromID(x).referenceCount) == -1) 
+        if (--(MemoryManager::Instance()->objectFromID(x).referenceCount) == -1) 
         {
             /* then it's the first time we've visited it, so: */
             visit(objectFromID(x)._class);
@@ -344,11 +351,186 @@ int MemoryManager::objectCount()
     register int i, j;
     j = 0;
     for (i = 0; i < ObjectTableMax; i++)
-        if (theMemoryManager->objectFromID(i).referenceCount > 0)
+        if (objectFromID(i).referenceCount > 0)
             j++;
     return j;
 }
 
+
+object MemoryManager::newArray(int size)
+{   
+    object newObj;
+
+    newObj = allocObject(size);
+    if (arrayClass == nilobj)
+        arrayClass = globalSymbol("Array");
+    objectRef(newObj).setClass(arrayClass);
+    return newObj;
+}
+
+object MemoryManager::newBlock()
+{   
+    object newObj;
+
+    newObj = allocObject(blockSize);
+    objectRef(newObj).setClass(globalSymbol("Block"));
+    return newObj;
+}
+
+object MemoryManager::newByteArray(int size)
+{   
+    object newobj;
+
+    newobj = allocByte(size);
+    objectRef(newobj).setClass(globalSymbol("ByteArray"));
+    return newobj;
+}
+
+object MemoryManager::newChar(int value)
+{   
+    object newobj;
+
+    newobj = allocObject(1);
+    objectRef(newobj).basicAtPut(1, newInteger(value));
+    objectRef(newobj).setClass(globalSymbol("Char"));
+    return(newobj);
+}
+
+object MemoryManager::newClass(const char* name)
+{   
+    object newObj, nameObj, methTable;
+
+    newObj = allocObject(classSize);
+    objectRef(newObj).setClass(globalSymbol("Class"));
+
+    /* now make name */
+    nameObj = newSymbol(name);
+    objectRef(newObj).basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
+    objectRef(newObj).basicAtPut(methodsInClass, methTable);
+    objectRef(newObj).basicAtPut(sizeInClass, newInteger(classSize));
+
+    /* now put in global symbols table */
+    nameTableInsert(symbols, strHash(name), nameObj, newObj);
+
+    return newObj;
+}
+
+object MemoryManager::newContext(int link, object method, object args, object temp)
+{   
+    object newObj;
+
+    newObj = allocObject(contextSize);
+    objectRef(newObj).setClass(globalSymbol("Context"));
+    objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
+    objectRef(newObj).basicAtPut(methodInContext, method);
+    objectRef(newObj).basicAtPut(argumentsInContext, args);
+    objectRef(newObj).basicAtPut(temporariesInContext, temp);
+    return newObj;
+}
+
+object MemoryManager::newDictionary(int size)
+{   
+    object newObj;
+
+    newObj = allocObject(1);
+    objectRef(newObj).setClass(globalSymbol("Dictionary"));
+    objectRef(newObj).basicAtPut(1, newArray(size));
+    return newObj;
+}
+
+object MemoryManager::newFloat(double d)
+{   
+    object newObj;
+
+    newObj = allocByte((int) sizeof (double));
+    ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
+    objectRef(newObj).setClass(globalSymbol("Float"));
+    return newObj;
+}
+
+object MemoryManager::newInteger(int i)
+{   
+    object newObj;
+
+    newObj = allocByte((int) sizeof (int));
+    ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
+    objectRef(newObj).setClass(globalSymbol("Integer"));
+    return newObj;
+}
+
+object MemoryManager::newCPointer(void* l)
+{   
+  object newObj;
+
+  int s = sizeof(void*);
+    newObj = allocByte((int) sizeof (void*));
+    ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
+    objectRef(newObj).setClass(globalSymbol("CPointer"));
+    return newObj;
+}
+
+object MemoryManager::newLink(object key, object value)
+{   
+    object newObj;
+
+    newObj = allocObject(3);
+    objectRef(newObj).setClass(globalSymbol("Link"));
+    objectRef(newObj).basicAtPut(1, key);
+    objectRef(newObj).basicAtPut(2, value);
+    return newObj;
+}
+
+object MemoryManager::newMethod()
+{   object newObj;
+
+    newObj = allocObject(methodSize);
+    objectRef(newObj).setClass(globalSymbol("Method"));
+    return newObj;
+}
+
+object MemoryManager::newStString(const char* value)
+{   
+  object newObj;
+
+    newObj = allocStr(value);
+    if (stringClass == nilobj)
+        stringClass = globalSymbol("String");
+    objectRef(newObj).setClass(stringClass);
+    return(newObj);
+}
+
+object MemoryManager::newSymbol(const char* str)
+{    
+    object newObj;
+
+    /* first see if it is already there */
+    newObj = globalKey(str);
+    if (newObj) 
+        return newObj;
+
+    /* not found, must make */
+    newObj = allocStr(str);
+    if (symbolClass == nilobj)
+        symbolClass = globalSymbol("Symbol");
+    objectRef(newObj).setClass(symbolClass);
+    nameTableInsert(symbols, strHash(str), newObj, nilobj);
+    return newObj;
+}
+
+
+object MemoryManager::copyFrom(object obj, int start, int size)
+{   
+    object newObj;
+    int i;
+
+    newObj = newArray(size);
+    for (i = 1; i <= size; i++) 
+    {
+        objectRef(newObj).basicAtPut(i, objectRef(obj).basicAt(start));
+        start++;
+    }
+    return newObj;
+}
 
 
 
@@ -363,12 +545,12 @@ void objectStruct::setClass(object y)
     _class = y;
 }
 
-short objectStruct::sizeField()
+long objectStruct::sizeField()
 {
     return size;
 }
 
-void objectStruct::setSizeField(short _size)
+void objectStruct::setSizeField(long _size)
 {
     size = _size;
 }
@@ -434,7 +616,6 @@ void objectStruct::byteAtPut(int i, int x)
     byte *bp;
     if ((i <= 0) || (i > 2 * - sizeField())) 
     {
-        fprintf(stderr,"index %d size %d\n", i, sizeField());
         sysError("index out of range", "byteAtPut");
     }
     else 
@@ -454,3 +635,32 @@ object objectStruct::basicAt(int i)
     return nilobj;
 }
 
+double objectStruct::floatValue()
+{   
+    double d;
+
+    ncopy((char *) &d, charPtr(), (int) sizeof(double));
+    return d;
+}
+
+int objectStruct::intValue()
+{   
+    int d;
+
+    if(this == &objectRef(nilobj))
+        return 0;
+    ncopy((char *) &d, charPtr(), (int) sizeof(int));
+    return d;
+}
+
+void* objectStruct::cPointerValue()
+{   
+    if(NULL == charPtr())
+        sysError("invalid cPointer","cPointerValue");
+
+    void* l;
+
+    int s = sizeof(void*);
+    ncopy((char *) &l, charPtr(), (int) sizeof(void*));
+    return l;
+}

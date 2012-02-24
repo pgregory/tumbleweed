@@ -23,8 +23,6 @@ int main(int argc, char** argv)
     FILE *fp;
     char *p, buffer[120];
 
-    initMemoryManager();
- 
     strcpy(buffer,"systemImage");
     p = buffer;
 
@@ -39,7 +37,7 @@ int main(int argc, char** argv)
     }
 
     imageRead(fp);
-    theMemoryManager->garbageCollect();
+    MemoryManager::Instance()->garbageCollect();
 
     initCommonSymbols();
     initFFISymbols();
