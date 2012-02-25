@@ -290,6 +290,7 @@ static void readMethods(FILE* fd, boolean printit)
             }
         
     } while (lineBuffer[0] != ']');
+
 }
 
 /*
@@ -297,6 +298,7 @@ static void readMethods(FILE* fd, boolean printit)
 */
 void fileIn(FILE* fd, boolean printit)
 {
+    MemoryManager::Instance()->disableGC(true);
     while(fgets(textBuffer, TextBufferSize, fd) != NULL) {
         lexinit(textBuffer);
         if (token == inputend)
@@ -312,4 +314,5 @@ void fileIn(FILE* fd, boolean printit)
         else 
             sysError("unrecognized line", textBuffer);
         }
+    MemoryManager::Instance()->disableGC(true);
 }

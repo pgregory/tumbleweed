@@ -54,7 +54,6 @@ struct objectStruct
     void* cPointerValue();
 
 };
-# define ObjectTableMax 32500
 
 
 # define nilobj (object) 0
@@ -142,6 +141,8 @@ class MemoryManager
         object newSymbol(const char*);
         object newCPointer(void* l);
 
+        void disableGC(bool disable);
+
         void imageRead(FILE* fp);
         void imageWrite(FILE* fp);
 
@@ -149,8 +150,11 @@ class MemoryManager
         TObjectFreeList objectFreeList;
         TObjectFreeListInv objectFreeListInv;
         TObjectTable    objectTable;
+        bool            noGC;
 
         static MemoryManager* m_pInstance;
+
+        size_t growObjectStore(size_t amount);
 };
 
 extern MemoryManager* theMemoryManager;

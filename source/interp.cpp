@@ -43,7 +43,7 @@ void flushCache(object messageToSend, object _class)
 {   
   int hash;
 
-  hash = ((objectRefHash(messageToSend)) + (objectRefHash(_class))) / cacheSize;
+  hash = ((objectRefHash(messageToSend)) + (objectRefHash(_class))) % cacheSize;
   methodCache[hash].cacheMessage = nilobj;
 }
 

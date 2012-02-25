@@ -29,7 +29,7 @@
 #include "interp.h"
 #include "names.h"
 
-boolean debugging = false;
+boolean debugging = true;
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
@@ -71,9 +71,9 @@ MemoryManager* MemoryManager::Instance()
 
 
 
-MemoryManager::MemoryManager()
+MemoryManager::MemoryManager() : noGC(false)
 {
-    objectTable.resize(ObjectTableMax);
+    objectTable.resize(65000);
 
     /* set all the reference counts to zero */
     for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
@@ -164,14 +164,18 @@ object MemoryManager::allocObject(size_t memorySize)
         /* more we can do */
         if (! done)
         {
-            if(garbageCollect() > 0)
+            if(debugging)
+                fprintf(stderr, "Failed to find an available object, trying GC\n");
+            if(!noGC && garbageCollect() > 0)
             {
                 return allocObject(memorySize);
             }
             else
             {
-                printf("Object count: %d\n", objectCount());
-                sysError("out of objects","alloc");
+                if(debugging)
+                    fprintf(stderr, "No suitable objects available after GC, growing store.\n");
+                growObjectStore(5000);
+                return allocObject(memorySize);
             }
         }
     }
@@ -568,26 +572,31 @@ void MemoryManager::imageRead(FILE* fp)
     i = dummyObject.di;
 
     if ((i < 0) || (i >= objectTable.size()))
-      sysError("reading index out of range","");
-    MemoryManager::Instance()->objectFromID(i)._class = dummyObject.cl;
-    if ((MemoryManager::Instance()->objectFromID(i)._class < 0) || 
-        ((MemoryManager::Instance()->objectFromID(i)._class) >= objectTable.size())) {
-      fprintf(stderr,"index %d\n", static_cast<int>(dummyObject.cl));
-      sysError("class out of range","imageRead");
+    {
+        // Grow enough, plus a bit.
+        growObjectStore(i - objectTable.size() + 500);
     }
-    MemoryManager::Instance()->objectFromID(i).size = size = dummyObject.ds;
+    objectFromID(i)._class = dummyObject.cl;
+    if ((objectFromID(i)._class < 0) || 
+        ((objectFromID(i)._class) >= objectTable.size())) 
+    {
+        // Grow enough, plus a bit.
+        growObjectStore(objectFromID(i)._class - objectTable.size() + 500);
+    }
+    objectFromID(i).size = size = dummyObject.ds;
     if (size < 0) size = ((- size) + 1) / 2;
-    if (size != 0) {
-      MemoryManager::Instance()->objectFromID(i).memory = mBlockAlloc((int) size);
-      ignore fr(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
+    if (size != 0) 
+    {
+      objectFromID(i).memory = mBlockAlloc((int) size);
+      ignore fr(fp, (char *) objectFromID(i).memory,
           sizeof(object) * (int) size);
     }
     else
-      MemoryManager::Instance()->objectFromID(i).memory = (object *) 0;
+      objectFromID(i).memory = (object *) 0;
 
-        MemoryManager::Instance()->objectFromID(i).referenceCount = 666;
+    objectFromID(i).referenceCount = 666;
   }
-  MemoryManager::Instance()->setFreeLists();
+  setFreeLists();
 }
 
 /*
@@ -625,9 +634,31 @@ void MemoryManager::imageWrite(FILE* fp)
   }
 }
 
+void MemoryManager::disableGC(bool disable)
+{
+    noGC = disable;
+}
 
 
+size_t MemoryManager::growObjectStore(size_t amount)
+{
+    // Empty object to use when resizing.
+    objectStruct empty = {nilobj, 0, 0, NULL};
 
+    size_t currentSize = objectTable.size();
+    objectTable.resize(objectTable.size()+amount, empty);
+
+    if(debugging)
+        fprintf(stderr, "Growing object store to %d\n", objectTable.size());
+
+    // Add all new objects to the free list.
+    for(size_t i = currentSize; i < objectTable.size(); ++i)
+    {
+       objectFreeList.insert(std::pair<size_t, object>(0, i));
+       objectFreeListInv.insert(std::pair<object, size_t>(i, 0));
+    } 
+    return objectTable.size();
+}
 
 
 object objectStruct::classField()
