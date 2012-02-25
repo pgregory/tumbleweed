@@ -314,5 +314,5 @@ void fileIn(FILE* fd, boolean printit)
         else 
             sysError("unrecognized line", textBuffer);
         }
-    MemoryManager::Instance()->disableGC(true);
+    MemoryManager::Instance()->disableGC(false);
 }

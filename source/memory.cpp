@@ -21,6 +21,8 @@
 
 */
 
+#include <sstream>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +31,8 @@
 #include "interp.h"
 #include "names.h"
 
-boolean debugging = true;
+
+boolean debugging = false;
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
@@ -349,13 +352,25 @@ objectStruct& MemoryManager::objectFromID(object id)
 }
 
 
-int MemoryManager::objectCount()
+size_t MemoryManager::objectCount()
 {   
     register int j = 0;
     for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
         if (i->referenceCount > 0)
             j++;
     return j;
+}
+
+
+std::string MemoryManager::statsString()
+{
+    std::stringstream str;
+    str << "Memory Statistics:" << std::endl;
+    str << "\tActive Objects     " << objectCount() << std::endl;
+    str << "\tObjectstore size   " << objectTable.size() << std::endl;
+    str << "\tFree objects       " << objectFreeListInv.size() << std::endl;
+
+    return str.str();
 }
 
 

@@ -96,6 +96,7 @@ void givepause();
 
 #include <map>
 #include <vector>
+#include <string>
 
 typedef std::vector<objectStruct>     TObjectTable;
 typedef TObjectTable::iterator  TObjectTableIterator;
@@ -117,7 +118,10 @@ class MemoryManager
         int garbageCollect();
         void visit(register object x);
         void visitMethodCache();
-        int objectCount();
+        size_t objectCount();
+
+        std::string statsString();
+
         objectStruct& objectFromID(object id);
         object copyFrom(object obj, int start, int size);
 

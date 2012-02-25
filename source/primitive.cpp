@@ -55,7 +55,7 @@ static object zeroaryPrims(int number)
       break;
 
     case 2:
-      fprintf(stderr,"object count %d\n", MemoryManager::Instance()->objectCount());
+      fprintf(stderr, "%s", MemoryManager::Instance()->statsString().c_str());
       break;
 
     case 3:         /* return a random number */
