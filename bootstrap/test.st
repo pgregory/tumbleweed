@@ -16,6 +16,7 @@ Class One Object
 Class Two One
 Class Three Two
 Class Four Three
+
 Methods One 'all'
         test
                 ^ 1
@@ -102,3 +103,138 @@ Methods Test 'all'
             ifTrue: ['super test passed' print]
             ifFalse: [ smalltalk error: 'super test failed']
 ]
+
+*
+* New test framework based on the original Kent Beck paper
+*
+
+RawClass MetaTestCase Class MetaObject FailedCheckSignal 
+Class TestCase Object selector
+Class TestSuite Object name testCases
+Class TestResult Object startTime stopTime Time testName failures errors
+
+Methods MetaTestCase 'creation'
+            selector: aSymbol
+            ^ self new setSelector: aSymbol
+]
+
+Methods TestCase 'all'
+            setSelector: aSymbol
+            selector <- aSymbol
+| 
+        selector
+            ^ selector
+]
+
+Methods TestCase 'fixture'
+        setUp
+            "Run whatever code you need to get ready for the test to run."
+            nil
+|
+        tearDown
+            "Release whatever resources you used for the test."
+            nil
+]
+
+Methods TestCase 'execution'
+        run
+            self setUp.
+            self performTest.
+            self tearDown
+|
+        performTest
+            | args |
+            ^ [self respondsTo: selector] ifTrue: 
+                [   args <- Array new: 1.
+                    args at: 1 put: self.
+                    smalltalk perform: selector withArguments: args
+                ] ifFalse: [ false ]
+|
+        should: aBlock
+            aBlock value ifFalse: ['error in test case' print]
+]
+
+Methods MetaTestSuite 'creation'
+        named: aString
+            ^ self new setName: aString
+]
+
+Methods TestSuite 'creation'
+        setName: aString
+            name <- aString.
+            testCases <- List new 
+|
+        name
+            ^ name
+|
+        addTestCase: aTestCase
+            testCases add: aTestCase
+|
+        addTestCases: aCollection
+            aCollection do: [:each | self addTestCase: each]
+]
+
+Methods TestSuite 'run'
+        run
+            | result |
+            result <- self defaultTestResult.
+            result start.
+            self run: result.
+            result stop.
+            ^ result
+|
+        defaultTestResult
+            ^ self defaultTestResultClass test: self
+|
+        defaultTestResultClass
+            ^ TestResult
+]
+
+Methods MetaTestResult 'creation'
+        test: aTest
+            ^ self new setTest: aTest
+]
+
+Methods TestResult 'creation'
+        setTest: aTest
+        testName <- aTest name.
+        failures <- List new.
+        errors <- List new
+]
+
+Methods TestResult 'run'
+        start
+            startTime <- <4>
+|
+        stop
+            stopTime <- <4>
+|
+        run: aTestResult
+            testCases do: [:each | each run: aTestResult]
+]
+
+Methods TestResult 'errors'
+        makeRecord: aString in: aTestCase
+            | record |
+            record <- Array new: 1.
+            record at: 1 put: aTestCase.
+            record at: 2 put: aString.
+            ^ record
+|
+        error: aString in: aTestCase
+            errors add: (self makeRecord: aString in: aTestCase)
+|
+        failure: aString in: aTestCase
+            failures add: (self makeRecord: aString in: aTestCase)
+]
+
+Class TestTestCase TestCase anumber
+
+Methods TestTestCase 'testing'
+        setUp
+            anumber <- 5.
+|
+        testAdd
+            self should: [anumber + 3 = 10]
+]
+

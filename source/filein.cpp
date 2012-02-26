@@ -79,28 +79,28 @@ static object findClassWithMeta(const char* name, object metaObj)
 
 static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
-  object classObj, superObj, metaObj;
+    object classObj, superObj, metaObj;
     int i, size, instanceTop;
 
-  metaObj = findClass(metaclass);
+    metaObj = findClass(metaclass);
     classObj = findClassWithMeta(_class, metaObj);
-  objectRef(classObj).setClass(metaObj);
+    objectRef(classObj).setClass(metaObj);
 
-  //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
+    //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
 
     size = 0;
-  superObj = nilobj;
-  if(NULL != superclass)
-  {
-    superObj = findClass(superclass);
-    objectRef(classObj).basicAtPut(superClassInClass, superObj);
-    size = objectRef(objectRef(superObj).basicAt(sizeInClass)).intValue();
-  }
+    superObj = nilobj;
+    if(NULL != superclass)
+    {
+        superObj = findClass(superclass);
+        objectRef(classObj).basicAtPut(superClassInClass, superObj);
+        size = objectRef(objectRef(superObj).basicAt(sizeInClass)).intValue();
+    }
 
-  // Set the size up to now.
+    // Set the size up to now.
     objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
-  return classObj;
+    return classObj;
 }
 
 /*
@@ -108,56 +108,56 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
 */
 static void readRawClassDeclaration()
 {   
-  object classObj, vars;
-  char* className, *metaName, *superName;
+    object classObj, vars;
+    char* className, *metaName, *superName;
     int i, size, instanceTop;
-  // todo: fixed length variables array!
+    // todo: fixed length variables array!
     object instanceVariables[15];
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-  className = strdup(tokenString);
+    className = strdup(tokenString);
     size = 0;
     if (nextToken() == nameconst) 
-  { /* read metaclass name */
+    { /* read metaclass name */
         metaName = strdup(tokenString);
         ignore nextToken();
-  }
+    }
     if (token == nameconst) 
-  { /* read superclass name */
+    { /* read superclass name */
         superName = strdup(tokenString);
         ignore nextToken();
-  }
+    }
 
-  classObj = createRawClass(className, metaName, superName);
-  free(className);
-  free(metaName);
-  free(superName);
+    classObj = createRawClass(className, metaName, superName);
+    free(className);
+    free(metaName);
+    free(superName);
 
-  // Get the current class size, we'll build on this as 
-  // we add instance variables.
-  size = objectRef(objectRef(classObj).basicAt(sizeInClass)).intValue();
+    // Get the current class size, we'll build on this as 
+    // we add instance variables.
+    size = objectRef(objectRef(classObj).basicAt(sizeInClass)).intValue();
 
     if (token == nameconst) 
-  {     /* read instance var names */
+    {     /* read instance var names */
         instanceTop = 0;
         while (token == nameconst) 
-    {
+        {
             instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(tokenString);
             size++;
             ignore nextToken();
-    }
+        }
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
-    {
+        {
             objectRef(vars).basicAtPut(i+1, instanceVariables[i]);
-    }
+        }
         objectRef(classObj).basicAtPut(variablesInClass, vars);
-  }
+    }
     objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-  objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
-  object methodsClass = objectRef(objectRef(classObj).basicAt(methodsInClass)).classField();
+    object methodsClass = objectRef(objectRef(classObj).basicAt(methodsInClass)).classField();
 }
 
 /*
