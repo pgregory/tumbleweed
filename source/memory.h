@@ -3,36 +3,56 @@
     Written by Tim Budd, Oregon State University, July 1987
 */
 
-/*
-    The first major decision to be made in the memory manager is what
-an entity of type object really is.  Two obvious choices are a pointer (to 
-the actual object memory) or an index into an object table.  We decided to
-use the latter, although either would work.
-    Similarly, one can either define the token object using a typedef,
-or using a define statement.  Either one will work (check this?)
-*/
 
+/*! \brief Auto referencing object handle class.
+ *
+ * Use this class to hold a reference to a newly created object so
+ * that it won't be collected by the garbage collector before it is
+ * assigned to a place in the object storage. 
+ * The handle automatically records the reference on creation, and 
+ * releases it when destroyed, so it just needs to be properly 
+ * scoped
+ */
 class ObjectHandle
 {
     public:
+        //! Default constructor
+        /*! By default, the handle refers to the nilobj. */
         ObjectHandle() : m_handle(0) {}
+        //! Constructor
+        /*! Takes an object ID, automatically records the reference */
         ObjectHandle(long object);
+        //! Destructor
+        /*! Releases any reference, allowing the object to be collected,
+         *  unless it has been assigned to a slot in the object storage
+         *  reachable from the Symbols list.
+         */
         ~ObjectHandle();
 
-        operator long()
-        {
-            return m_handle;
-        }
+        //! Cast to 'object' id
         operator long() const
         {
             return m_handle;
         }
 
+        /*! Accessor for the object id referenced
+         *
+         * \return The object handle
+         */
         long handle() const
         {
             return m_handle;
         }
 
+        //! Assignement operator
+        /*!
+         *  Assign a new handle to be referenced.
+         *  If an existing handle is referenced, it will be 
+         *  released first.
+         *
+         *  \param o An object reference.
+         *  \return A reference to this object.
+         */
         ObjectHandle& operator=(long o);
 
     private:
@@ -130,7 +150,7 @@ typedef std::vector<objectStruct>     TObjectTable;
 typedef TObjectTable::iterator  TObjectTableIterator;
 typedef std::multimap<size_t, object>    TObjectFreeList;
 typedef std::map<object, size_t>    TObjectFreeListInv;
-typedef std::map<long, bool>    TObjectRefs;
+typedef std::map<object, long>    TObjectRefs;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
 typedef TObjectFreeListInv::iterator   TObjectFreeListInvIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;

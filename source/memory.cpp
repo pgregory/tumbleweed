@@ -57,7 +57,10 @@ static object symbolClass = nilobj; /* the class Symbol */
 
 MemoryManager* MemoryManager::m_pInstance = NULL;
 
-void ncopy(register char* p, register char* q, register int n)      /* ncopy - copy exactly n bytes from place to place */
+//
+// ncopy - copy exactly n bytes from place to place 
+// 
+void ncopy(register char* p, register char* q, register int n)      
 {   
     for (; n>0; n--)
         *p++ = *q++;
@@ -652,14 +655,17 @@ void MemoryManager::disableGC(bool disable)
 
 void MemoryManager::refObject(long o)
 {
-    objectReferences[o] = true;
+    objectReferences[o]++;
 }
 
 void MemoryManager::unrefObject(long o)
 {
     TObjectRefs::iterator i;
     if((i = objectReferences.find(o)) != objectReferences.end())
-        objectReferences.erase(i);
+    {
+        if(--i->second <= 0)
+            objectReferences.erase(i);
+    }
 }
 
 
