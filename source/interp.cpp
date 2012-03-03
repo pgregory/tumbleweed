@@ -214,23 +214,28 @@ readMethodInfo:
             break;
 
           case contextConst:
-            /* check to see if we have made a block context yet */
-            if (contextObject == processStack) {
-              /* not yet, do it now - first get real return point */
-              returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
-              contextObject = MemoryManager::Instance()->newContext(linkPointer, method,
-                  MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
-                    linkPointer - returnPoint),
-                  MemoryManager::Instance()->copyFrom(processStack, linkPointer + 5,
-                    methodTempSize(method)));
-              objectRef(processStack).basicAtPut(linkPointer+1, contextObject);
-              ipush(contextObject);
-              /* save byte pointer then restore things properly */
-              objectRef(processStack).fieldAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
-              goto readLinkageBlock;
+            {
+              /* check to see if we have made a block context yet */
+              if (contextObject == processStack) 
+              {
+                /* not yet, do it now - first get real return point */
+                returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
+                ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
+                      linkPointer - returnPoint));
+                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 5,
+                      methodTempSize(method)));
+                contextObject = MemoryManager::Instance()->newContext(linkPointer, method,
+                    args,
+                    temp);
+                objectRef(processStack).basicAtPut(linkPointer+1, contextObject);
+                ipush(contextObject);
+                /* save byte pointer then restore things properly */
+                objectRef(processStack).fieldAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+                goto readLinkageBlock;
 
+              }
+              ipush(contextObject);
             }
-            ipush(contextObject);
             break;
 
           case nilConst: 
@@ -336,7 +341,8 @@ doFindMessage:
         /* stack, if not make stack larger */
         i = 6 + methodTempSize(method) + methodStackSize(method);
         j = processStackTop();
-        if ((j + i) > objectRef(processStack).sizeField()) {
+        if ((j + i) > objectRef(processStack).sizeField()) 
+        {
           processStack = growProcessStack(j, i);
           psb = objectRef(processStack).sysMemPtr();
           pst = (psb + j);

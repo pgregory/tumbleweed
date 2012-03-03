@@ -43,10 +43,10 @@
 
 # define cacheSize 211
 struct CachedMethod {
-  object cacheMessage;  /* the message being requested */
-  object lookupClass;   /* the class of the receiver */
-  object cacheClass;    /* the class of the method */
-  object cacheMethod;   /* the method itself */
+  ObjectHandle cacheMessage;  /* the message being requested */
+  ObjectHandle lookupClass;   /* the class of the receiver */
+  ObjectHandle cacheClass;    /* the class of the method */
+  ObjectHandle cacheMethod;   /* the method itself */
 };
 extern CachedMethod methodCache[];
 

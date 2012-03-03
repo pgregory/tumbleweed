@@ -13,7 +13,7 @@
 #include "names.h"
 #include "interp.h"
 
-object firstProcess;
+ObjectHandle firstProcess;
 int initial = 0;    /* not making initial image */
 
 extern noreturn initFFISymbols();   /* FFI symbols */

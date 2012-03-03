@@ -17,7 +17,7 @@ void goDoIt(const char * text);
 
 extern noreturn initFFISymbols();   /* FFI symbols */
 
-object firstProcess;
+ObjectHandle firstProcess;
 int initial = 1;    /* making initial image */
 
 int main(int argc, char** argv) 
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
 void goDoIt(const char * text)
 {   
-  object stack, method;
+    object stack, method;
 
     method = MemoryManager::Instance()->newMethod();
     setInstanceVariables(nilobj);

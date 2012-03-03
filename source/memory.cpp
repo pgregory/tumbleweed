@@ -76,7 +76,7 @@ MemoryManager* MemoryManager::Instance()
 
 MemoryManager::MemoryManager() : noGC(false)
 {
-    objectTable.resize(65000);
+    objectTable.resize(6500);
 
     /* set all the reference counts to zero */
     for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
@@ -268,17 +268,6 @@ void MemoryManager::setFreeLists()
     }
 }
 
-void MemoryManager::visitMethodCache()
-{
-    for(int i = 0; i < cacheSize; ++i)
-    {
-        visit(methodCache[i].cacheMessage);
-        visit(methodCache[i].lookupClass);
-        visit(methodCache[i].cacheClass);
-        visit(methodCache[i].cacheMethod);
-    }
-}
-
 void MemoryManager::visit(register object x)
 {
     int i, s;
@@ -316,9 +305,10 @@ int MemoryManager::garbageCollect()
     /* visit symbols and firstProcess to toggle their referenceCount */
 
     visit(symbols);
-    if(firstProcess) 
-        visit(firstProcess);
-    visitMethodCache();
+
+    /* Visit any explicitly held references from the use of ObjectHandle */
+    for(TObjectRefs::iterator i = objectReferences.begin(), iend = objectReferences.end(); i != iend; ++i)
+        visit(i->first);
 
     /* add new garbage to objectFreeList 
     * toggle referenceCount 
@@ -340,7 +330,10 @@ int MemoryManager::garbageCollect()
     }
 
     if (debugging)
+    {
+        fprintf(stderr," %d references.\n",objectReferences.size());
         fprintf(stderr," %d objects - %d freed.\n",c,f);
+    }
 
     numAllocated = 0;
     return f;
@@ -652,6 +645,18 @@ void MemoryManager::imageWrite(FILE* fp)
 void MemoryManager::disableGC(bool disable)
 {
     noGC = disable;
+}
+
+void MemoryManager::refObject(long o)
+{
+    objectReferences[o] = true;
+}
+
+void MemoryManager::unrefObject(long o)
+{
+    TObjectRefs::iterator i;
+    if((i = objectReferences.find(o)) != objectReferences.end())
+        objectReferences.erase(i);
 }
 
 

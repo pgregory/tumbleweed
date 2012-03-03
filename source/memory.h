@@ -12,6 +12,34 @@ use the latter, although either would work.
 or using a define statement.  Either one will work (check this?)
 */
 
+class ObjectHandle
+{
+    public:
+        ObjectHandle() : m_handle(0) {}
+        ObjectHandle(long object);
+        ~ObjectHandle();
+
+        operator long()
+        {
+            return m_handle;
+        }
+        operator long() const
+        {
+            return m_handle;
+        }
+
+        long handle() const
+        {
+            return m_handle;
+        }
+
+        ObjectHandle& operator=(long o);
+
+    private:
+        long    m_handle;
+};
+
+
 typedef long object;
 
 /*
@@ -31,7 +59,7 @@ struct objectStruct
     object _class;
     long referenceCount;
     long size;
-    object *memory;
+    object*memory;
 
     object classField();
     void setClass(object y);
@@ -102,6 +130,7 @@ typedef std::vector<objectStruct>     TObjectTable;
 typedef TObjectTable::iterator  TObjectTableIterator;
 typedef std::multimap<size_t, object>    TObjectFreeList;
 typedef std::map<object, size_t>    TObjectFreeListInv;
+typedef std::map<long, bool>    TObjectRefs;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
 typedef TObjectFreeListInv::iterator   TObjectFreeListInvIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
@@ -117,7 +146,6 @@ class MemoryManager
         void setFreeLists(); 
         int garbageCollect();
         void visit(register object x);
-        void visitMethodCache();
         size_t objectCount();
 
         std::string statsString();
@@ -145,15 +173,19 @@ class MemoryManager
         object newSymbol(const char*);
         object newCPointer(void* l);
 
+        void refObject(long o);
+        void unrefObject(long o);
         void disableGC(bool disable);
 
         void imageRead(FILE* fp);
         void imageWrite(FILE* fp);
 
+
     private:
         TObjectFreeList objectFreeList;
         TObjectFreeListInv objectFreeListInv;
         TObjectTable    objectTable;
+        TObjectRefs     objectReferences;
         bool            noGC;
 
         static MemoryManager* m_pInstance;
@@ -165,3 +197,22 @@ extern MemoryManager* theMemoryManager;
 
 #define objectRef(x) (MemoryManager::Instance()->objectFromID(x))
 
+inline ObjectHandle::ObjectHandle(long object) : m_handle(object) 
+{
+    MemoryManager::Instance()->refObject(object);
+}
+
+inline ObjectHandle::~ObjectHandle() 
+{
+    MemoryManager::Instance()->unrefObject(handle());
+}
+
+inline ObjectHandle& ObjectHandle::operator=(long o)
+{
+    if(m_handle)
+        MemoryManager::Instance()->unrefObject(m_handle);
+    m_handle = o;
+    MemoryManager::Instance()->refObject(o);
+
+    return *this;
+}
