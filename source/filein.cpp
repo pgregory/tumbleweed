@@ -36,40 +36,40 @@ static char textBuffer[TextBufferSize];
 */
 static object findClass(const char* name)
 {   
-  object newobj;
+    object newobj;
 
     newobj = globalSymbol(name);
     if (newobj == nilobj)
         newobj = MemoryManager::Instance()->newClass(name);
     if (objectRef(newobj).basicAt(sizeInClass) == nilobj) 
-  {
+    {
         objectRef(newobj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
-  }
+    }
     return newobj;
 }
 
 static object findClassWithMeta(const char* name, object metaObj)
 {   
-  object newObj, nameObj, methTable;
-  int size;
+    object newObj, nameObj, methTable;
+    int size;
 
     newObj = globalSymbol(name);
     if (newObj == nilobj)
-  {
-    size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
-    newObj = MemoryManager::Instance()->allocObject(size);
-    objectRef(newObj).setClass(metaObj);
+    {
+        size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
+        newObj = MemoryManager::Instance()->allocObject(size);
+        objectRef(newObj).setClass(metaObj);
 
-    /* now make name */
-    nameObj = MemoryManager::Instance()->newSymbol(name);
-    objectRef(newObj).basicAtPut(nameInClass, nameObj);
-    methTable = MemoryManager::Instance()->newDictionary(39);
-    objectRef(newObj).basicAtPut(methodsInClass, methTable);
-    objectRef(newObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+        /* now make name */
+        nameObj = MemoryManager::Instance()->newSymbol(name);
+        objectRef(newObj).basicAtPut(nameInClass, nameObj);
+        methTable = MemoryManager::Instance()->newDictionary(39);
+        objectRef(newObj).basicAtPut(methodsInClass, methTable);
+        objectRef(newObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
-    /* now put in global symbols table */
-    nameTableInsert(symbols, strHash(name), nameObj, newObj);
-  }
+        /* now put in global symbols table */
+        nameTableInsert(symbols, strHash(name), nameObj, newObj);
+    }
     return newObj;
 }
 
@@ -165,68 +165,68 @@ static void readRawClassDeclaration()
 */
 static void readClassDeclaration()
 {   
-  object classObj, metaObj, vars;
-  char* className, *superName;
+    object classObj, metaObj, vars;
+    char* className, *superName;
     int i, size, instanceTop;
-  // todo: fixed length variables array!
+    // todo: fixed length variables array!
     object instanceVariables[15];
-  // todo: horrible fixed length arrays!
-  char metaClassName[100];
-  char metaSuperClassName[100];
+    // todo: horrible fixed length arrays!
+    char metaClassName[100];
+    char metaSuperClassName[100];
 
-  className = superName = NULL;
+    className = superName = NULL;
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-  className = strdup(tokenString);
+    className = strdup(tokenString);
     if (nextToken() == nameconst) 
-  { /* read superclass name */
+    { /* read superclass name */
         superName = strdup(tokenString);
         ignore nextToken();
-  }
-  // todo: sprintf eradication!
-  sprintf(metaClassName, "Meta%s", className);
-  if(NULL != superName)
-    sprintf(metaSuperClassName, "Meta%s", superName);
-  else
-    sprintf(metaSuperClassName, "Class");
+    }
+    // todo: sprintf eradication!
+    sprintf(metaClassName, "Meta%s", className);
+    if(NULL != superName)
+        sprintf(metaSuperClassName, "Meta%s", superName);
+    else
+        sprintf(metaSuperClassName, "Class");
 
-  metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
-  classObj = createRawClass(className, metaClassName, superName);
-  objectRef(classObj).setClass(metaObj);
+    metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
+    classObj = createRawClass(className, metaClassName, superName);
+    objectRef(classObj).setClass(metaObj);
 
-  size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
-  instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");
-  vars = MemoryManager::Instance()->newArray(1);
-  objectRef(vars).basicAtPut(1, instanceVariables[0]);
-  objectRef(metaObj).basicAtPut(variablesInClass, vars);
+    size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
+    instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");
+    vars = MemoryManager::Instance()->newArray(1);
+    objectRef(vars).basicAtPut(1, instanceVariables[0]);
+    objectRef(metaObj).basicAtPut(variablesInClass, vars);
     objectRef(metaObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size+1));
 
-  // Get the current class size, we'll build on this as 
-  // we add instance variables.
-  size = objectRef(objectRef(classObj).basicAt(sizeInClass)).intValue();
+    // Get the current class size, we'll build on this as 
+    // we add instance variables.
+    size = objectRef(objectRef(classObj).basicAt(sizeInClass)).intValue();
 
     if (token == nameconst) 
-  {     /* read instance var names */
+    {     /* read instance var names */
         instanceTop = 0;
         while (token == nameconst) 
-    {
+        {
             instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(tokenString);
             size++;
             ignore nextToken();
-    }
+        }
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
-    {
+        {
             objectRef(vars).basicAtPut(i+1, instanceVariables[i]);
-    }
+        }
         objectRef(classObj).basicAtPut(variablesInClass, vars);
-  }
+    }
     objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-  objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
-  free(className);
-  free(superName);
+    free(className);
+    free(superName);
 }
 
 /*
@@ -237,9 +237,9 @@ static void readMethods(FILE* fd, boolean printit)
     object classObj, methTable, theMethod, selector;
 # define LINEBUFFERSIZE 16384
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
-  object protocol;
+    object protocol;
 
-  protocol = nilobj;
+    protocol = nilobj;
     if (nextToken() != nameconst)
         sysError("missing name","following Method keyword");
     classObj = findClass(tokenString);
@@ -249,14 +249,16 @@ static void readMethods(FILE* fd, boolean printit)
 
     /* now find or create a method table */
     methTable = objectRef(classObj).basicAt(methodsInClass);
-    if (methTable == nilobj) {  /* must make */
+    if (methTable == nilobj) 
+    {  /* must make */
         methTable = MemoryManager::Instance()->newDictionary(MethodTableSize);
         objectRef(classObj).basicAtPut(methodsInClass, methTable);
-        }
+    }
 
-  if(nextToken() == strconst) {
-    protocol = MemoryManager::Instance()->newStString(tokenString);
-  }
+    if(nextToken() == strconst) 
+    {
+        protocol = MemoryManager::Instance()->newStString(tokenString);
+    }
 
     /* now go read the methods */
     do {
@@ -268,27 +270,27 @@ static void readMethods(FILE* fd, boolean printit)
             if ((lineBuffer[0] == '|') || (lineBuffer[0] == ']'))
                 break;
             ignore strcat(textBuffer, lineBuffer);
-            }
+        }
         if (eoftest == NULL) {
             sysError("unexpected end of file","while reading method");
             break;
-            }
+        }
 
         /* now we have a method */
         theMethod = MemoryManager::Instance()->newMethod();
         if (parse(theMethod, textBuffer, savetext)) {
             selector = objectRef(theMethod).basicAt(messageInMethod);
             objectRef(theMethod).basicAtPut(methodClassInMethod, classObj);
-      objectRef(theMethod).basicAtPut(protocolInMethod, protocol);
+            objectRef(theMethod).basicAtPut(protocolInMethod, protocol);
             if (printit)
                 dspMethod(cp, objectRef(selector).charPtr());
             nameTableInsert(methTable, objectRefHash(selector), selector, theMethod);
-            }
+        }
         else {
             /* get rid of unwanted method */
             givepause();
-            }
-        
+        }
+
     } while (lineBuffer[0] != ']');
 
 }
@@ -298,21 +300,33 @@ static void readMethods(FILE* fd, boolean printit)
 */
 void fileIn(FILE* fd, boolean printit)
 {
-    MemoryManager::Instance()->disableGC(true);
-    while(fgets(textBuffer, TextBufferSize, fd) != NULL) {
+    while(fgets(textBuffer, TextBufferSize, fd) != NULL) 
+    {
         lexinit(textBuffer);
         if (token == inputend)
             ; /* do nothing, get next line */
         else if ((token == binary) && streq(tokenString, "*"))
             ; /* do nothing, its a comment */
         else if ((token == nameconst) && streq(tokenString, "RawClass"))
+        {
+            MemoryManager::Instance()->disableGC(true);
             readRawClassDeclaration();
+            MemoryManager::Instance()->disableGC(false);
+        }
         else if ((token == nameconst) && streq(tokenString, "Class"))
+        {
+            MemoryManager::Instance()->disableGC(true);
             readClassDeclaration();
+            MemoryManager::Instance()->disableGC(false);
+        }
         else if ((token == nameconst) && streq(tokenString,"Methods"))
+        {
+            MemoryManager::Instance()->disableGC(true);
             readMethods(fd, printit);
+            MemoryManager::Instance()->disableGC(false);
+        }
         else 
             sysError("unrecognized line", textBuffer);
-        }
-    MemoryManager::Instance()->disableGC(false);
+        MemoryManager::Instance()->garbageCollect();
+    }
 }
