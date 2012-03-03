@@ -108,11 +108,11 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
 */
 static void readRawClassDeclaration()
 {   
-    object classObj, vars;
+    ObjectHandle classObj, vars;
     char* className, *metaName, *superName;
     int i, size, instanceTop;
     // todo: fixed length variables array!
-    object instanceVariables[15];
+    ObjectHandle instanceVariables[15];
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
@@ -165,11 +165,11 @@ static void readRawClassDeclaration()
 */
 static void readClassDeclaration()
 {   
-    object classObj, metaObj, vars;
+    ObjectHandle classObj, metaObj, vars;
     char* className, *superName;
     int i, size, instanceTop;
     // todo: fixed length variables array!
-    object instanceVariables[15];
+    ObjectHandle instanceVariables[15];
     // todo: horrible fixed length arrays!
     char metaClassName[100];
     char metaSuperClassName[100];
@@ -234,10 +234,10 @@ static void readClassDeclaration()
 */
 static void readMethods(FILE* fd, boolean printit)
 {   
-    object classObj, methTable, theMethod, selector;
+    ObjectHandle classObj, methTable, theMethod, selector;
 # define LINEBUFFERSIZE 16384
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
-    object protocol;
+    ObjectHandle protocol;
 
     protocol = nilobj;
     if (nextToken() != nameconst)
@@ -308,23 +308,11 @@ void fileIn(FILE* fd, boolean printit)
         else if ((token == binary) && streq(tokenString, "*"))
             ; /* do nothing, its a comment */
         else if ((token == nameconst) && streq(tokenString, "RawClass"))
-        {
-            MemoryManager::Instance()->disableGC(true);
             readRawClassDeclaration();
-            MemoryManager::Instance()->disableGC(false);
-        }
         else if ((token == nameconst) && streq(tokenString, "Class"))
-        {
-            MemoryManager::Instance()->disableGC(true);
             readClassDeclaration();
-            MemoryManager::Instance()->disableGC(false);
-        }
         else if ((token == nameconst) && streq(tokenString,"Methods"))
-        {
-            MemoryManager::Instance()->disableGC(true);
             readMethods(fd, printit);
-            MemoryManager::Instance()->disableGC(false);
-        }
         else 
             sysError("unrecognized line", textBuffer);
         MemoryManager::Instance()->garbageCollect();

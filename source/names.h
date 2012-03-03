@@ -43,11 +43,11 @@
 # define stackTopInProcess 2
 # define linkPtrInProcess 3
 
-extern object trueobj;      /* the pseudo variable true */
-extern object falseobj;     /* the pseudo variable false */
+extern ObjectHandle trueobj;      /* the pseudo variable true */
+extern ObjectHandle falseobj;     /* the pseudo variable false */
 
 extern noreturn initCommonSymbols();    /* common symbols */
-extern object unSyms[], binSyms[];
+extern ObjectHandle unSyms[], binSyms[];
 
 extern noreturn nameTableInsert( OBJ X INT X OBJ X OBJ );
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/

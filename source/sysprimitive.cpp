@@ -55,7 +55,8 @@ noreturn dspMethod(char* cp, char* mp)
 }
 
 void givepause()
-{   char buffer[80];
+{   
+  char buffer[80];
 
   ignore fprintf(stderr,"push return to continue\n");
   ignore fgets(buffer,80,stdin);
@@ -63,7 +64,7 @@ void givepause()
 
 object sysPrimitive(int number, object* arguments)
 {   
-  object returnedObject = nilobj;
+  ObjectHandle returnedObject = nilobj;
 
   /* someday there will be more here */
   switch(number - 150) {
@@ -73,11 +74,11 @@ object sysPrimitive(int number, object* arguments)
       break;
 
     case 1: /* readline, with history support */
-/*      {
-        char* p = readline(objectRef(arguments[0]).charPtr());
-        add_history(p);
-        returnedObject = MemoryManager::Instance()->newStString(p);
-      }*/
+      /*      {
+              char* p = readline(objectRef(arguments[0]).charPtr());
+              add_history(p);
+              returnedObject = MemoryManager::Instance()->newStString(p);
+              }*/
       break;
 
     case 2: /* get last error */ 

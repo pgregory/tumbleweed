@@ -48,16 +48,16 @@ extern char peek();
 int codeTop;            /* top position filled in code array */
 byte codeArray[codeLimit];  /* bytecode array */
 int literalTop;         /*  ... etc. */
- object literalArray[literalLimit];
- int temporaryTop;
- char *temporaryName[temporaryLimit];
- int argumentTop;
- char *argumentName[argumentLimit];
- int instanceTop;
- char *instanceName[instanceLimit];
+ObjectHandle literalArray[literalLimit];
+int temporaryTop;
+char *temporaryName[temporaryLimit];
+int argumentTop;
+char *argumentName[argumentLimit];
+int instanceTop;
+char *instanceName[instanceLimit];
 
- int maxTemporary;      /* highest temporary see so far */
- char selector[80];     /* message selector */
+int maxTemporary;      /* highest temporary see so far */
+char selector[80];     /* message selector */
 
 enum blockstatus {NotInBlock, InBlock, OptimizedBlock} blockstat;
 
@@ -76,15 +76,16 @@ void setInstanceVariables(object aClass)
 
     if (aClass == nilobj)
         instanceTop = 0;
-    else {
+    else 
+    {
         setInstanceVariables(objectRef(aClass).basicAt(superClassInClass));
         vars = objectRef(aClass).basicAt(variablesInClass);
         if (vars != nilobj) {
             limit = objectRef(vars).sizeField();
             for (i = 1; i <= limit; i++)
                 instanceName[++instanceTop] = objectRef(objectRef(vars).basicAt(i)).charPtr();
-            }
         }
+    }
 }
 
 void genCode(int value)
@@ -97,10 +98,11 @@ void genCode(int value)
 
 void genInstruction(int high, int low)
 {
-    if (low >= 16) {
+    if (low >= 16) 
+    {
         genInstruction(Extended, high);
         genCode(low);
-        }
+    }
     else
         genCode(high * 16 + low);
 }
@@ -109,9 +111,10 @@ int genLiteral(object aLiteral)
 {
     if (literalTop >= literalLimit)
         compilError(selector,"too many literals in method","");
-    else {
+    else 
+    {
         literalArray[++literalTop] = aLiteral;
-        }
+    }
     return(literalTop - 1);
 }
 
@@ -136,44 +139,50 @@ boolean nameTerm(char *name)
     boolean isSuper = false;
 
     /* it might be self or super */
-    if (streq(name, "self") || streq(name, "super")) {
+    if (streq(name, "self") || streq(name, "super")) 
+    {
         genInstruction(PushArgument, 0);
         done = true;
         if (streq(name,"super")) isSuper = true;
-        }
+    }
 
     /* or it might be a temporary (reverse this to get most recent first)*/
     if (! done)
         for (i = temporaryTop; (! done) && ( i >= 1 ) ; i--)
-            if (streq(name, temporaryName[i])) {
+            if (streq(name, temporaryName[i])) 
+            {
                 genInstruction(PushTemporary, i-1);
                 done = true;
-                }
+            }
 
     /* or it might be an argument */
     if (! done)
         for (i = 1; (! done) && (i <= argumentTop ) ; i++)
-            if (streq(name, argumentName[i])) {
+            if (streq(name, argumentName[i])) 
+            {
                 genInstruction(PushArgument, i);
                 done = true;
-                }
+            }
 
     /* or it might be an instance variable */
     if (! done)
-        for (i = 1; (! done) && (i <= instanceTop); i++) {
-            if (streq(name, instanceName[i])) {
+        for (i = 1; (! done) && (i <= instanceTop); i++) 
+        {
+            if (streq(name, instanceName[i])) 
+            {
                 genInstruction(PushInstance, i-1);
                 done = true;
-                }
             }
+        }
 
     /* or it might be a global constant */
     if (! done)
         for (i = 0; (! done) && glbsyms[i]; i++)
-            if (streq(name, glbsyms[i])) {
+            if (streq(name, glbsyms[i])) 
+            {
                 genInstruction(PushConstant, i+4);
                 done = true;
-                }
+            }
 
     /* not anything else, it must be a global */
     /* must look it up at run time */
@@ -186,14 +195,17 @@ boolean nameTerm(char *name)
     return(isSuper);
 }
 
- int parseArray()
-{   int i, size, base;
-    object newLit, obj;
+int parseArray()
+{   
+    int i, size, base;
+    ObjectHandle newLit, obj;
 
     base = literalTop;
     ignore nextToken();
-    while (parseok && (token != closing)) {
-        switch(token) {
+    while (parseok && (token != closing)) 
+    {
+        switch(token) 
+        {
             case arraybegin:
                 ignore parseArray();
                 break;
@@ -214,23 +226,25 @@ boolean nameTerm(char *name)
                 break;
 
             case binary:
-                if (streq(tokenString, "(")) {
+                if (streq(tokenString, "(")) 
+                {
                     ignore parseArray();
                     break;
-                    }
-                if (streq(tokenString, "-") && isdigit(peek())) {
+                }
+                if (streq(tokenString, "-") && isdigit(peek())) 
+                {
                     ignore nextToken();
                     if (token == intconst)
                         ignore genLiteral(MemoryManager::Instance()->newInteger(- tokenInteger));
-                    else if (token == floatconst) {
+                    else if (token == floatconst) 
+                    {
                         ignore genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat));
-                        }
+                    }
                     else
-                        compilError(selector,"negation not followed",
-                            "by number");
+                        compilError(selector,"negation not followed", "by number");
                     ignore nextToken();
                     break;
-                    }
+                }
                 ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString));
                 ignore nextToken();
                 break;
@@ -247,7 +261,7 @@ boolean nameTerm(char *name)
 
             default:
                 compilError(selector,"illegal text in literal array",
-                    tokenString);
+                        tokenString);
                 ignore nextToken();
                 break;
         }
@@ -256,67 +270,79 @@ boolean nameTerm(char *name)
     if (parseok)
         if (! streq(tokenString, ")"))
             compilError(selector,"array not terminated by right parenthesis",
-                tokenString);
+                    tokenString);
         else
             ignore nextToken();
     size = literalTop - base;
     newLit = MemoryManager::Instance()->newArray(size);
-    for (i = size; i >= 1; i--) {
+    for (i = size; i >= 1; i--) 
+    {
         obj = literalArray[literalTop];
         objectRef(newLit).basicAtPut(i, obj);
         literalArray[literalTop] = nilobj;
         literalTop = literalTop - 1;
-        }
+    }
     return(genLiteral(newLit));
 }
 
- boolean term()
-{   boolean superTerm = false;  /* true if term is pseudo var super */
+boolean term()
+{   
+    boolean superTerm = false;  /* true if term is pseudo var super */
 
-    if (token == nameconst) {
+    if (token == nameconst) 
+    {
         superTerm = nameTerm(tokenString);
         ignore nextToken();
-        }
-    else if (token == intconst) {
+    }
+    else if (token == intconst) 
+    {
         genInteger(tokenInteger);
         ignore nextToken();
-        }
-    else if (token == floatconst) {
+    }
+    else if (token == floatconst) 
+    {
         genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newFloat(tokenFloat)));
         ignore nextToken();
-        }
-    else if ((token == binary) && streq(tokenString, "-")) {
+    }
+    else if ((token == binary) && streq(tokenString, "-")) 
+    {
         ignore nextToken();
         if (token == intconst)
             genInteger(- tokenInteger);
-        else if (token == floatconst) {
+        else if (token == floatconst) 
+        {
             genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat)));
-            }
+                    genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat)));
+        }
         else
             compilError(selector,"negation not followed",
-                "by number");
+                    "by number");
         ignore nextToken();
-        }
-    else if (token == charconst) {
+    }
+    else if (token == charconst) 
+    {
         genInstruction(PushLiteral,
-            genLiteral(MemoryManager::Instance()->newChar(tokenInteger)));
+                genLiteral(MemoryManager::Instance()->newChar(tokenInteger)));
         ignore nextToken();
-        }
-    else if (token == symconst) {
+    }
+    else if (token == symconst) 
+    {
         genInstruction(PushLiteral,
-            genLiteral(MemoryManager::Instance()->newSymbol(tokenString)));
+                genLiteral(MemoryManager::Instance()->newSymbol(tokenString)));
         ignore nextToken();
-        }
-    else if (token == strconst) {
+    }
+    else if (token == strconst) 
+    {
         genInstruction(PushLiteral,
-            genLiteral(MemoryManager::Instance()->newStString(tokenString)));
+                genLiteral(MemoryManager::Instance()->newStString(tokenString)));
         ignore nextToken();
-        }
-    else if (token == arraybegin) {
+    }
+    else if (token == arraybegin) 
+    {
         genInstruction(PushLiteral, parseArray());
-        }
-    else if ((token == binary) && streq(tokenString, "(")) {
+    }
+    else if ((token == binary) && streq(tokenString, "(")) 
+    {
         ignore nextToken();
         expression();
         if (parseok)
@@ -324,7 +350,7 @@ boolean nameTerm(char *name)
                 compilError(selector,"Missing Right Parenthesis","");
             else
                 ignore nextToken();
-        }
+    }
     else if ((token == binary) && streq(tokenString, "<"))
         parsePrimitive();
     else if ((token == binary) && streq(tokenString, "["))

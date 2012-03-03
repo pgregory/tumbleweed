@@ -33,7 +33,7 @@
 #include "names.h"
 #include "interp.h"
 
-extern object processStack;
+extern ObjectHandle processStack;
 extern int linkPointer;
 
 extern double frexp(), ldexp();
@@ -45,7 +45,7 @@ extern object ffiPrimitive(INT X OBJP);
 static object zeroaryPrims(int number)
 {   
   short i;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
   returnedObject = nilobj;
   switch(number) {
@@ -91,7 +91,7 @@ static object zeroaryPrims(int number)
 static int unaryPrims(int number, object firstarg)
 {   
   int i, j, saveLinkPointer;
-  object returnedObject, saveProcessStack;
+  ObjectHandle returnedObject, saveProcessStack;
 
   returnedObject = firstarg;
   switch(number) {
@@ -125,7 +125,8 @@ static int unaryPrims(int number, object firstarg)
       i = objectRef(objectRef(processStack).basicAt(linkPointer)).intValue();
       /* then creating context pointer */
       j = objectRef(objectRef(firstarg).basicAt(1)).intValue();
-      if (objectRef(processStack).basicAt(j+1) != firstarg) {
+      if (objectRef(processStack).basicAt(j+1) != firstarg) 
+      {
         returnedObject = falseobj;
         break;
       }
@@ -145,7 +146,8 @@ static int unaryPrims(int number, object firstarg)
 # ifdef SIGNAL
       /* trap control-C */
       signal(SIGINT, brkfun);
-      if (setjmp(jb)) {
+      if (setjmp(jb)) 
+      {
         returnedObject = falseobj;
       }
       else
@@ -153,7 +155,8 @@ static int unaryPrims(int number, object firstarg)
 # ifdef CRTLBRK
         /* trap control-C using dos ctrlbrk routine */
         ctrlbrk(brkfun);
-      if (setjmp(jb)) {
+      if (setjmp(jb)) 
+      {
         returnedObject = falseobj;
       }
       else
@@ -184,10 +187,11 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 {   
   char buffer[2000];
   int i;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
   returnedObject = firstarg;
-  switch(number) {
+  switch(number) 
+  {
     case 1:     /* object identity test */
       if (firstarg == secondarg)
         returnedObject = trueobj;
@@ -254,10 +258,11 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   // todo: Fixed length buffer
   char *bp, *tp, buffer[4096];
   int i, j;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
   returnedObject = firstarg;
-  switch(number) {
+  switch(number) 
+  {
     case 1:         /* basicAt:Put: */
       fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), objectRef(secondarg).intValue(), static_cast<int>(thirdarg));
       objectRef(firstarg).fieldAtPut(objectRef(secondarg).intValue(), thirdarg);
@@ -299,9 +304,10 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
 
 static int intUnary(int number, object firstarg)
 {   
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-  switch(number) {
+  switch(number) 
+  {
     case 1:     /* float equiv of integer */
       returnedObject = MemoryManager::Instance()->newFloat((double) firstarg);
       break;
@@ -336,9 +342,10 @@ static object intBinary(register int number, register int firstarg, int secondar
 {   
   boolean binresult;
   long longresult;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-  switch(number) {
+  switch(number) 
+  {
     case 0:     /* addition */
       longresult = firstarg;
       longresult += secondarg;
@@ -417,9 +424,10 @@ overflow:
 
 static int strUnary(int number, char* firstargument)
 {   
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-  switch(number) {
+  switch(number) 
+  {
     case 1:     /* length of string */
       returnedObject = MemoryManager::Instance()->newInteger(strlen(firstargument));
       break;
@@ -459,9 +467,10 @@ static int floatUnary(int number, double firstarg)
   char buffer[20];
   double temp;
   int i, j;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-  switch(number) {
+  switch(number) 
+  {
     case 1:     /* floating value asString */
       ignore sprintf(buffer,"%g", firstarg);
       returnedObject = MemoryManager::Instance()->newStString(buffer);
@@ -512,9 +521,10 @@ static int floatUnary(int number, double firstarg)
 static object floatBinary(int number, double first, double second)
 {    
   boolean binResult;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-  switch(number) {
+  switch(number) 
+  {
     case 0: first += second; break;
 
     case 1: first -= second; break;
@@ -545,9 +555,10 @@ static object floatBinary(int number, double first, double second)
 static int cPointerUnary(int number, void* firstarg)
 {   
   char buffer[20];
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-  switch(number) {
+  switch(number) 
+  {
     case 1:     /* cPointer value asString */
       //ignore sprintf(buffer,"0x%X", reinterpret_cast<unsigned int>(firstarg));
       returnedObject = MemoryManager::Instance()->newStString(buffer);
@@ -567,10 +578,10 @@ static int cPointerUnary(int number, void* firstarg)
 object primitive(register int primitiveNumber, object* arguments)
 {   
   register int primitiveGroup = primitiveNumber / 10;
-  object returnedObject;
+  ObjectHandle returnedObject;
 
-
-  switch(primitiveGroup) {
+  switch(primitiveGroup) 
+  {
     case 0:
       returnedObject = zeroaryPrims(primitiveNumber);
       break;
@@ -589,7 +600,7 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
 
     case 6: case 7:     /* integer binary operations */
-        returnedObject = intBinary(primitiveNumber-60,
+      returnedObject = intBinary(primitiveNumber-60,
           objectRef(arguments[0]).intValue(), 
           objectRef(arguments[1]).intValue());
       break;

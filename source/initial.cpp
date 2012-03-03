@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
 void goDoIt(const char * text)
 {   
-    object stack, method;
+    ObjectHandle stack, method;
 
     method = MemoryManager::Instance()->newMethod();
     setInstanceVariables(nilobj);
@@ -84,10 +84,10 @@ void goDoIt(const char * text)
 */
 void makeInitialImage()
 {   
-    object hashTable;
-    object integerClass;
-    object symbolObj, symbolClass, classClass, metaClassClass;
-  object objectClass, metaObjectClass;
+    ObjectHandle hashTable;
+    ObjectHandle integerClass;
+    ObjectHandle symbolObj, symbolClass, classClass, metaClassClass;
+  ObjectHandle objectClass, metaObjectClass;
 
     /* first create the table, without class links */
     symbols = MemoryManager::Instance()->allocObject(1);

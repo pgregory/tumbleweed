@@ -169,7 +169,7 @@ object MemoryManager::allocObject(size_t memorySize)
         {
             if(debugging)
                 fprintf(stderr, "Failed to find an available object, trying GC\n");
-            if(!noGC && garbageCollect() > 0)
+            if(garbageCollect() > 0)
             {
                 return allocObject(memorySize);
             }
@@ -295,6 +295,9 @@ int MemoryManager::garbageCollect()
 {
     register int j;
     int c=1,f=0;
+
+    if(noGC)
+        return 0;
 
     if (debugging) 
         fprintf(stderr,"\ngarbage collecting ... ");

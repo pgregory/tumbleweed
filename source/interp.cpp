@@ -19,7 +19,7 @@
 # include "names.h"
 # include "interp.h"
 
-object trueobj, falseobj;
+ObjectHandle trueobj, falseobj;
 boolean watching = 0;
 extern object primitive( INT X OBJP );
 
@@ -27,7 +27,7 @@ extern object primitive( INT X OBJP );
    the following variables are local to this module
    */
 
-static object method, messageToSend;
+static ObjectHandle method, messageToSend;
 
 static int messTest(object obj)
 {
@@ -54,7 +54,7 @@ void flushCache(object messageToSend, object _class)
    */
 static boolean findMethod(object* methodClassLocation)
 {   
-  object methodTable, methodClass;
+  ObjectHandle methodTable, methodClass;
 
   method = nilobj;
   methodClass = *methodClassLocation;
@@ -104,13 +104,13 @@ static boolean findMethod(object* methodClassLocation)
 
 
 /* the following are manipulated by primitives */
-object  processStack;
+ObjectHandle  processStack;
 int     linkPointer;
 
 static object growProcessStack(int top, int toadd)
 {   
   int size, i;
-  object newStack;
+  ObjectHandle newStack;
 
   if (toadd < 100) toadd = 100;
   size = objectRef(processStack).sizeField() + toadd;
@@ -126,14 +126,16 @@ boolean execute(object aProcess, int maxsteps)
   object returnedObject;
   int returnPoint, timeSliceCounter;
   object *pst, *psb, *rcv, *arg, *temps, *lits, *cntx;
-  object contextObject, *primargs;
+  ObjectHandle contextObject; 
+  object *primargs;
   int byteOffset;
-  object methodClass, argarray;
+  ObjectHandle argarray;
+  object methodClass; 
   int i, j;
   register int low;
   int high;
   byte *bp;
-  object intClass = globalSymbol("Integer");
+  ObjectHandle intClass = globalSymbol("Integer");
 
   /* unpack the instance variables from the process */
   processStack    = objectRef(aProcess).basicAt(stackInProcess);

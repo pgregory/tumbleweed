@@ -21,7 +21,7 @@
 #include "names.h"
 #include "interp.h"
 
-extern object processStack;
+extern ObjectHandle processStack;
 extern int linkPointer;
 
 typedef void* FFI_LibraryHandle;
@@ -274,7 +274,7 @@ object valueIn(int retMap, FFI_DataType* data)
 }
 
 typedef struct FFI_CallbackData_S {
-  object  block;
+  ObjectHandle  block;
   int     numArgs;
   FFI_Symbols *argTypeArray;
   FFI_Symbols retType;
@@ -307,8 +307,8 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object bytePointer = objectRef(block).basicAt(bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
-  object process = MemoryManager::Instance()->allocObject(processSize);
-  object stack = MemoryManager::Instance()->newArray(50);
+  ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
+  ObjectHandle stack = MemoryManager::Instance()->newArray(50);
   objectRef(process).basicAtPut(stackInProcess, stack);
   objectRef(process).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
   objectRef(process).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
@@ -322,7 +322,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   for(arg = 0; arg < data->numArgs; ++arg)
     objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
 
-  object saveProcessStack = processStack;
+  ObjectHandle saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
   while(execute(process, 15000));
   // Re-read the stack object, in case it had to grow during execution and 
@@ -336,7 +336,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
 object ffiPrimitive(int number, object* arguments)
 {   
-  object returnedObject = nilobj;
+  ObjectHandle returnedObject = nilobj;
   char libName[MAX_PATH];
 
   switch(number - 180) {

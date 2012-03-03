@@ -26,13 +26,14 @@ object ioPrimitive(int number, object* arguments)
 {   
   int i, j;
   char *p, buffer[1024];
-  object returnedObject;
+  ObjectHandle returnedObject;
 
   returnedObject = nilobj;
 
   i = objectRef(arguments[0]).intValue();
 
-  switch(number) {
+  switch(number) 
+  {
     case 0:     /* file open */
       i = objectRef(arguments[0]).intValue();
       p = objectRef(arguments[1]).charPtr();
@@ -75,7 +76,8 @@ object ioPrimitive(int number, object* arguments)
       while (1) {
         if (fgets(&buffer[j], 512, fp[i]) == NULL)
           return(nilobj); /* end of file */
-        if (fp[i] == stdin) {
+        if (fp[i] == stdin) 
+        {
           /* delete the newline */
           j = strlen(buffer);
           if (buffer[j-1] == '\n')

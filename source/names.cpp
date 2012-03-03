@@ -33,7 +33,7 @@
 
 noreturn nameTableInsert(object dict, int hash, object key, object value)
 {   
-    object table, link, nwLink, nextLink, tablentry;
+    ObjectHandle table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
     table = objectRef(dict).basicAt(1);
@@ -144,8 +144,8 @@ object nameTableLookup(object dict, const char* str)
     return hashEachElement(dict, strHash(str), strTest);
 }
 
-object unSyms[12];
-object binSyms[30];
+ObjectHandle unSyms[12];
+ObjectHandle binSyms[30];
 
 const char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
 "basicSize", "print", "printString", 0};
