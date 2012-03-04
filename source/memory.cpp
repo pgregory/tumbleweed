@@ -200,7 +200,7 @@ object MemoryManager::allocByte(size_t size)
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    objectRef(newObj).setSizeField(-size);
+    objectRef(newObj).size = -size;
     return newObj;
 }
 
@@ -282,7 +282,7 @@ void MemoryManager::visit(register object x)
         {
             /* then it's the first time we've visited it, so: */
             visit(objectFromID(x)._class);
-            s = objectRef(x).sizeField();
+            s = objectRef(x).size;
             if (s>0) 
             {
                 p = objectFromID(x).memory;
@@ -380,7 +380,7 @@ object MemoryManager::newArray(int size)
     newObj = allocObject(size);
     if (arrayClass == nilobj)
         arrayClass = globalSymbol("Array");
-    objectRef(newObj).setClass(arrayClass);
+    objectRef(newObj)._class = arrayClass;
     return newObj;
 }
 
@@ -389,7 +389,7 @@ object MemoryManager::newBlock()
     object newObj;
 
     newObj = allocObject(blockSize);
-    objectRef(newObj).setClass(globalSymbol("Block"));
+    objectRef(newObj)._class = globalSymbol("Block");
     return newObj;
 }
 
@@ -398,7 +398,7 @@ object MemoryManager::newByteArray(int size)
     object newobj;
 
     newobj = allocByte(size);
-    objectRef(newobj).setClass(globalSymbol("ByteArray"));
+    objectRef(newobj)._class = globalSymbol("ByteArray");
     return newobj;
 }
 
@@ -408,7 +408,7 @@ object MemoryManager::newChar(int value)
 
     newobj = allocObject(1);
     objectRef(newobj).basicAtPut(1, newInteger(value));
-    objectRef(newobj).setClass(globalSymbol("Char"));
+    objectRef(newobj)._class = globalSymbol("Char");
     return(newobj);
 }
 
@@ -417,7 +417,7 @@ object MemoryManager::newClass(const char* name)
     object newObj, nameObj, methTable;
 
     newObj = allocObject(classSize);
-    objectRef(newObj).setClass(globalSymbol("Class"));
+    objectRef(newObj)._class = globalSymbol("Class");
 
     /* now make name */
     nameObj = newSymbol(name);
@@ -436,7 +436,7 @@ object MemoryManager::newContext(int link, object method, object args, object te
     object newObj;
 
     newObj = allocObject(contextSize);
-    objectRef(newObj).setClass(globalSymbol("Context"));
+    objectRef(newObj)._class = globalSymbol("Context");
     objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
     objectRef(newObj).basicAtPut(methodInContext, method);
     objectRef(newObj).basicAtPut(argumentsInContext, args);
@@ -449,7 +449,7 @@ object MemoryManager::newDictionary(int size)
     object newObj;
 
     newObj = allocObject(1);
-    objectRef(newObj).setClass(globalSymbol("Dictionary"));
+    objectRef(newObj)._class = globalSymbol("Dictionary");
     objectRef(newObj).basicAtPut(1, newArray(size));
     return newObj;
 }
@@ -460,7 +460,7 @@ object MemoryManager::newFloat(double d)
 
     newObj = allocByte((int) sizeof (double));
     ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
-    objectRef(newObj).setClass(globalSymbol("Float"));
+    objectRef(newObj)._class = globalSymbol("Float");
     return newObj;
 }
 
@@ -470,7 +470,7 @@ object MemoryManager::newInteger(int i)
 
     newObj = allocByte((int) sizeof (int));
     ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
-    objectRef(newObj).setClass(globalSymbol("Integer"));
+    objectRef(newObj)._class = globalSymbol("Integer");
     return newObj;
 }
 
@@ -481,7 +481,7 @@ object MemoryManager::newCPointer(void* l)
   int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
     ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
-    objectRef(newObj).setClass(globalSymbol("CPointer"));
+    objectRef(newObj)._class = globalSymbol("CPointer");
     return newObj;
 }
 
@@ -490,7 +490,7 @@ object MemoryManager::newLink(object key, object value)
     object newObj;
 
     newObj = allocObject(3);
-    objectRef(newObj).setClass(globalSymbol("Link"));
+    objectRef(newObj)._class = globalSymbol("Link");
     objectRef(newObj).basicAtPut(1, key);
     objectRef(newObj).basicAtPut(2, value);
     return newObj;
@@ -500,7 +500,7 @@ object MemoryManager::newMethod()
 {   object newObj;
 
     newObj = allocObject(methodSize);
-    objectRef(newObj).setClass(globalSymbol("Method"));
+    objectRef(newObj)._class = globalSymbol("Method");
     return newObj;
 }
 
@@ -511,7 +511,7 @@ object MemoryManager::newStString(const char* value)
     newObj = allocStr(value);
     if (stringClass == nilobj)
         stringClass = globalSymbol("String");
-    objectRef(newObj).setClass(stringClass);
+    objectRef(newObj)._class = stringClass;
     return(newObj);
 }
 
@@ -528,7 +528,7 @@ object MemoryManager::newSymbol(const char* str)
     newObj = allocStr(str);
     if (symbolClass == nilobj)
         symbolClass = globalSymbol("Symbol");
-    objectRef(newObj).setClass(symbolClass);
+    objectRef(newObj)._class = symbolClass;
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
     return newObj;
 }
@@ -549,11 +549,11 @@ object MemoryManager::copyFrom(object obj, int start, int size)
 }
 
 
-struct SDummy
+static struct 
 {
-  int di;
-  object cl;
-  short ds;
+    int di;
+    object cl;
+    short ds;
 } dummyObject;
 
 /*
@@ -690,72 +690,37 @@ size_t MemoryManager::growObjectStore(size_t amount)
 }
 
 
-object objectStruct::classField()
-{
-    return _class;
-}
-
-void objectStruct::setClass(object y)
-{
-    _class = y;
-}
-
-long objectStruct::sizeField()
-{
-    return size;
-}
-
-void objectStruct::setSizeField(long _size)
-{
-    size = _size;
-}
-
 object* objectStruct::sysMemPtr()
 {
     return memory;
 }
 
-object* objectStruct::memoryPtr()
-{
-    return sysMemPtr();
-}
-
 byte* objectStruct::bytePtr()
 {
-    return (byte *)memoryPtr();
+    return (byte *)sysMemPtr();
 }
 
 char* objectStruct::charPtr()
 {
-    return (char *)memoryPtr();
+    return (char *)sysMemPtr();
 }
 
 
-void objectStruct::simpleAtPut(int i, object v)
+void objectStruct::basicAtPut(int i, object v)
 {
-    if((i <= 0) || (i > sizeField()))
-        sysError("index out of range", "simpleAtPut");
+    if((i <= 0) || (i > size))
+        sysError("index out of range", "basicAtPut");
     else
         sysMemPtr()[i-1] = v;
 }
 
-void objectStruct::basicAtPut(int i, object v)
-{
-    simpleAtPut(i, v);
-}
-
-
-void objectStruct::fieldAtPut(int i, object v)
-{
-    basicAtPut(i, v);
-}
 
 int objectStruct::byteAt(int i)
 {
     byte* bp;
     unsigned char t;
 
-    if((i <= 0) || (i > 2 * - sizeField()))
+    if((i <= 0) || (i > 2 * - size))
         sysError("index out of range", "byteAt");
     else
     {
@@ -769,7 +734,7 @@ int objectStruct::byteAt(int i)
 void objectStruct::byteAtPut(int i, int x)
 {
     byte *bp;
-    if ((i <= 0) || (i > 2 * - sizeField())) 
+    if ((i <= 0) || (i > 2 * - size)) 
     {
         sysError("index out of range", "byteAtPut");
     }
@@ -782,7 +747,7 @@ void objectStruct::byteAtPut(int i, int x)
 
 object objectStruct::basicAt(int i)
 {
-    if(( i <= 0) || (i > sizeField()))
+    if(( i <= 0) || (i > size))
         sysError("index out of range", "basicAt");
     else
         return (sysMemPtr()[i-1]);

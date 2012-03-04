@@ -38,10 +38,10 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
     /* first get the hash table */
     table = objectRef(dict).basicAt(1);
 
-    if (objectRef(table).sizeField() < 3)
+    if (objectRef(table).size < 3)
         sysError("attempt to insert into","too small name table");
     else {
-        hash = 3 * ( hash % (objectRef(table).sizeField() / 3));
+        hash = 3 * ( hash % (objectRef(table).size / 3));
         tablentry = objectRef(table).basicAt(hash+1);
         if ((tablentry == nilobj) || (tablentry == key)) {
             objectRef(table).basicAtPut(hash+1, key);
@@ -78,22 +78,24 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     table = objectRef(dict).basicAt(1);
 
     /* now see if table is valid */
-    if ((tablesize = objectRef(table).sizeField()) < 3)
+    if ((tablesize = objectRef(table).size) < 3)
         sysError("system error","lookup on null table");
-    else {
+    else 
+    {
         hash = 1+ (3 * (hash % (tablesize / 3)));
         hp = objectRef(table).sysMemPtr() + (hash-1);
         key = *hp++; /* table at: hash */
         value = *hp++; /* table at: hash + 1 */
         if ((key != nilobj) && (*fun)(key)) 
             return value;
-        for (link = *hp; link != nilobj; link = *hp) {
+        for (link = *hp; link != nilobj; link = *hp) 
+        {
             hp = objectRef(link).sysMemPtr();
             key = *hp++; /* link at: 1 */
             value = *hp++; /* link at: 2 */
             if ((key != nilobj) && (*fun)(key))
                 return value;
-            }
+        }
     }
     return nilobj;
 }

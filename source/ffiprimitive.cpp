@@ -27,22 +27,26 @@ extern int linkPointer;
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
 
-typedef union FFI_DataType_U {
+static union 
+{
   char* charPtr;
   int   integer;
   void* cPointer;
   float _float;
-  struct {
+  struct 
+  {
     void* pointer;
     int integer;
   } outInteger;
-  struct {
+  struct 
+  {
     void* pointer;
     float _float;
   } outFloat;
 } FFI_DataType;
 
-typedef enum FFI_Symbols_E {
+typedef enum FFI_Symbols_E 
+{
   FFI_CHAR,
   FFI_CHAR_OUT,
   FFI_STRING,
@@ -71,7 +75,8 @@ typedef enum FFI_Symbols_E {
 } FFI_Symbols;
 
 
-static const char* ffiStrs[] = {
+static const char* ffiStrs[] = 
+{
   "char",               // FFI_CHAR,       
   "charOut",            // FFI_CHAR_OUT,
   "string",             // FFI_STRING,
@@ -101,7 +106,8 @@ static const char* ffiStrs[] = {
 
 static int ffiNumStrs = sizeof(ffiStrs)/sizeof(ffiStrs[0]);
 static object *ffiSyms;
-static void* ffiLSTTypes[] = {
+static void* ffiLSTTypes[] = 
+{
   &ffi_type_uchar,      // FFI_CHAR,
   &ffi_type_pointer,    // FFI_CHAR_OUT,
   &ffi_type_pointer,    // FFI_STRING,
@@ -161,7 +167,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
   object realValue;
 
   object sclass = globalSymbol("Symbol");
-  object vclass = objectRef(value).classField();
+  object vclass = objectRef(value)._class;
   if(vclass == sclass)
     realValue = globalSymbol(objectRef(value).charPtr());
   else
@@ -199,9 +205,9 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      if(objectRef(realValue).classField() == globalSymbol("Integer"))
+      if(objectRef(realValue)._class == globalSymbol("Integer"))
         data->integer = objectRef(realValue).intValue();
-      else if(objectRef(realValue).classField() == globalSymbol("Float"))
+      else if(objectRef(realValue)._class == globalSymbol("Float"))
         data->integer = (int)objectRef(realValue).floatValue();
       ptr = &data->integer;
       break;
@@ -273,7 +279,8 @@ object valueIn(int retMap, FFI_DataType* data)
   }
 }
 
-typedef struct FFI_CallbackData_S {
+static struct
+{
   ObjectHandle  block;
   int     numArgs;
   FFI_Symbols *argTypeArray;
@@ -384,8 +391,8 @@ object ffiPrimitive(int number, object* arguments)
         FFI_FunctionHandle func = objectRef(arguments[0]).cPointerValue();
         object rtype = arguments[1];
         int retMap = mapType(rtype);
-        int cargTypes = objectRef(arguments[2]).sizeField();
-        int cargs = objectRef(arguments[3]).sizeField();
+        int cargTypes = objectRef(arguments[2]).size;
+        int cargs = objectRef(arguments[3]).size;
         int cOutArgs = 0;
 
         assert(cargTypes <= cargs);
@@ -455,7 +462,7 @@ object ffiPrimitive(int number, object* arguments)
 
         object rtype = arguments[0];
         int retMap = mapType(rtype);
-        int cargTypes = objectRef(arguments[1]).sizeField();
+        int cargTypes = objectRef(arguments[1]).size;
         ffi_closure* closure;
         ffi_cif *cif = static_cast<ffi_cif*>(calloc(1, sizeof(ffi_cif)));
         object block = arguments[2];

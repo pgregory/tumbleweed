@@ -36,7 +36,13 @@ static int messTest(object obj)
 
 /* a cache of recently executed methods is used for fast lookup */
 # define cacheSize 211
-struct CachedMethod methodCache[cacheSize];
+static struct 
+{
+  ObjectHandle cacheMessage;  /* the message being requested */
+  ObjectHandle lookupClass;   /* the class of the receiver */
+  ObjectHandle cacheClass;    /* the class of the method */
+  ObjectHandle cacheMethod;   /* the method itself */
+} methodCache[cacheSize];
 
 /* flush an entry from the cache (usually when its been recompiled) */
 void flushCache(object messageToSend, object _class)
@@ -113,7 +119,7 @@ static object growProcessStack(int top, int toadd)
   ObjectHandle newStack;
 
   if (toadd < 100) toadd = 100;
-  size = objectRef(processStack).sizeField() + toadd;
+  size = objectRef(processStack).size + toadd;
   newStack = MemoryManager::Instance()->newArray(size);
   for (i = 1; i <= top; i++) {
     objectRef(newStack).basicAtPut(i, objectRef(processStack).basicAt(i));
@@ -232,7 +238,7 @@ readMethodInfo:
                 objectRef(processStack).basicAtPut(linkPointer+1, contextObject);
                 ipush(contextObject);
                 /* save byte pointer then restore things properly */
-                objectRef(processStack).fieldAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+                objectRef(processStack).basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
                 goto readLinkageBlock;
 
               }
@@ -276,7 +282,7 @@ readMethodInfo:
 doSendMessage:
         arg = psb + (returnPoint-1);
         rcv = objectRef(argumentsAt(0)).sysMemPtr();
-        methodClass = objectRef(argumentsAt(0)).classField();
+        methodClass = objectRef(argumentsAt(0))._class;
 
 doFindMessage:
         /* look up method in cache */
@@ -328,7 +334,7 @@ doFindMessage:
           ipush(argarray);
           messageToSend = MemoryManager::Instance()->newSymbol("watchWith:");
           /* try again - if fail really give up */
-          methodClass = objectRef(method).classField();
+          methodClass = objectRef(method)._class;
           if (! findMethod(&methodClass)) {
             sysWarn("can't find","watch method");
             /* just quit */
@@ -337,18 +343,18 @@ doFindMessage:
         }
 
         /* save the current byte pointer */
-        objectRef(processStack).fieldAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+        objectRef(processStack).basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
         i = 6 + methodTempSize(method) + methodStackSize(method);
         j = processStackTop();
-        if ((j + i) > objectRef(processStack).sizeField()) 
+        if ((j + i) > objectRef(processStack).size) 
         {
           processStack = growProcessStack(j, i);
           psb = objectRef(processStack).sysMemPtr();
           pst = (psb + j);
-          objectRef(aProcess).fieldAtPut(stackInProcess, processStack);
+          objectRef(aProcess).basicAtPut(stackInProcess, processStack);
         }
 
         byteOffset = 1;
@@ -371,7 +377,7 @@ doFindMessage:
         temps = pst+1;
         pst += methodTempSize(method);
         /* break if we are too big and probably looping */
-        if (objectRef(processStack).sizeField() > 1800) timeSliceCounter = 0;
+        if (objectRef(processStack).size > 1800) timeSliceCounter = 0;
         goto readMethodInfo; 
 
       case SendUnary:
@@ -394,8 +400,8 @@ doFindMessage:
         /* and overflow does not occur */
         primargs = pst - 1;
         if ((! watching) && (low <= 12) &&
-            (objectRef(primargs[0]).classField() == intClass && 
-              objectRef(primargs[1]).classField() == intClass)) {
+            (objectRef(primargs[0])._class == intClass && 
+              objectRef(primargs[1])._class == intClass)) {
           returnedObject = primitive(low+60, primargs);
           if (returnedObject != nilobj) {
             // pop arguments off stack , push on result 
@@ -424,7 +430,7 @@ doFindMessage:
             break;
 
           case 11: /* class of object */
-            returnedObject = objectRef(*primargs).classField();
+            returnedObject = objectRef(*primargs)._class;
             break;
           case 21: /* object equality test */
             if (*primargs == *(primargs+1))
@@ -437,7 +443,7 @@ doFindMessage:
             break;
           case 31: /* basicAt:Put:*/
             j = objectRef(*(primargs+1)).intValue();
-            objectRef(*primargs).fieldAtPut(j, *(primargs+2));
+            objectRef(*primargs).basicAtPut(j, *(primargs+2));
             returnedObject = nilobj;
             break;
           case 53: /* set time slice */
@@ -568,9 +574,9 @@ doReturn:
   /* before returning we put back the values in the current process */
   /* object */
 
-  objectRef(processStack).fieldAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
-  objectRef(aProcess).fieldAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(processStackTop()));
-  objectRef(aProcess).fieldAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(linkPointer));
+  objectRef(processStack).basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+  objectRef(aProcess).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(processStackTop()));
+  objectRef(aProcess).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(linkPointer));
 
   return true;
 }

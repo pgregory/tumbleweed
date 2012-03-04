@@ -58,7 +58,7 @@ static object findClassWithMeta(const char* name, object metaObj)
     {
         size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
         newObj = MemoryManager::Instance()->allocObject(size);
-        objectRef(newObj).setClass(metaObj);
+        objectRef(newObj)._class = metaObj;
 
         /* now make name */
         nameObj = MemoryManager::Instance()->newSymbol(name);
@@ -84,7 +84,7 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
 
     metaObj = findClass(metaclass);
     classObj = findClassWithMeta(_class, metaObj);
-    objectRef(classObj).setClass(metaObj);
+    objectRef(classObj)._class = metaObj;
 
     //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
 
@@ -157,7 +157,7 @@ static void readRawClassDeclaration()
     objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
-    object methodsClass = objectRef(objectRef(classObj).basicAt(methodsInClass)).classField();
+    object methodsClass = objectRef(objectRef(classObj).basicAt(methodsInClass))._class;
 }
 
 /*
@@ -193,7 +193,7 @@ static void readClassDeclaration()
 
     metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
     classObj = createRawClass(className, metaClassName, superName);
-    objectRef(classObj).setClass(metaObj);
+    objectRef(classObj)._class = metaObj;
 
     size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
     instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");

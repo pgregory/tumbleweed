@@ -96,11 +96,11 @@ static int unaryPrims(int number, object firstarg)
   returnedObject = firstarg;
   switch(number) {
     case 1:     /* class of object */
-      returnedObject = objectRef(firstarg).classField();
+      returnedObject = objectRef(firstarg)._class;
       break;
 
     case 2:     /* basic size of object */
-      i = objectRef(firstarg).sizeField();
+      i = objectRef(firstarg).size;
       /* byte objects have negative size */
       if (i < 0) i = (-i);
       returnedObject = MemoryManager::Instance()->newInteger(i);
@@ -110,7 +110,7 @@ static int unaryPrims(int number, object firstarg)
       // \todo: Not happy about this, need to review the hashing.
       // This specialises the hash for integers, to ensure values are used, not objects,
       // but there are other cases where the value should be considered, like float.
-      if(objectRef(firstarg).classField() == globalSymbol("Integer"))
+      if(objectRef(firstarg)._class == globalSymbol("Integer"))
         returnedObject = MemoryManager::Instance()->newInteger(objectRef(firstarg).intValue());
       else
         returnedObject = MemoryManager::Instance()->newInteger(firstarg);
@@ -131,10 +131,10 @@ static int unaryPrims(int number, object firstarg)
         break;
       }
       /* first change link pointer to that of creator */
-      objectRef(processStack).fieldAtPut(i, 
+      objectRef(processStack).basicAtPut(i, 
           objectRef(processStack).basicAt(j));
       /* then change return point to that of creator */
-      objectRef(processStack).fieldAtPut(i+2, 
+      objectRef(processStack).basicAtPut(i+2, 
           objectRef(processStack).basicAt(j+2));
       returnedObject = trueobj;
       break;
@@ -200,7 +200,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 2:     /* set class of object */
-      objectRef(firstarg).setClass(secondarg);
+      objectRef(firstarg)._class = secondarg;
       returnedObject = firstarg;
       break;
 
@@ -233,8 +233,8 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       /* first get previous link */
       i = objectRef(objectRef(processStack).basicAt(linkPointer)).intValue();
       /* change context and byte pointer */
-      objectRef(processStack).fieldAtPut(i+1, firstarg);
-      objectRef(processStack).fieldAtPut(i+4, secondarg);
+      objectRef(processStack).basicAtPut(i+1, firstarg);
+      objectRef(processStack).basicAtPut(i+4, secondarg);
       break;
 
     case 9:     /* duplicate a block, adding a new context to it */
@@ -265,7 +265,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   {
     case 1:         /* basicAt:Put: */
       fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), objectRef(secondarg).intValue(), static_cast<int>(thirdarg));
-      objectRef(firstarg).fieldAtPut(objectRef(secondarg).intValue(), thirdarg);
+      objectRef(firstarg).basicAtPut(objectRef(secondarg).intValue(), thirdarg);
       break;
 
     case 2:         /* basicAt:Put: for bytes */

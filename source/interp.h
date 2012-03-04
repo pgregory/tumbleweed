@@ -42,13 +42,6 @@
 # define SendToSuper 11
 
 # define cacheSize 211
-struct CachedMethod {
-  ObjectHandle cacheMessage;  /* the message being requested */
-  ObjectHandle lookupClass;   /* the class of the receiver */
-  ObjectHandle cacheClass;    /* the class of the method */
-  ObjectHandle cacheMethod;   /* the method itself */
-};
-extern CachedMethod methodCache[];
 
 boolean execute(object aProcess, int maxsteps);
 void flushCache(object messageToSend, object _class);

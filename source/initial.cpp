@@ -98,16 +98,16 @@ void makeInitialImage()
     symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
     symbolClass = MemoryManager::Instance()->newClass("Symbol");
     integerClass = MemoryManager::Instance()->newClass("Integer");
-    objectRef(symbolObj).setClass(symbolClass);
+    objectRef(symbolObj)._class = symbolClass;
     classClass = MemoryManager::Instance()->newClass("Class");
-    objectRef(symbolClass).setClass(classClass);
-    objectRef(integerClass).setClass(classClass);
+    objectRef(symbolClass)._class = classClass;
+    objectRef(integerClass)._class = classClass;
   metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
-    objectRef(classClass).setClass(metaClassClass);
+    objectRef(classClass)._class = metaClassClass;
   objectClass = MemoryManager::Instance()->newClass("Object");
   metaObjectClass = MemoryManager::Instance()->newClass("MetaObject");
-  objectRef(objectClass).setClass(metaObjectClass);
-  objectRef(metaObjectClass).setClass(classClass);
+  objectRef(objectClass)._class = metaObjectClass;
+  objectRef(metaObjectClass)._class = classClass;
 
   objectRef(metaClassClass).basicAtPut(superClassInClass, metaObjectClass);
   objectRef(metaObjectClass).basicAtPut(superClassInClass, classClass);
@@ -117,9 +117,9 @@ void makeInitialImage()
     /* and make a couple common classes, just to hold their places */
     ignore MemoryManager::Instance()->newClass("Link");
     ignore MemoryManager::Instance()->newClass("ByteArray");
-    objectRef(hashTable).setClass(MemoryManager::Instance()->newClass("Array"));
-    objectRef(symbols).setClass(MemoryManager::Instance()->newClass("Dictionary"));
-    objectRef(nilobj).setClass(MemoryManager::Instance()->newClass("UndefinedObject"));
+    objectRef(hashTable)._class = MemoryManager::Instance()->newClass("Array");
+    objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
+    objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
     ignore MemoryManager::Instance()->newClass("String");
     nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 

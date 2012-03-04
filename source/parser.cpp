@@ -80,8 +80,9 @@ void setInstanceVariables(object aClass)
     {
         setInstanceVariables(objectRef(aClass).basicAt(superClassInClass));
         vars = objectRef(aClass).basicAt(variablesInClass);
-        if (vars != nilobj) {
-            limit = objectRef(vars).sizeField();
+        if (vars != nilobj) 
+        {
+            limit = objectRef(vars).size;
             for (i = 1; i <= limit; i++)
                 instanceName[++instanceTop] = objectRef(objectRef(vars).basicAt(i)).charPtr();
         }
