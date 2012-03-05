@@ -3,6 +3,7 @@
     Written by Tim Budd, Oregon State University, July 1987
 */
 
+#include "env.h"
 
 /*! \brief Auto referencing object handle class.
  *
@@ -190,7 +191,7 @@ class MemoryManager
         /*! The default constructor is private as the memory manager is implemented
          *  as a singleton, all access is via the Instance() function.
          */
-        MemoryManager();
+        MemoryManager(size_t initialSize = 6500);
     public:
         //! Destructor
         ~MemoryManager();
@@ -223,11 +224,17 @@ class MemoryManager
          */
         void visit(register object x);
 
-        /*! Get the count of live, refernced objects.
+        /*! Get the count of live, referenced objects.
          *
          * \return The number of active objects.
          */
         size_t objectCount();
+
+        /*! Get the count of free object slots.
+         *
+         * \return The number of free slots.
+         */
+        size_t freeSlotsCount();
 
         /*! Dump object memory stats into a string.
          *
@@ -500,6 +507,7 @@ class MemoryManager
          */
         void imageWrite(FILE* fp);
 
+        void setGrowAmount(size_t amount);
 
     private:
         TObjectFreeList objectFreeList;
@@ -507,10 +515,13 @@ class MemoryManager
         TObjectTable    objectTable;
         TObjectRefs     objectReferences;
         bool            noGC;
+        size_t          growAmount;
 
         static MemoryManager* m_pInstance;
 
         size_t growObjectStore(size_t amount);
+
+        friend class MemoryManagerTest;
 };
 
 extern MemoryManager* theMemoryManager;

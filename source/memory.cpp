@@ -77,9 +77,9 @@ MemoryManager* MemoryManager::Instance()
 
 
 
-MemoryManager::MemoryManager() : noGC(false)
+MemoryManager::MemoryManager(size_t initialSize) : noGC(false), growAmount(5000)
 {
-    objectTable.resize(6500);
+    objectTable.resize(initialSize);
 
     /* set all the reference counts to zero */
     for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
@@ -180,7 +180,7 @@ object MemoryManager::allocObject(size_t memorySize)
             {
                 if(debugging)
                     fprintf(stderr, "No suitable objects available after GC, growing store.\n");
-                growObjectStore(5000);
+                growObjectStore(growAmount);
                 return allocObject(memorySize);
             }
         }
@@ -278,7 +278,7 @@ void MemoryManager::visit(register object x)
 
     if (x) 
     {
-        if (--(MemoryManager::Instance()->objectFromID(x).referenceCount) == -1) 
+        if (--(objectFromID(x).referenceCount) == -1) 
         {
             /* then it's the first time we've visited it, so: */
             visit(objectFromID(x)._class);
@@ -303,7 +303,7 @@ int MemoryManager::garbageCollect()
         return 0;
 
     if (debugging) 
-        fprintf(stderr,"\ngarbage collecting ... ");
+        fprintf(stderr,"\ngarbage collecting ... \n");
 
     for(TObjectTableIterator x = objectTable.begin(), xend = objectTable.end(); x != xend; ++x)
         x->referenceCount = 0;
@@ -360,6 +360,10 @@ size_t MemoryManager::objectCount()
     return j;
 }
 
+size_t MemoryManager::freeSlotsCount()
+{   
+    return objectFreeListInv.size();
+}
 
 std::string MemoryManager::statsString()
 {
@@ -687,6 +691,11 @@ size_t MemoryManager::growObjectStore(size_t amount)
        objectFreeListInv.insert(std::pair<object, size_t>(i, 0));
     } 
     return objectTable.size();
+}
+
+void MemoryManager::setGrowAmount(size_t amount)
+{
+    growAmount = amount;
 }
 
 
