@@ -27,7 +27,7 @@ extern int linkPointer;
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
 
-static union 
+typedef union FFI_DataType_U
 {
   char* charPtr;
   int   integer;
@@ -279,7 +279,7 @@ object valueIn(int retMap, FFI_DataType* data)
   }
 }
 
-static struct
+typedef struct FFI_CallbackData_U
 {
   ObjectHandle  block;
   int     numArgs;
