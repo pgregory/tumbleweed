@@ -93,8 +93,8 @@ add_custom_command(
 
 add_executable(tw ${tw_srcs} systemImage serverSystemImage)
 
-target_link_libraries(initial ${LIBS} libtw)
-target_link_libraries(tw ${LIBS} libtw)
+target_link_libraries(initial libtw ${LIBS})
+target_link_libraries(tw libtw ${LIBS})
 
 install(TARGETS tw RUNTIME DESTINATION .)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
@@ -107,7 +107,7 @@ if(TW_BUILD_TESTS)
   include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/source)
   add_executable(memory_manager_test
     test/memory_test.cpp)
-  target_link_libraries(memory_manager_test ${GTEST_BOTH_LIBRARIES} ${LIBS} libtw)
+  target_link_libraries(memory_manager_test libtw ${GTEST_BOTH_LIBRARIES} ${LIBS})
   set(memory_manager_test_args "")
   GTEST_ADD_TESTS(memory_manager_test "${memory_manager_test_args}" test/memory_test.cpp)
 endif(TW_BUILD_TESTS)
