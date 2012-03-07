@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <editline/readline.h>
 #include <dlfcn.h>
 #include <assert.h>
 #include <ffi.h>
@@ -309,33 +308,33 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
   FFI_CallbackData* data = (FFI_CallbackData*)ud;
 
-  object block = data->block;
-  object context = objectRef(block).basicAt(contextInBlock);
-  object bytePointer = objectRef(block).basicAt(bytecountPositionInBlock);
+  ObjectHandle block = data->block;
+  ObjectHandle context = block->basicAt(contextInBlock);
+  ObjectHandle bytePointer = block->basicAt(bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
   ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
   ObjectHandle stack = MemoryManager::Instance()->newArray(50);
-  objectRef(process).basicAtPut(stackInProcess, stack);
-  objectRef(process).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
-  objectRef(process).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
-  objectRef(stack).basicAtPut(3, context);
-  objectRef(stack).basicAtPut(4, MemoryManager::Instance()->newInteger(1));
-  objectRef(stack).basicAtPut(6, bytePointer);
+  process->basicAtPut(stackInProcess, stack.handle());
+  process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
+  process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+  stack->basicAtPut(3, context.handle());
+  stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));
+  stack->basicAtPut(6, bytePointer.handle());
 
   /* change context and byte pointer */
-  int argLoc = objectRef(objectRef(block).basicAt(argumentLocationInBlock)).intValue();
-  object temps = objectRef(context).basicAt(temporariesInContext);
+  int argLoc = objectRef(block->basicAt(argumentLocationInBlock)).intValue();
+  object temps = context->basicAt(temporariesInContext);
   for(arg = 0; arg < data->numArgs; ++arg)
     objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
 
   ObjectHandle saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
-  while(execute(process, 15000));
+  while(execute(process.handle(), 15000));
   // Re-read the stack object, in case it had to grow during execution and 
   // was replaced.
-  stack = objectRef(process).basicAt(stackInProcess);
-  object ro = objectRef(stack).basicAt(1);
+  stack = process->basicAt(stackInProcess);
+  object ro = stack->basicAt(1);
   valueOut(data->retType, ro, static_cast<FFI_DataType*>(ret)); 
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
@@ -429,7 +428,7 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = MemoryManager::Instance()->newArray(cargTypes + 1);
 
             ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
-            objectRef(returnedObject).basicAtPut(1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
+            returnedObject->basicAtPut(1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
           }
           // Now fill in the rest of the result array with the arguments
           // thus getting any 'out' values back to the system in a controlled 
@@ -446,7 +445,7 @@ object ffiPrimitive(int number, object* arguments)
               int argMap = mapType(argType);
               // Get a new value out of the arguments array.
               object newVal = valueIn(argMap, static_cast<FFI_DataType*>(values[i]));
-              objectRef(returnedObject).basicAtPut(i+2, newVal); 
+              returnedObject->basicAtPut(i+2, newVal); 
             }
           }
         }
@@ -529,6 +528,6 @@ object ffiPrimitive(int number, object* arguments)
     default:
       sysError("unknown primitive","ffiPrimitive");
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 

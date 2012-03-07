@@ -31,7 +31,7 @@ static ObjectHandle method, messageToSend;
 
 static int messTest(object obj)
 {
-  return obj == messageToSend;
+  return obj == messageToSend.handle();
 }
 
 /* a cache of recently executed methods is used for fast lookup */
@@ -67,26 +67,26 @@ static boolean findMethod(object* methodClassLocation)
 
 
 //  printf("Looking for %s starting at %d\n", objectRef(messageToSend).charPtr(), methodClass);
-  for (; methodClass != nilobj; methodClass = 
-      objectRef(methodClass).basicAt(superClassInClass)) {
+  for (; methodClass.handle() != nilobj; methodClass = 
+      methodClass->basicAt(superClassInClass)) {
 //    printf("Looking for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-    methodTable = objectRef(methodClass).basicAt(methodsInClass);
-    if(methodTable == 0)
-      printf("Null method table on %s\n", objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-    method = hashEachElement(methodTable, objectRefHash(messageToSend), messTest);
-    if (method != nilobj)
+    methodTable = methodClass->basicAt(methodsInClass);
+    if(methodTable.handle() == nilobj)
+      printf("Null method table on %s\n", objectRef(methodClass->basicAt(nameInClass)).charPtr());
+    method = hashEachElement(methodTable.handle(), objectRefHash(messageToSend.handle()), messTest);
+    if (method.handle() != nilobj)
     {
 //      printf("...found\n");
       break;
     }
   }
 
-  if (method == nilobj) {       /* it wasn't found */
+  if (method.handle() == nilobj) {       /* it wasn't found */
     methodClass = *methodClassLocation;
     return false;
   }
 
-  *methodClassLocation = methodClass;
+  *methodClassLocation = methodClass.handle();
   return true;
 }
 
@@ -119,12 +119,12 @@ static object growProcessStack(int top, int toadd)
   ObjectHandle newStack;
 
   if (toadd < 100) toadd = 100;
-  size = objectRef(processStack).size + toadd;
+  size = processStack->size + toadd;
   newStack = MemoryManager::Instance()->newArray(size);
   for (i = 1; i <= top; i++) {
-    objectRef(newStack).basicAtPut(i, objectRef(processStack).basicAt(i));
+    newStack->basicAtPut(i, processStack->basicAt(i));
   }
-  return newStack;
+  return newStack.handle();
 }
 
 boolean execute(object aProcess, int maxsteps)
@@ -145,7 +145,7 @@ boolean execute(object aProcess, int maxsteps)
 
   /* unpack the instance variables from the process */
   processStack    = objectRef(aProcess).basicAt(stackInProcess);
-  psb = objectRef(processStack).sysMemPtr();
+  psb = processStack->sysMemPtr();
   j = objectRef(objectRef(aProcess).basicAt(stackTopInProcess)).intValue();
   pst = psb + (j-1);
   linkPointer     = objectRef(objectRef(aProcess).basicAt(linkPtrInProcess)).intValue();
@@ -158,7 +158,7 @@ readLinkageBlock:
   contextObject  = processStackAt(linkPointer+1);
   returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
   byteOffset  = objectRef(processStackAt(linkPointer+4)).intValue();
-  if (contextObject == nilobj) {
+  if (contextObject.handle() == nilobj) {
     contextObject = processStack;
     cntx = psb;
     arg = cntx + (returnPoint-1);
@@ -166,17 +166,17 @@ readLinkageBlock:
     temps = cntx + linkPointer + 4;
   }
   else {    /* read from context object */
-    cntx = objectRef(contextObject).sysMemPtr();
-    method = objectRef(contextObject).basicAt(methodInContext);
-    arg = objectRef(objectRef(contextObject).basicAt(argumentsInContext)).sysMemPtr();
-    temps = objectRef(objectRef(contextObject).basicAt(temporariesInContext)).sysMemPtr();
+    cntx = contextObject->sysMemPtr();
+    method = contextObject->basicAt(methodInContext);
+    arg = objectRef(contextObject->basicAt(argumentsInContext)).sysMemPtr();
+    temps = objectRef(contextObject->basicAt(temporariesInContext)).sysMemPtr();
   }
 
   rcv = objectRef(argumentsAt(0)).sysMemPtr();
 
 readMethodInfo:
-  lits           = objectRef(objectRef(method).basicAt(literalsInMethod)).sysMemPtr();
-  bp             = objectRef(objectRef(method).basicAt(bytecodesInMethod)).bytePtr() - 1;
+  lits           = objectRef(method->basicAt(literalsInMethod)).sysMemPtr();
+  bp             = objectRef(method->basicAt(bytecodesInMethod)).bytePtr() - 1;
 
   while ( --timeSliceCounter > 0 ) {
     low = (high = nextByte()) & 0x0F;
@@ -224,25 +224,25 @@ readMethodInfo:
           case contextConst:
             {
               /* check to see if we have made a block context yet */
-              if (contextObject == processStack) 
+              if (contextObject.handle() == processStack.handle()) 
               {
                 /* not yet, do it now - first get real return point */
                 returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
-                ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
+                ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack.handle(), returnPoint, 
                       linkPointer - returnPoint));
-                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 5,
-                      methodTempSize(method)));
-                contextObject = MemoryManager::Instance()->newContext(linkPointer, method,
-                    args,
-                    temp);
-                objectRef(processStack).basicAtPut(linkPointer+1, contextObject);
-                ipush(contextObject);
+                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack.handle(), linkPointer + 5,
+                      methodTempSize(method.handle())));
+                contextObject = MemoryManager::Instance()->newContext(linkPointer, method.handle(),
+                    args.handle(),
+                    temp.handle());
+                processStack->basicAtPut(linkPointer+1, contextObject.handle());
+                ipush(contextObject.handle());
                 /* save byte pointer then restore things properly */
-                objectRef(processStack).basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+                processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
                 goto readLinkageBlock;
 
               }
-              ipush(contextObject);
+              ipush(contextObject.handle());
             }
             break;
 
@@ -251,11 +251,11 @@ readMethodInfo:
             break;
 
           case trueConst:
-            ipush(trueobj);
+            ipush(trueobj.handle());
             break;
 
           case falseConst:
-            ipush(falseobj);
+            ipush(falseobj.handle());
             break;
 
           default:
@@ -286,11 +286,11 @@ doSendMessage:
 
 doFindMessage:
         /* look up method in cache */
-        i = ((objectRefHash(messageToSend)) + (objectRefHash(methodClass))) % cacheSize;
-        if ((methodCache[i].cacheMessage == messageToSend) &&
-            (methodCache[i].lookupClass == methodClass)) {
+        i = ((objectRefHash(messageToSend.handle())) + (objectRefHash(methodClass))) % cacheSize;
+        if ((methodCache[i].cacheMessage.handle() == messageToSend.handle()) &&
+            (methodCache[i].lookupClass.handle() == methodClass)) {
           method = methodCache[i].cacheMethod;
-          methodClass = methodCache[i].cacheClass;
+          methodClass = methodCache[i].cacheClass.handle();
 //          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
         }
         else {
@@ -302,14 +302,14 @@ doFindMessage:
             argarray = MemoryManager::Instance()->newArray(j+1);
             for (; j >= 0; j--) {
               ipop(returnedObject);
-              objectRef(argarray).basicAtPut(j+1, returnedObject);
+              argarray->basicAtPut(j+1, returnedObject);
             }
 //            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-            printf("Failed to find %s\n", objectRef(messageToSend).charPtr());
-            ipush(objectRef(argarray).basicAt(1)); /* push receiver back */
-            ipush(messageToSend);
+            printf("Failed to find %s\n", messageToSend->charPtr());
+            ipush(argarray->basicAt(1)); /* push receiver back */
+            ipush(messageToSend.handle());
             messageToSend = MemoryManager::Instance()->newSymbol("message:notRecognizedWithArguments:");
-            ipush(argarray);
+            ipush(argarray.handle());
             /* try again - if fail really give up */
             if (! findMethod(&methodClass)) {
               sysWarn("can't find","error recovery method");
@@ -322,19 +322,19 @@ doFindMessage:
           methodCache[i].cacheClass = methodClass;
         }
 
-        if (watching && (objectRef(method).basicAt(watchInMethod) != nilobj)) {
+        if (watching && (method->basicAt(watchInMethod) != nilobj)) {
           /* being watched, we send to method itself */
           j = processStackTop() - returnPoint;
           argarray = MemoryManager::Instance()->newArray(j+1);
           for (; j >= 0; j--) {
             ipop(returnedObject);
-            objectRef(argarray).basicAtPut(j+1, returnedObject);
+            argarray->basicAtPut(j+1, returnedObject);
           }
-          ipush(method); /* push method */
-          ipush(argarray);
+          ipush(method.handle()); /* push method */
+          ipush(argarray.handle());
           messageToSend = MemoryManager::Instance()->newSymbol("watchWith:");
           /* try again - if fail really give up */
-          methodClass = objectRef(method)._class;
+          methodClass = method->_class;
           if (! findMethod(&methodClass)) {
             sysWarn("can't find","watch method");
             /* just quit */
@@ -343,18 +343,18 @@ doFindMessage:
         }
 
         /* save the current byte pointer */
-        objectRef(processStack).basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+        processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
-        i = 6 + methodTempSize(method) + methodStackSize(method);
+        i = 6 + methodTempSize(method.handle()) + methodStackSize(method.handle());
         j = processStackTop();
-        if ((j + i) > objectRef(processStack).size) 
+        if ((j + i) > processStack->size) 
         {
           processStack = growProcessStack(j, i);
-          psb = objectRef(processStack).sysMemPtr();
+          psb = processStack->sysMemPtr();
           pst = (psb + j);
-          objectRef(aProcess).basicAtPut(stackInProcess, processStack);
+          objectRef(aProcess).basicAtPut(stackInProcess, processStack.handle());
         }
 
         byteOffset = 1;
@@ -370,14 +370,14 @@ doFindMessage:
         ipush(MemoryManager::Instance()->newInteger(returnPoint));
         arg = cntx + (returnPoint-1);
         /* position 3 : method */
-        ipush(method);
+        ipush(method.handle());
         /* position 4 : bytecode counter */
         ipush(MemoryManager::Instance()->newInteger(byteOffset));
         /* then make space for temporaries */
         temps = pst+1;
-        pst += methodTempSize(method);
+        pst += methodTempSize(method.handle());
         /* break if we are too big and probably looping */
-        if (objectRef(processStack).size > 1800) timeSliceCounter = 0;
+        if (processStack->size > 1800) timeSliceCounter = 0;
         goto readMethodInfo; 
 
       case SendUnary:
@@ -385,7 +385,7 @@ doFindMessage:
         /* they are so common */
         if ((! watching) && (low <= 1)) {
           if (stackTop() == nilobj) {
-            stackTopPut((low?falseobj:trueobj));
+            stackTopPut((low?falseobj.handle():trueobj.handle()));
             break;
           }
         }
@@ -400,8 +400,8 @@ doFindMessage:
         /* and overflow does not occur */
         primargs = pst - 1;
         if ((! watching) && (low <= 12) &&
-            (objectRef(primargs[0])._class == intClass && 
-              objectRef(primargs[1])._class == intClass)) {
+            (objectRef(primargs[0])._class == intClass.handle() && 
+              objectRef(primargs[1])._class == intClass.handle())) {
           returnedObject = primitive(low+60, primargs);
           if (returnedObject != nilobj) {
             // pop arguments off stack , push on result 
@@ -426,7 +426,7 @@ doFindMessage:
         switch(i) {
           case 5:   /* set watch */
             watching = ! watching;
-            returnedObject = watching?trueobj:falseobj;
+            returnedObject = watching?trueobj.handle():falseobj.handle();
             break;
 
           case 11: /* class of object */
@@ -434,8 +434,8 @@ doFindMessage:
             break;
           case 21: /* object equality test */
             if (*primargs == *(primargs+1))
-              returnedObject = trueobj;
-            else returnedObject = falseobj;
+              returnedObject = trueobj.handle();
+            else returnedObject = falseobj.handle();
             break;
           case 25: /* basicAt: */
             j = objectRef(*(primargs+1)).intValue();
@@ -468,8 +468,8 @@ doFindMessage:
         break;
 
 doReturn:
-        returnPoint = objectRef(objectRef(processStack).basicAt(linkPointer + 2)).intValue();
-        linkPointer = objectRef(objectRef(processStack).basicAt(linkPointer)).intValue();
+        returnPoint = objectRef(processStack->basicAt(linkPointer + 2)).intValue();
+        linkPointer = objectRef(processStack->basicAt(linkPointer)).intValue();
         while (processStackTop() >= returnPoint) {
           stackTopFree();
         }
@@ -509,7 +509,7 @@ doReturn:
           case BranchIfTrue:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj) {
+            if (returnedObject == trueobj.handle()) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -519,7 +519,7 @@ doReturn:
           case BranchIfFalse:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj) {
+            if (returnedObject == falseobj.handle()) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -529,7 +529,7 @@ doReturn:
           case AndBranch:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj) {
+            if (returnedObject == falseobj.handle()) {
               ipush(returnedObject);
               byteOffset = i;
             }
@@ -538,7 +538,7 @@ doReturn:
           case OrBranch:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj) {
+            if (returnedObject == trueobj.handle()) {
               ipush(returnedObject);
               byteOffset = i;
             }
@@ -548,7 +548,7 @@ doReturn:
             i = nextByte();
             messageToSend = literalsAt(i);
             rcv = objectRef(argumentsAt(0)).sysMemPtr();
-            methodClass = objectRef(method).basicAt(methodClassInMethod);
+            methodClass = method->basicAt(methodClassInMethod);
             /* if there is a superclass, use it
                otherwise for class Object (the only 
                class that doesn't have a superclass) use
@@ -574,7 +574,7 @@ doReturn:
   /* before returning we put back the values in the current process */
   /* object */
 
-  objectRef(processStack).basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+  processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
   objectRef(aProcess).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(processStackTop()));
   objectRef(aProcess).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(linkPointer));
 

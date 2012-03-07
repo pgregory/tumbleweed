@@ -38,29 +38,29 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
     /* first get the hash table */
     table = objectRef(dict).basicAt(1);
 
-    if (objectRef(table).size < 3)
+    if (table->size < 3)
         sysError("attempt to insert into","too small name table");
     else {
-        hash = 3 * ( hash % (objectRef(table).size / 3));
-        tablentry = objectRef(table).basicAt(hash+1);
-        if ((tablentry == nilobj) || (tablentry == key)) {
-            objectRef(table).basicAtPut(hash+1, key);
-            objectRef(table).basicAtPut(hash+2, value);
+        hash = 3 * ( hash % (table->size / 3));
+        tablentry = table->basicAt(hash+1);
+        if ((tablentry.handle() == nilobj) || (tablentry.handle() == key)) {
+            table->basicAtPut(hash+1, key);
+            table->basicAtPut(hash+2, value);
             }
         else {
             nwLink = MemoryManager::Instance()->newLink(key, value);
-            link = objectRef(table).basicAt(hash+3);
-            if (link == nilobj) {
-                objectRef(table).basicAtPut(hash+3, nwLink);
+            link = table->basicAt(hash+3);
+            if (link.handle() == nilobj) {
+                table->basicAtPut(hash+3, nwLink.handle());
                 }
             else
                 while(1)
-                    if (objectRef(link).basicAt(1) == key) {
-                        objectRef(link).basicAtPut(2, value);
+                    if (link->basicAt(1) == key) {
+                        link->basicAtPut(2, value);
                         break;
                         }
-                    else if ((nextLink = objectRef(link).basicAt(3)) == nilobj) {
-                        objectRef(link).basicAtPut(3, nwLink);
+                    else if ((nextLink = link->basicAt(3)).handle() == nilobj) {
+                        link->basicAtPut(3, nwLink.handle());
                         break;
                         }
                     else

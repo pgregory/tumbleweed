@@ -85,7 +85,7 @@ static object zeroaryPrims(int number)
       sysError("unknown primitive","zeroargPrims");
       break;
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static int unaryPrims(int number, object firstarg)
@@ -122,20 +122,20 @@ static int unaryPrims(int number, object firstarg)
 
     case 8:     /* change return point - block return */
       /* first get previous link pointer */
-      i = objectRef(objectRef(processStack).basicAt(linkPointer)).intValue();
+      i = objectRef(processStack->basicAt(linkPointer)).intValue();
       /* then creating context pointer */
       j = objectRef(objectRef(firstarg).basicAt(1)).intValue();
-      if (objectRef(processStack).basicAt(j+1) != firstarg) 
+      if (processStack->basicAt(j+1) != firstarg) 
       {
         returnedObject = falseobj;
         break;
       }
       /* first change link pointer to that of creator */
-      objectRef(processStack).basicAtPut(i, 
-          objectRef(processStack).basicAt(j));
+      processStack->basicAtPut(i, 
+          processStack->basicAt(j));
       /* then change return point to that of creator */
-      objectRef(processStack).basicAtPut(i+2, 
-          objectRef(processStack).basicAt(j+2));
+      processStack->basicAtPut(i+2, 
+          processStack->basicAt(j+2));
       returnedObject = trueobj;
       break;
 
@@ -180,7 +180,7 @@ static int unaryPrims(int number, object firstarg)
       sysError("unknown primitive","unaryPrims");
       break;
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static int binaryPrims(int number, object firstarg, object secondarg)
@@ -231,18 +231,18 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 
     case 8:     /* block start */
       /* first get previous link */
-      i = objectRef(objectRef(processStack).basicAt(linkPointer)).intValue();
+      i = objectRef(processStack->basicAt(linkPointer)).intValue();
       /* change context and byte pointer */
-      objectRef(processStack).basicAtPut(i+1, firstarg);
-      objectRef(processStack).basicAtPut(i+4, secondarg);
+      processStack->basicAtPut(i+1, firstarg);
+      processStack->basicAtPut(i+4, secondarg);
       break;
 
     case 9:     /* duplicate a block, adding a new context to it */
       returnedObject = MemoryManager::Instance()->newBlock();
-      objectRef(returnedObject).basicAtPut(1, secondarg);
-      objectRef(returnedObject).basicAtPut(2, objectRef(firstarg).basicAt(2));
-      objectRef(returnedObject).basicAtPut(3, objectRef(firstarg).basicAt(3));
-      objectRef(returnedObject).basicAtPut(4, objectRef(firstarg).basicAt(4));
+      returnedObject->basicAtPut(1, secondarg);
+      returnedObject->basicAtPut(2, objectRef(firstarg).basicAt(2));
+      returnedObject->basicAtPut(3, objectRef(firstarg).basicAt(3));
+      returnedObject->basicAtPut(4, objectRef(firstarg).basicAt(4));
       break;
 
     default:        /* unknown primitive */
@@ -250,7 +250,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static int trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
@@ -299,7 +299,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
       sysError("unknown primitive","trinaryPrims");
       break;
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static int intUnary(int number, object firstarg)
@@ -335,7 +335,7 @@ static int intUnary(int number, object firstarg)
     default:
       sysError("intUnary primitive","not implemented yet");
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static object intBinary(register int number, register int firstarg, int secondarg)
@@ -413,13 +413,13 @@ static object intBinary(register int number, register int firstarg, int secondar
       returnedObject = falseobj;
   else
     returnedObject = MemoryManager::Instance()->newInteger(firstarg);
-  return(returnedObject);
+  return(returnedObject.handle());
 
   /* on overflow, return nil and let smalltalk code */
   /* figure out what to do */
 overflow:
   returnedObject = nilobj;
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static int strUnary(int number, char* firstargument)
@@ -459,7 +459,7 @@ static int strUnary(int number, char* firstargument)
       break;
   }
 
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static int floatUnary(int number, double firstarg)
@@ -493,8 +493,8 @@ static int floatUnary(int number, double firstarg)
       else { i -= ndif; temp = ldexp(temp, ndif); }
       j = (int) temp;
       returnedObject = MemoryManager::Instance()->newArray(2);
-      objectRef(returnedObject).basicAtPut(1, MemoryManager::Instance()->newInteger(j));
-      objectRef(returnedObject).basicAtPut(2, MemoryManager::Instance()->newInteger(i));
+      returnedObject->basicAtPut(1, MemoryManager::Instance()->newInteger(j));
+      returnedObject->basicAtPut(2, MemoryManager::Instance()->newInteger(i));
 # ifdef trynew
       /* if number is too big it can't be integer anyway */
       if (firstarg > 2e9)
@@ -515,7 +515,7 @@ static int floatUnary(int number, double firstarg)
       break;
   }
 
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 static object floatBinary(int number, double first, double second)
@@ -548,7 +548,7 @@ static object floatBinary(int number, double first, double second)
       returnedObject = falseobj;
   else
     returnedObject = MemoryManager::Instance()->newFloat(first);
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 
@@ -568,7 +568,7 @@ static int cPointerUnary(int number, void* firstarg)
       break;
   }
 
-  return(returnedObject);
+  return(returnedObject.handle());
 }
 
 
@@ -642,5 +642,5 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
   }
 
-  return (returnedObject);
+  return (returnedObject.handle());
 }

@@ -96,5 +96,5 @@ object sysPrimitive(int number, object* arguments)
     default:
       sysError("unknown primitive","sysPrimitive");
   }
-  return(returnedObject);
+  return(returnedObject.handle());
 }

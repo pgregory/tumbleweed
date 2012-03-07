@@ -5,6 +5,8 @@
 
 #include "env.h"
 
+class MemoryManager;
+struct objectStruct;
 /*! \brief Auto referencing object handle class.
  *
  * Use this class to hold a reference to a newly created object so
@@ -19,10 +21,31 @@ class ObjectHandle
     public:
         //! Default constructor
         /*! By default, the handle refers to the nilobj. */
-        ObjectHandle() : m_handle(0) {}
+        ObjectHandle();
         //! Constructor
-        /*! Takes an object ID, automatically records the reference */
+        /*! Takes an object ID, automatically records the reference 
+         *
+         * \param object The object to reference, it will be managed by the
+         *        default singleton memory manager
+         *
+         */
+        //! Copy constructor
+        /*! Ensures that the copy correctly references the object.
+         *
+         * \param from The ObjectHandle to duplicate.
+         */
+        ObjectHandle(const ObjectHandle& from);
         ObjectHandle(long object);
+        //! Constructor
+        /*! Takes an object ID and manager to reference against, 
+         *  automatically records the reference 
+         *
+         * \param object The object to reference, it will be managed by the
+         *        default singleton memory manager
+         * \param manager Pointer to the manager to reference with.
+         *
+         */
+        ObjectHandle(long object, MemoryManager* manager);
         //! Destructor
         /*! Releases any reference, allowing the object to be collected,
          *  unless it has been assigned to a slot in the object storage
@@ -31,10 +54,9 @@ class ObjectHandle
         ~ObjectHandle();
 
         //! Cast to object ID
-        operator long() const
-        {
-            return m_handle;
-        }
+        operator objectStruct&() const;
+
+        objectStruct* operator->() const;
 
         /*! Accessor for the object ID referenced
          *
@@ -58,6 +80,7 @@ class ObjectHandle
 
     private:
         long    m_handle;
+        MemoryManager*  m_manager;
 };
 
 
@@ -528,22 +551,53 @@ extern MemoryManager* theMemoryManager;
 
 #define objectRef(x) (MemoryManager::Instance()->objectFromID(x))
 
+inline ObjectHandle::ObjectHandle() : m_handle(0)
+{
+    m_manager = MemoryManager::Instance();
+}
+
+inline ObjectHandle::ObjectHandle(const ObjectHandle& from)
+{
+    m_handle = from.m_handle;
+    m_manager = from.m_manager;
+    if(m_manager && m_handle)
+        m_manager->refObject(m_handle);
+}
+
 inline ObjectHandle::ObjectHandle(long object) : m_handle(object) 
 {
-    MemoryManager::Instance()->refObject(object);
+    m_manager = MemoryManager::Instance();
+    m_manager->refObject(object);
+}
+
+inline ObjectHandle::ObjectHandle(long object, MemoryManager* manager) : 
+  m_handle(object),
+  m_manager(manager) 
+{
+    m_manager->refObject(object);
 }
 
 inline ObjectHandle::~ObjectHandle() 
 {
-    MemoryManager::Instance()->unrefObject(handle());
+    m_manager->unrefObject(handle());
 }
 
 inline ObjectHandle& ObjectHandle::operator=(long o)
 {
-    if(m_handle)
-        MemoryManager::Instance()->unrefObject(m_handle);
+    if(m_handle && m_manager)
+        m_manager->unrefObject(m_handle);
     m_handle = o;
-    MemoryManager::Instance()->refObject(o);
+    m_manager->refObject(o);
 
     return *this;
+}
+
+inline objectStruct* ObjectHandle::operator->() const
+{
+  return &m_manager->objectFromID(m_handle);
+}
+
+inline ObjectHandle::operator objectStruct&() const
+{
+    return m_manager->objectFromID(m_handle);
 }

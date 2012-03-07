@@ -55,27 +55,27 @@ void goDoIt(const char * text)
 
     method = MemoryManager::Instance()->newMethod();
     setInstanceVariables(nilobj);
-    ignore parse(method, text, false);
+    ignore parse(method.handle(), text, false);
 
     firstProcess = MemoryManager::Instance()->allocObject(processSize);
     stack = MemoryManager::Instance()->allocObject(50);
 
     /* make a process */
-    objectRef(firstProcess).basicAtPut(stackInProcess, stack);
-    objectRef(firstProcess).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
-    objectRef(firstProcess).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+    firstProcess->basicAtPut(stackInProcess, stack.handle());
+    firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
+    firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
 
     /* put argument on stack */
-    objectRef(stack).basicAtPut(1, nilobj);   /* argument */
+    stack->basicAtPut(1, nilobj);   /* argument */
     /* now make a linkage area in stack */
-    objectRef(stack).basicAtPut(2, nilobj);   /* previous link */
-    objectRef(stack).basicAtPut(3, nilobj);   /* context object (nil = stack) */
-    objectRef(stack).basicAtPut(4, MemoryManager::Instance()->newInteger(1));    /* return point */
-    objectRef(stack).basicAtPut(5, method);   /* method */
-    objectRef(stack).basicAtPut(6, MemoryManager::Instance()->newInteger(1));    /* byte offset */
+    stack->basicAtPut(2, nilobj);   /* previous link */
+    stack->basicAtPut(3, nilobj);   /* context object (nil = stack) */
+    stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));    /* return point */
+    stack->basicAtPut(5, method.handle());   /* method */
+    stack->basicAtPut(6, MemoryManager::Instance()->newInteger(1));    /* byte offset */
 
     /* now go execute it */
-    while (execute(firstProcess, 15000)) fprintf(stderr,"..");
+    while (execute(firstProcess.handle(), 15000)) fprintf(stderr,"..");
 }
 
 /*
@@ -84,50 +84,50 @@ void goDoIt(const char * text)
 */
 void makeInitialImage()
 {   
-    ObjectHandle hashTable;
-    ObjectHandle integerClass;
-    ObjectHandle symbolObj, symbolClass, classClass, metaClassClass;
+  ObjectHandle hashTable;
+  ObjectHandle integerClass;
+  ObjectHandle symbolObj, symbolClass, classClass, metaClassClass;
   ObjectHandle objectClass, metaObjectClass;
 
-    /* first create the table, without class links */
-    symbols = MemoryManager::Instance()->allocObject(1);
-    hashTable = MemoryManager::Instance()->allocObject(3 * 53);
-    objectRef(symbols).basicAtPut(1, hashTable);
+  /* first create the table, without class links */
+  symbols = MemoryManager::Instance()->allocObject(1);
+  hashTable = MemoryManager::Instance()->allocObject(3 * 53);
+  objectRef(symbols).basicAtPut(1, hashTable.handle());
 
-    /* next create #Symbol, Symbol and Class */
-    symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
-    symbolClass = MemoryManager::Instance()->newClass("Symbol");
-    integerClass = MemoryManager::Instance()->newClass("Integer");
-    objectRef(symbolObj)._class = symbolClass;
-    classClass = MemoryManager::Instance()->newClass("Class");
-    objectRef(symbolClass)._class = classClass;
-    objectRef(integerClass)._class = classClass;
+  /* next create #Symbol, Symbol and Class */
+  symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
+  symbolClass = MemoryManager::Instance()->newClass("Symbol");
+  integerClass = MemoryManager::Instance()->newClass("Integer");
+  symbolObj->_class = symbolClass.handle();
+  classClass = MemoryManager::Instance()->newClass("Class");
+  symbolClass->_class = classClass.handle();
+  integerClass->_class = classClass.handle();
   metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
-    objectRef(classClass)._class = metaClassClass;
+  classClass->_class = metaClassClass.handle();
   objectClass = MemoryManager::Instance()->newClass("Object");
   metaObjectClass = MemoryManager::Instance()->newClass("MetaObject");
-  objectRef(objectClass)._class = metaObjectClass;
-  objectRef(metaObjectClass)._class = classClass;
+  objectClass->_class = metaObjectClass.handle();
+  metaObjectClass->_class = classClass.handle();
 
-  objectRef(metaClassClass).basicAtPut(superClassInClass, metaObjectClass);
-  objectRef(metaObjectClass).basicAtPut(superClassInClass, classClass);
-    objectRef(metaObjectClass).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(classSize));
+  metaClassClass->basicAtPut(superClassInClass, metaObjectClass.handle());
+  metaObjectClass->basicAtPut(superClassInClass, classClass.handle());
+  metaObjectClass->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(classSize));
 
-    /* now fix up classes for symbol table */
-    /* and make a couple common classes, just to hold their places */
-    ignore MemoryManager::Instance()->newClass("Link");
-    ignore MemoryManager::Instance()->newClass("ByteArray");
-    objectRef(hashTable)._class = MemoryManager::Instance()->newClass("Array");
-    objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
-    objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
-    ignore MemoryManager::Instance()->newClass("String");
-    nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
+  /* now fix up classes for symbol table */
+  /* and make a couple common classes, just to hold their places */
+  ignore MemoryManager::Instance()->newClass("Link");
+  ignore MemoryManager::Instance()->newClass("ByteArray");
+  hashTable->_class = MemoryManager::Instance()->newClass("Array");
+  objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
+  objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
+  ignore MemoryManager::Instance()->newClass("String");
+  nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 
-  objectRef(classClass).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+  classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
-    /* finally at least make true and false to be distinct */
-    trueobj = MemoryManager::Instance()->newSymbol("true");
-    nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-    falseobj = MemoryManager::Instance()->newSymbol("false");
-    nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
+  /* finally at least make true and false to be distinct */
+  trueobj = MemoryManager::Instance()->newSymbol("true");
+  nameTableInsert(symbols, strHash("true"), trueobj.handle(), trueobj.handle());
+  falseobj = MemoryManager::Instance()->newSymbol("false");
+  nameTableInsert(symbols, strHash("false"), falseobj.handle(), falseobj.handle());
 }

@@ -136,7 +136,7 @@ static void readRawClassDeclaration()
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
-    size = objectRef(objectRef(classObj).basicAt(sizeInClass)).intValue();
+    size = objectRef(classObj->basicAt(sizeInClass)).intValue();
 
     if (token == nameconst) 
     {     /* read instance var names */
@@ -150,14 +150,14 @@ static void readRawClassDeclaration()
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
         {
-            objectRef(vars).basicAtPut(i+1, instanceVariables[i]);
+            vars->basicAtPut(i+1, instanceVariables[i].handle());
         }
-        objectRef(classObj).basicAtPut(variablesInClass, vars);
+        classObj->basicAtPut(variablesInClass, vars.handle());
     }
-    objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-    objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+    classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
-    object methodsClass = objectRef(objectRef(classObj).basicAt(methodsInClass))._class;
+    object methodsClass = objectRef(classObj->basicAt(methodsInClass))._class;
 }
 
 /*
@@ -193,18 +193,18 @@ static void readClassDeclaration()
 
     metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
     classObj = createRawClass(className, metaClassName, superName);
-    objectRef(classObj)._class = metaObj;
+    classObj->_class = metaObj.handle();
 
-    size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
+    size = objectRef(metaObj->basicAt(sizeInClass)).intValue();
     instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");
     vars = MemoryManager::Instance()->newArray(1);
-    objectRef(vars).basicAtPut(1, instanceVariables[0]);
-    objectRef(metaObj).basicAtPut(variablesInClass, vars);
-    objectRef(metaObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size+1));
+    vars->basicAtPut(1, instanceVariables[0].handle());
+    metaObj->basicAtPut(variablesInClass, vars.handle());
+    metaObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size+1));
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
-    size = objectRef(objectRef(classObj).basicAt(sizeInClass)).intValue();
+    size = objectRef(classObj->basicAt(sizeInClass)).intValue();
 
     if (token == nameconst) 
     {     /* read instance var names */
@@ -218,12 +218,12 @@ static void readClassDeclaration()
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
         {
-            objectRef(vars).basicAtPut(i+1, instanceVariables[i]);
+            vars->basicAtPut(i+1, instanceVariables[i].handle());
         }
-        objectRef(classObj).basicAtPut(variablesInClass, vars);
+        classObj->basicAtPut(variablesInClass, vars.handle());
     }
-    objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-    objectRef(classObj).basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+    classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
     free(className);
     free(superName);
@@ -243,16 +243,16 @@ static void readMethods(FILE* fd, boolean printit)
     if (nextToken() != nameconst)
         sysError("missing name","following Method keyword");
     classObj = findClass(tokenString);
-    setInstanceVariables(classObj);
+    setInstanceVariables(classObj.handle());
     if (printit)
-        cp = objectRef(objectRef(classObj).basicAt(nameInClass)).charPtr();
+        cp = objectRef(classObj->basicAt(nameInClass)).charPtr();
 
     /* now find or create a method table */
-    methTable = objectRef(classObj).basicAt(methodsInClass);
-    if (methTable == nilobj) 
+    methTable = classObj->basicAt(methodsInClass);
+    if (methTable.handle() == nilobj) 
     {  /* must make */
         methTable = MemoryManager::Instance()->newDictionary(MethodTableSize);
-        objectRef(classObj).basicAtPut(methodsInClass, methTable);
+        classObj->basicAtPut(methodsInClass, methTable.handle());
     }
 
     if(nextToken() == strconst) 
@@ -278,13 +278,13 @@ static void readMethods(FILE* fd, boolean printit)
 
         /* now we have a method */
         theMethod = MemoryManager::Instance()->newMethod();
-        if (parse(theMethod, textBuffer, savetext)) {
-            selector = objectRef(theMethod).basicAt(messageInMethod);
-            objectRef(theMethod).basicAtPut(methodClassInMethod, classObj);
-            objectRef(theMethod).basicAtPut(protocolInMethod, protocol);
+        if (parse(theMethod.handle(), textBuffer, savetext)) {
+            selector = theMethod->basicAt(messageInMethod);
+            theMethod->basicAtPut(methodClassInMethod, classObj.handle());
+            theMethod->basicAtPut(protocolInMethod, protocol.handle());
             if (printit)
-                dspMethod(cp, objectRef(selector).charPtr());
-            nameTableInsert(methTable, objectRefHash(selector), selector, theMethod);
+                dspMethod(cp, selector->charPtr());
+            nameTableInsert(methTable.handle(), objectRefHash(selector.handle()), selector.handle(), theMethod.handle());
         }
         else {
             /* get rid of unwanted method */
