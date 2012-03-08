@@ -121,7 +121,7 @@ void makeInitialImage()
   objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary").handle();
   objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject").handle();
   ignore MemoryManager::Instance()->newClass("String");
-  nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
+  nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols").handle(), symbols);
 
   classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 

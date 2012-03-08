@@ -447,13 +447,11 @@ ObjectHandle MemoryManager::newDictionary(int size)
     return newObj;
 }
 
-object MemoryManager::newFloat(double d)
+ObjectHandle MemoryManager::newFloat(double d)
 {   
-    object newObj;
-
-    newObj = allocByte((int) sizeof (double));
-    ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
-    objectRef(newObj)._class = globalSymbol("Float");
+    ObjectHandle newObj(allocByte((int) sizeof (double)), this);
+    ncopy(newObj->charPtr(), (char *) &d, (int) sizeof (double));
+    newObj->_class = globalSymbol("Float");
     return newObj;
 }
 
@@ -476,51 +474,47 @@ object MemoryManager::newCPointer(void* l)
     return newObj;
 }
 
-object MemoryManager::newLink(object key, object value)
+ObjectHandle MemoryManager::newLink(const ObjectHandle& key, const ObjectHandle& value)
 {   
-    object newObj;
-
-    newObj = allocObject(3);
-    objectRef(newObj)._class = globalSymbol("Link");
-    objectRef(newObj).basicAtPut(1, key);
-    objectRef(newObj).basicAtPut(2, value);
+    ObjectHandle newObj(allocObject(3), this);
+    newObj->_class = globalSymbol("Link");
+    newObj->basicAtPut(1, key);
+    newObj->basicAtPut(2, value);
     return newObj;
 }
 
 object MemoryManager::newMethod()
-{   object newObj;
-
-    newObj = allocObject(methodSize);
-    objectRef(newObj)._class = globalSymbol("Method");
-    return newObj;
-}
-
-object MemoryManager::newStString(const char* value)
 {   
   object newObj;
+  
+  newObj = allocObject(methodSize);
+  objectRef(newObj)._class = globalSymbol("Method");
 
-    newObj = allocStr(value);
-    if (stringClass == nilobj)
-        stringClass = globalSymbol("String");
-    objectRef(newObj)._class = stringClass;
-    return(newObj);
+  return newObj;
 }
 
-object MemoryManager::newSymbol(const char* str)
-{    
-    object newObj;
+ObjectHandle MemoryManager::newStString(const char* value)
+{   
+  ObjectHandle newObj(allocStr(value), this);
+  if (stringClass == nilobj)
+    stringClass = globalSymbol("String");
+  newObj->_class = stringClass;
+  return newObj;
+}
 
+ObjectHandle MemoryManager::newSymbol(const char* str)
+{    
     /* first see if it is already there */
-    newObj = globalKey(str);
-    if (newObj) 
+    ObjectHandle newObj(globalKey(str));
+    if (newObj.handle()) 
         return newObj;
 
     /* not found, must make */
-    newObj = allocStr(str);
+    newObj = ObjectHandle(allocStr(str), this);
     if (symbolClass == nilobj)
         symbolClass = globalSymbol("Symbol");
-    objectRef(newObj)._class = symbolClass;
-    nameTableInsert(symbols, strHash(str), newObj, nilobj);
+    newObj->_class = symbolClass;
+    nameTableInsert(symbols, strHash(str), newObj.handle(), nilobj);
     return newObj;
 }
 
