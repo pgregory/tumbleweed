@@ -90,7 +90,7 @@ void makeInitialImage()
   ObjectHandle objectClass, metaObjectClass;
 
   /* first create the table, without class links */
-  symbols = MemoryManager::Instance()->allocObject(1);
+  symbols = MemoryManager::Instance()->allocObject(1).handle();
   hashTable = MemoryManager::Instance()->allocObject(3 * 53);
   objectRef(symbols).basicAtPut(1, hashTable);
 
