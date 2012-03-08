@@ -361,7 +361,7 @@ class MemoryManager
          * \param size The desired size of the array in bytes.
          * \return The ID of the new object.
          */
-        object newByteArray(int size);
+        ObjectHandle newByteArray(int size);
 
         /*! Create a new Class object.
          *
@@ -370,7 +370,7 @@ class MemoryManager
          * \param name The name of the new class.
          * \return The ID of the new object.
          */
-        object newClass(const char* name);
+        ObjectHandle newClass(const char* name);
 
         /*! Create a new Char object.
          *
@@ -379,7 +379,7 @@ class MemoryManager
          * \param value The char value to assign to the object.
          * \return The ID of the new object.
          */
-        object newChar(int value);
+        ObjectHandle newChar(int value);
 
         /*! Create a new Context object.
          *
@@ -391,7 +391,7 @@ class MemoryManager
          * \param temp An Array object for storing temporary variables during execution.
          * \return The ID of the new object.
          */
-        object newContext(int link, object method, object args, object temp);
+        ObjectHandle newContext(int link, const ObjectHandle& method, const ObjectHandle& args, const ObjectHandle& temp);
 
         /*! Create a new Dictionary object.
          *
@@ -402,7 +402,7 @@ class MemoryManager
          * \param size The initial size of the hash table.
          * \return The ID of the new object.
          */
-        object newDictionary(int size);
+        ObjectHandle newDictionary(int size);
 
         /*! Create a new Integer object.
          *

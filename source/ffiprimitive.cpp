@@ -254,7 +254,7 @@ object valueIn(int retMap, FFI_DataType* data)
       break;
 
     case FFI_CHAR:
-      return MemoryManager::Instance()->newChar(data->integer);
+      return MemoryManager::Instance()->newChar(data->integer).handle();
       break;
 
     case FFI_STRING:
