@@ -127,7 +127,7 @@ void genInteger(int val)    /* generate an integer push */
         genInstruction(PushConstant, val);
     else
         genInstruction(PushLiteral,
-            genLiteral(MemoryManager::Instance()->newInteger(val)));
+            genLiteral(MemoryManager::Instance()->newInteger(val).handle()));
 }
 
 const char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
@@ -212,7 +212,7 @@ int parseArray()
                 break;
 
             case intconst:
-                ignore genLiteral(MemoryManager::Instance()->newInteger(tokenInteger));
+                ignore genLiteral(MemoryManager::Instance()->newInteger(tokenInteger).handle());
                 ignore nextToken();
                 break;
 
@@ -236,7 +236,7 @@ int parseArray()
                 {
                     ignore nextToken();
                     if (token == intconst)
-                        ignore genLiteral(MemoryManager::Instance()->newInteger(- tokenInteger));
+                        ignore genLiteral(MemoryManager::Instance()->newInteger(- tokenInteger).handle());
                     else if (token == floatconst) 
                     {
                         ignore genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat));
@@ -279,7 +279,7 @@ int parseArray()
     for (i = size; i >= 1; i--) 
     {
         obj = literalArray[literalTop];
-        newLit->basicAtPut(i, obj.handle());
+        newLit->basicAtPut(i, obj);
         literalArray[literalTop] = nilobj;
         literalTop = literalTop - 1;
     }
@@ -672,7 +672,7 @@ void body()
 void block()
 {   
     int saveTemporary, argumentCount, fixLocation;
-    object tempsym, newBlk;
+    ObjectHandle tempsym, newBlk;
     enum blockstatus savebstat;
 
     saveTemporary = temporaryTop;
@@ -691,7 +691,7 @@ void block()
                 compilError(selector,"too many temporaries in method","");
             else {
                 tempsym = MemoryManager::Instance()->newSymbol(tokenString);
-                temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
+                temporaryName[temporaryTop] = tempsym->charPtr();
                 }
             ignore nextToken();
             }
@@ -701,10 +701,9 @@ void block()
         ignore nextToken();
         }
     newBlk = MemoryManager::Instance()->newBlock();
-    objectRef(newBlk).basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
-    objectRef(newBlk).basicAtPut(argumentLocationInBlock, 
-        MemoryManager::Instance()->newInteger(saveTemporary + 1));
-    genInstruction(PushLiteral, genLiteral(newBlk));
+    newBlk->basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
+    newBlk->basicAtPut(argumentLocationInBlock, MemoryManager::Instance()->newInteger(saveTemporary + 1));
+    genInstruction(PushLiteral, genLiteral(newBlk.handle()));
     genInstruction(PushConstant, contextConst);
     genInstruction(DoPrimitive, 2);
     genCode(29);
@@ -712,7 +711,7 @@ void block()
     fixLocation = codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    objectRef(newBlk).basicAtPut(bytecountPositionInBlock, MemoryManager::Instance()->newInteger(codeTop+1));
+    newBlk->basicAtPut(bytecountPositionInBlock, MemoryManager::Instance()->newInteger(codeTop+1));
     blockstat = InBlock;
     body();
     if ((token == closing) && streq(tokenString, "]"))
@@ -788,7 +787,7 @@ void messagePattern()
 boolean parse(object method, const char* text, boolean savetext)
 {   
     int i;
-    object bytecodes, theLiterals;
+    ObjectHandle bytecodes, theLiterals;
     byte *bp;
 
     lexinit(text);
@@ -813,7 +812,7 @@ boolean parse(object method, const char* text, boolean savetext)
         }
     else {
         bytecodes = MemoryManager::Instance()->newByteArray(codeTop);
-        bp = objectRef(bytecodes).bytePtr();
+        bp = bytecodes->bytePtr();
         for (i = 0; i < codeTop; i++) {
             bp[i] = codeArray[i];
             }
@@ -822,7 +821,7 @@ boolean parse(object method, const char* text, boolean savetext)
         if (literalTop > 0) {
             theLiterals = MemoryManager::Instance()->newArray(literalTop);
             for (i = 1; i <= literalTop; i++) {
-                objectRef(theLiterals).basicAtPut(i, literalArray[i].handle());
+                theLiterals->basicAtPut(i, literalArray[i]);
                 }
             objectRef(method).basicAtPut(literalsInMethod, theLiterals);
             }

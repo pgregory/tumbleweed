@@ -78,6 +78,8 @@ class ObjectHandle
          */
         ObjectHandle& operator=(long o);
 
+        bool operator==(const ObjectHandle& o);
+
     private:
         long    m_handle;
         MemoryManager*  m_manager;
@@ -125,6 +127,7 @@ struct objectStruct
      * \param o The object to assign.
      */
     void basicAtPut(int index, object o);
+    void basicAtPut(int index, const ObjectHandle& o);
     /*! Byte accessor 
      *
      * Get the byte at the given index in the data area.
@@ -340,7 +343,7 @@ class MemoryManager
          * \param size The desired size of the array in objects.
          * \return The ID of the new object.
          */
-        object newArray(int size);
+        ObjectHandle newArray(int size);
 
         /*! Create a new Block object.
          *
@@ -348,7 +351,7 @@ class MemoryManager
          *
          * \return The ID of the new object.
          */
-        object newBlock();
+        ObjectHandle newBlock();
 
         /*! Create a new ByteArray object.
          *
@@ -408,7 +411,7 @@ class MemoryManager
          * \param value The integer value to assign to the object.
          * \return The ID of the new object.
          */
-        object newInteger(int value);
+        ObjectHandle newInteger(int value);
 
         /*! Create a new Float object.
          *
@@ -600,4 +603,9 @@ inline objectStruct* ObjectHandle::operator->() const
 inline ObjectHandle::operator objectStruct&() const
 {
     return m_manager->objectFromID(m_handle);
+}
+
+inline bool ObjectHandle::operator==(const ObjectHandle& o)
+{
+  return (m_handle == o.m_handle) && (m_manager == o.m_manager);
 }

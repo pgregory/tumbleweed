@@ -61,7 +61,7 @@ void goDoIt(const char * text)
     stack = MemoryManager::Instance()->allocObject(50);
 
     /* make a process */
-    firstProcess->basicAtPut(stackInProcess, stack.handle());
+    firstProcess->basicAtPut(stackInProcess, stack);
     firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
     firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
 
@@ -71,7 +71,7 @@ void goDoIt(const char * text)
     stack->basicAtPut(2, nilobj);   /* previous link */
     stack->basicAtPut(3, nilobj);   /* context object (nil = stack) */
     stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));    /* return point */
-    stack->basicAtPut(5, method.handle());   /* method */
+    stack->basicAtPut(5, method);   /* method */
     stack->basicAtPut(6, MemoryManager::Instance()->newInteger(1));    /* byte offset */
 
     /* now go execute it */
@@ -92,7 +92,7 @@ void makeInitialImage()
   /* first create the table, without class links */
   symbols = MemoryManager::Instance()->allocObject(1);
   hashTable = MemoryManager::Instance()->allocObject(3 * 53);
-  objectRef(symbols).basicAtPut(1, hashTable.handle());
+  objectRef(symbols).basicAtPut(1, hashTable);
 
   /* next create #Symbol, Symbol and Class */
   symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
@@ -109,8 +109,8 @@ void makeInitialImage()
   objectClass->_class = metaObjectClass.handle();
   metaObjectClass->_class = classClass.handle();
 
-  metaClassClass->basicAtPut(superClassInClass, metaObjectClass.handle());
-  metaObjectClass->basicAtPut(superClassInClass, classClass.handle());
+  metaClassClass->basicAtPut(superClassInClass, metaObjectClass);
+  metaObjectClass->basicAtPut(superClassInClass, classClass);
   metaObjectClass->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(classSize));
 
   /* now fix up classes for symbol table */

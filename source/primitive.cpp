@@ -131,11 +131,9 @@ static int unaryPrims(int number, object firstarg)
         break;
       }
       /* first change link pointer to that of creator */
-      processStack->basicAtPut(i, 
-          processStack->basicAt(j));
+      processStack->basicAtPut(i, processStack->basicAt(j));
       /* then change return point to that of creator */
-      processStack->basicAtPut(i+2, 
-          processStack->basicAt(j+2));
+      processStack->basicAtPut(i+2, processStack->basicAt(j+2));
       returnedObject = trueobj;
       break;
 
