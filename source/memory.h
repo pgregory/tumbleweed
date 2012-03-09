@@ -53,8 +53,10 @@ class ObjectHandle
          */
         ~ObjectHandle();
 
-        //! Cast to object ID
+        //! Cast to object struct
         operator objectStruct&() const;
+
+        operator long() const;
 
         objectStruct* operator->() const;
 
@@ -600,4 +602,9 @@ inline objectStruct* ObjectHandle::operator->() const
 inline ObjectHandle::operator objectStruct&() const
 {
     return m_manager->objectFromID(m_handle);
+}
+
+inline ObjectHandle::operator long() const
+{
+    return m_handle;
 }

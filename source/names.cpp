@@ -43,15 +43,15 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
     else {
         hash = 3 * ( hash % (table->size / 3));
         tablentry = table->basicAt(hash+1);
-        if ((tablentry.handle() == nilobj) || (tablentry.handle() == key)) {
+        if ((tablentry == nilobj) || (tablentry == key)) {
             table->basicAtPut(hash+1, key);
             table->basicAtPut(hash+2, value);
             }
         else {
             nwLink = MemoryManager::Instance()->newLink(key, value);
             link = table->basicAt(hash+3);
-            if (link.handle() == nilobj) {
-                table->basicAtPut(hash+3, nwLink.handle());
+            if (link == nilobj) {
+                table->basicAtPut(hash+3, nwLink);
                 }
             else
                 while(1)
@@ -59,8 +59,8 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
                         link->basicAtPut(2, value);
                         break;
                         }
-                    else if ((nextLink = link->basicAt(3)).handle() == nilobj) {
-                        link->basicAtPut(3, nwLink.handle());
+                    else if ((nextLink = link->basicAt(3)) == nilobj) {
+                        link->basicAtPut(3, nwLink);
                         break;
                         }
                     else

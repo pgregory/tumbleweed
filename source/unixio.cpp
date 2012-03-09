@@ -110,5 +110,5 @@ object ioPrimitive(int number, object* arguments)
       sysError("unknown primitive","filePrimitive");
   }
 
-  return(returnedObject.handle());
+  return(returnedObject);
 }

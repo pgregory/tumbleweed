@@ -315,12 +315,12 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object processClass = globalSymbol("Process");
   ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
   ObjectHandle stack = MemoryManager::Instance()->newArray(50);
-  process->basicAtPut(stackInProcess, stack.handle());
+  process->basicAtPut(stackInProcess, stack);
   process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
   process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
-  stack->basicAtPut(3, context.handle());
+  stack->basicAtPut(3, context);
   stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));
-  stack->basicAtPut(6, bytePointer.handle());
+  stack->basicAtPut(6, bytePointer);
 
   /* change context and byte pointer */
   int argLoc = objectRef(block->basicAt(argumentLocationInBlock)).intValue();
@@ -330,7 +330,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
   ObjectHandle saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
-  while(execute(process.handle(), 15000));
+  while(execute(process, 15000));
   // Re-read the stack object, in case it had to grow during execution and 
   // was replaced.
   stack = process->basicAt(stackInProcess);
@@ -528,6 +528,6 @@ object ffiPrimitive(int number, object* arguments)
     default:
       sysError("unknown primitive","ffiPrimitive");
   }
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 

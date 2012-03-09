@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     initFFISymbols();
 
     firstProcess = globalSymbol("systemProcess");
-    if (firstProcess.handle() == nilobj) 
+    if (firstProcess == nilobj) 
     {
         sysError("no initial process","in image");
         exit(1); 
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     /* execute the main system process loop repeatedly */
     /*debugging = true;*/
 
-    while (execute(firstProcess.handle(), 15000)) ;
+    while (execute(firstProcess, 15000)) ;
 
     /* exit and return - belt and suspenders, but it keeps lint happy */
     exit(0); 

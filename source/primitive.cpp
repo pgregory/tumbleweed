@@ -85,7 +85,7 @@ static object zeroaryPrims(int number)
       sysError("unknown primitive","zeroargPrims");
       break;
   }
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static int unaryPrims(int number, object firstarg)
@@ -180,7 +180,7 @@ static int unaryPrims(int number, object firstarg)
       sysError("unknown primitive","unaryPrims");
       break;
   }
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static int binaryPrims(int number, object firstarg, object secondarg)
@@ -250,7 +250,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
   }
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static int trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
@@ -299,7 +299,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
       sysError("unknown primitive","trinaryPrims");
       break;
   }
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static int intUnary(int number, object firstarg)
@@ -335,7 +335,7 @@ static int intUnary(int number, object firstarg)
     default:
       sysError("intUnary primitive","not implemented yet");
   }
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static object intBinary(register int number, register int firstarg, int secondarg)
@@ -413,13 +413,13 @@ static object intBinary(register int number, register int firstarg, int secondar
       returnedObject = falseobj;
   else
     returnedObject = MemoryManager::Instance()->newInteger(firstarg);
-  return(returnedObject.handle());
+  return(returnedObject);
 
   /* on overflow, return nil and let smalltalk code */
   /* figure out what to do */
 overflow:
   returnedObject = nilobj;
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static int strUnary(int number, char* firstargument)
@@ -459,7 +459,7 @@ static int strUnary(int number, char* firstargument)
       break;
   }
 
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static int floatUnary(int number, double firstarg)
@@ -515,7 +515,7 @@ static int floatUnary(int number, double firstarg)
       break;
   }
 
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 static object floatBinary(int number, double first, double second)
@@ -548,7 +548,7 @@ static object floatBinary(int number, double first, double second)
       returnedObject = falseobj;
   else
     returnedObject = MemoryManager::Instance()->newFloat(first);
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 
@@ -568,7 +568,7 @@ static int cPointerUnary(int number, void* firstarg)
       break;
   }
 
-  return(returnedObject.handle());
+  return(returnedObject);
 }
 
 
@@ -642,5 +642,5 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
   }
 
-  return (returnedObject.handle());
+  return (returnedObject);
 }

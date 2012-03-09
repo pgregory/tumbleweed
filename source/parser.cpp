@@ -279,11 +279,11 @@ int parseArray()
     for (i = size; i >= 1; i--) 
     {
         obj = literalArray[literalTop];
-        newLit->basicAtPut(i, obj.handle());
+        newLit->basicAtPut(i, obj);
         literalArray[literalTop] = nilobj;
         literalTop = literalTop - 1;
     }
-    return(genLiteral(newLit.handle()));
+    return(genLiteral(newLit));
 }
 
 boolean term()
@@ -384,15 +384,15 @@ void genMessage(boolean toSuper, int argumentCount, object messagesym)
     int i;
 
     if ((! toSuper) && (argumentCount == 0))
-        for (i = 0; (! sent) && unSyms[i].handle() ; i++)
-            if (messagesym == unSyms[i].handle()) {
+        for (i = 0; (! sent) && unSyms[i] ; i++)
+            if (messagesym == unSyms[i]) {
                 genInstruction(SendUnary, i);
                 sent = true;
                 }
 
     if ((! toSuper) && (argumentCount == 1))
-        for (i = 0; (! sent) && binSyms[i].handle(); i++)
-            if (messagesym == binSyms[i].handle()) {
+        for (i = 0; (! sent) && binSyms[i]; i++)
+            if (messagesym == binSyms[i]) {
                 genInstruction(SendBinary, i);
                 sent = true;
                 }
@@ -822,7 +822,7 @@ boolean parse(object method, const char* text, boolean savetext)
         if (literalTop > 0) {
             theLiterals = MemoryManager::Instance()->newArray(literalTop);
             for (i = 1; i <= literalTop; i++) {
-                objectRef(theLiterals).basicAtPut(i, literalArray[i].handle());
+                objectRef(theLiterals).basicAtPut(i, literalArray[i]);
                 }
             objectRef(method).basicAtPut(literalsInMethod, theLiterals);
             }

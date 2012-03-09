@@ -31,7 +31,7 @@ static ObjectHandle method, messageToSend;
 
 static int messTest(object obj)
 {
-  return obj == messageToSend.handle();
+  return obj == messageToSend;
 }
 
 /* a cache of recently executed methods is used for fast lookup */
@@ -67,26 +67,26 @@ static boolean findMethod(object* methodClassLocation)
 
 
 //  printf("Looking for %s starting at %d\n", objectRef(messageToSend).charPtr(), methodClass);
-  for (; methodClass.handle() != nilobj; methodClass = 
+  for (; methodClass != nilobj; methodClass = 
       methodClass->basicAt(superClassInClass)) {
 //    printf("Looking for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
     methodTable = methodClass->basicAt(methodsInClass);
-    if(methodTable.handle() == nilobj)
+    if(methodTable == nilobj)
       printf("Null method table on %s\n", objectRef(methodClass->basicAt(nameInClass)).charPtr());
-    method = hashEachElement(methodTable.handle(), objectRefHash(messageToSend.handle()), messTest);
-    if (method.handle() != nilobj)
+    method = hashEachElement(methodTable, objectRefHash(messageToSend), messTest);
+    if (method != nilobj)
     {
 //      printf("...found\n");
       break;
     }
   }
 
-  if (method.handle() == nilobj) {       /* it wasn't found */
+  if (method == nilobj) {       /* it wasn't found */
     methodClass = *methodClassLocation;
     return false;
   }
 
-  *methodClassLocation = methodClass.handle();
+  *methodClassLocation = methodClass;
   return true;
 }
 
@@ -124,7 +124,7 @@ static object growProcessStack(int top, int toadd)
   for (i = 1; i <= top; i++) {
     newStack->basicAtPut(i, processStack->basicAt(i));
   }
-  return newStack.handle();
+  return newStack;
 }
 
 boolean execute(object aProcess, int maxsteps)
@@ -158,7 +158,7 @@ readLinkageBlock:
   contextObject  = processStackAt(linkPointer+1);
   returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
   byteOffset  = objectRef(processStackAt(linkPointer+4)).intValue();
-  if (contextObject.handle() == nilobj) {
+  if (contextObject == nilobj) {
     contextObject = processStack;
     cntx = psb;
     arg = cntx + (returnPoint-1);
@@ -224,25 +224,25 @@ readMethodInfo:
           case contextConst:
             {
               /* check to see if we have made a block context yet */
-              if (contextObject.handle() == processStack.handle()) 
+              if (contextObject == processStack) 
               {
                 /* not yet, do it now - first get real return point */
                 returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
-                ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack.handle(), returnPoint, 
+                ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
                       linkPointer - returnPoint));
-                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack.handle(), linkPointer + 5,
-                      methodTempSize(method.handle())));
-                contextObject = MemoryManager::Instance()->newContext(linkPointer, method.handle(),
-                    args.handle(),
-                    temp.handle());
-                processStack->basicAtPut(linkPointer+1, contextObject.handle());
-                ipush(contextObject.handle());
+                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 5,
+                      methodTempSize(method)));
+                contextObject = MemoryManager::Instance()->newContext(linkPointer, method,
+                    args,
+                    temp);
+                processStack->basicAtPut(linkPointer+1, contextObject);
+                ipush(contextObject);
                 /* save byte pointer then restore things properly */
                 processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
                 goto readLinkageBlock;
 
               }
-              ipush(contextObject.handle());
+              ipush(contextObject);
             }
             break;
 
@@ -251,11 +251,11 @@ readMethodInfo:
             break;
 
           case trueConst:
-            ipush(trueobj.handle());
+            ipush(trueobj);
             break;
 
           case falseConst:
-            ipush(falseobj.handle());
+            ipush(falseobj);
             break;
 
           default:
@@ -286,11 +286,11 @@ doSendMessage:
 
 doFindMessage:
         /* look up method in cache */
-        i = ((objectRefHash(messageToSend.handle())) + (objectRefHash(methodClass))) % cacheSize;
-        if ((methodCache[i].cacheMessage.handle() == messageToSend.handle()) &&
-            (methodCache[i].lookupClass.handle() == methodClass)) {
+        i = ((objectRefHash(messageToSend)) + (objectRefHash(methodClass))) % cacheSize;
+        if ((methodCache[i].cacheMessage == messageToSend) &&
+            (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
-          methodClass = methodCache[i].cacheClass.handle();
+          methodClass = methodCache[i].cacheClass;
 //          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
         }
         else {
@@ -307,9 +307,9 @@ doFindMessage:
 //            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
             printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
-            ipush(messageToSend.handle());
+            ipush(messageToSend);
             messageToSend = MemoryManager::Instance()->newSymbol("message:notRecognizedWithArguments:");
-            ipush(argarray.handle());
+            ipush(argarray);
             /* try again - if fail really give up */
             if (! findMethod(&methodClass)) {
               sysWarn("can't find","error recovery method");
@@ -330,8 +330,8 @@ doFindMessage:
             ipop(returnedObject);
             argarray->basicAtPut(j+1, returnedObject);
           }
-          ipush(method.handle()); /* push method */
-          ipush(argarray.handle());
+          ipush(method); /* push method */
+          ipush(argarray);
           messageToSend = MemoryManager::Instance()->newSymbol("watchWith:");
           /* try again - if fail really give up */
           methodClass = method->_class;
@@ -347,14 +347,14 @@ doFindMessage:
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
-        i = 6 + methodTempSize(method.handle()) + methodStackSize(method.handle());
+        i = 6 + methodTempSize(method) + methodStackSize(method);
         j = processStackTop();
         if ((j + i) > processStack->size) 
         {
           processStack = growProcessStack(j, i);
           psb = processStack->sysMemPtr();
           pst = (psb + j);
-          objectRef(aProcess).basicAtPut(stackInProcess, processStack.handle());
+          objectRef(aProcess).basicAtPut(stackInProcess, processStack);
         }
 
         byteOffset = 1;
@@ -370,12 +370,12 @@ doFindMessage:
         ipush(MemoryManager::Instance()->newInteger(returnPoint));
         arg = cntx + (returnPoint-1);
         /* position 3 : method */
-        ipush(method.handle());
+        ipush(method);
         /* position 4 : bytecode counter */
         ipush(MemoryManager::Instance()->newInteger(byteOffset));
         /* then make space for temporaries */
         temps = pst+1;
-        pst += methodTempSize(method.handle());
+        pst += methodTempSize(method);
         /* break if we are too big and probably looping */
         if (processStack->size > 1800) timeSliceCounter = 0;
         goto readMethodInfo; 
@@ -385,7 +385,7 @@ doFindMessage:
         /* they are so common */
         if ((! watching) && (low <= 1)) {
           if (stackTop() == nilobj) {
-            stackTopPut((low?falseobj.handle():trueobj.handle()));
+            stackTopPut((low?falseobj:trueobj));
             break;
           }
         }
@@ -400,8 +400,8 @@ doFindMessage:
         /* and overflow does not occur */
         primargs = pst - 1;
         if ((! watching) && (low <= 12) &&
-            (objectRef(primargs[0])._class == intClass.handle() && 
-              objectRef(primargs[1])._class == intClass.handle())) {
+            (objectRef(primargs[0])._class == intClass && 
+              objectRef(primargs[1])._class == intClass)) {
           returnedObject = primitive(low+60, primargs);
           if (returnedObject != nilobj) {
             // pop arguments off stack , push on result 
@@ -426,7 +426,7 @@ doFindMessage:
         switch(i) {
           case 5:   /* set watch */
             watching = ! watching;
-            returnedObject = watching?trueobj.handle():falseobj.handle();
+            returnedObject = watching?trueobj:falseobj;
             break;
 
           case 11: /* class of object */
@@ -434,8 +434,8 @@ doFindMessage:
             break;
           case 21: /* object equality test */
             if (*primargs == *(primargs+1))
-              returnedObject = trueobj.handle();
-            else returnedObject = falseobj.handle();
+              returnedObject = trueobj;
+            else returnedObject = falseobj;
             break;
           case 25: /* basicAt: */
             j = objectRef(*(primargs+1)).intValue();
@@ -509,7 +509,7 @@ doReturn:
           case BranchIfTrue:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj.handle()) {
+            if (returnedObject == trueobj) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -519,7 +519,7 @@ doReturn:
           case BranchIfFalse:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj.handle()) {
+            if (returnedObject == falseobj) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -529,7 +529,7 @@ doReturn:
           case AndBranch:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj.handle()) {
+            if (returnedObject == falseobj) {
               ipush(returnedObject);
               byteOffset = i;
             }
@@ -538,7 +538,7 @@ doReturn:
           case OrBranch:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj.handle()) {
+            if (returnedObject == trueobj) {
               ipush(returnedObject);
               byteOffset = i;
             }

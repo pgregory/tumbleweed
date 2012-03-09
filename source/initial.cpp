@@ -55,13 +55,13 @@ void goDoIt(const char * text)
 
     method = MemoryManager::Instance()->newMethod();
     setInstanceVariables(nilobj);
-    ignore parse(method.handle(), text, false);
+    ignore parse(method, text, false);
 
     firstProcess = MemoryManager::Instance()->allocObject(processSize);
     stack = MemoryManager::Instance()->allocObject(50);
 
     /* make a process */
-    firstProcess->basicAtPut(stackInProcess, stack.handle());
+    firstProcess->basicAtPut(stackInProcess, stack);
     firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
     firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
 
@@ -71,11 +71,11 @@ void goDoIt(const char * text)
     stack->basicAtPut(2, nilobj);   /* previous link */
     stack->basicAtPut(3, nilobj);   /* context object (nil = stack) */
     stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));    /* return point */
-    stack->basicAtPut(5, method.handle());   /* method */
+    stack->basicAtPut(5, method);   /* method */
     stack->basicAtPut(6, MemoryManager::Instance()->newInteger(1));    /* byte offset */
 
     /* now go execute it */
-    while (execute(firstProcess.handle(), 15000)) fprintf(stderr,"..");
+    while (execute(firstProcess, 15000)) fprintf(stderr,"..");
 }
 
 /*
@@ -92,25 +92,25 @@ void makeInitialImage()
   /* first create the table, without class links */
   symbols = MemoryManager::Instance()->allocObject(1);
   hashTable = MemoryManager::Instance()->allocObject(3 * 53);
-  objectRef(symbols).basicAtPut(1, hashTable.handle());
+  objectRef(symbols).basicAtPut(1, hashTable);
 
   /* next create #Symbol, Symbol and Class */
   symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
   symbolClass = MemoryManager::Instance()->newClass("Symbol");
   integerClass = MemoryManager::Instance()->newClass("Integer");
-  symbolObj->_class = symbolClass.handle();
+  symbolObj->_class = symbolClass;
   classClass = MemoryManager::Instance()->newClass("Class");
-  symbolClass->_class = classClass.handle();
-  integerClass->_class = classClass.handle();
+  symbolClass->_class = classClass;
+  integerClass->_class = classClass;
   metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
-  classClass->_class = metaClassClass.handle();
+  classClass->_class = metaClassClass;
   objectClass = MemoryManager::Instance()->newClass("Object");
   metaObjectClass = MemoryManager::Instance()->newClass("MetaObject");
-  objectClass->_class = metaObjectClass.handle();
-  metaObjectClass->_class = classClass.handle();
+  objectClass->_class = metaObjectClass;
+  metaObjectClass->_class = classClass;
 
-  metaClassClass->basicAtPut(superClassInClass, metaObjectClass.handle());
-  metaObjectClass->basicAtPut(superClassInClass, classClass.handle());
+  metaClassClass->basicAtPut(superClassInClass, metaObjectClass);
+  metaObjectClass->basicAtPut(superClassInClass, classClass);
   metaObjectClass->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(classSize));
 
   /* now fix up classes for symbol table */
@@ -127,7 +127,7 @@ void makeInitialImage()
 
   /* finally at least make true and false to be distinct */
   trueobj = MemoryManager::Instance()->newSymbol("true");
-  nameTableInsert(symbols, strHash("true"), trueobj.handle(), trueobj.handle());
+  nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
   falseobj = MemoryManager::Instance()->newSymbol("false");
-  nameTableInsert(symbols, strHash("false"), falseobj.handle(), falseobj.handle());
+  nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
 }
