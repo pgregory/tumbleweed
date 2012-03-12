@@ -139,7 +139,7 @@ void initFFISymbols()
   ffiSyms = static_cast<object*>(calloc(ffiNumStrs, sizeof(object)));
   int i;
   for(i = 0; i < ffiNumStrs; ++i)
-    ffiSyms[i] = MemoryManager::Instance()->newSymbol(ffiStrs[i]).handle();
+    ffiSyms[i] = MemoryManager::Instance()->newSymbol(ffiStrs[i]);
 }
 
 void cleanupFFISymbols()
@@ -258,7 +258,7 @@ object valueIn(int retMap, FFI_DataType* data)
       break;
 
     case FFI_STRING:
-      return MemoryManager::Instance()->newStString(data->charPtr).handle();
+      return MemoryManager::Instance()->newStString(data->charPtr);
       break;
 
     case FFI_INT:

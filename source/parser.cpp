@@ -189,8 +189,8 @@ boolean nameTerm(char *name)
     /* must look it up at run time */
     if (! done) 
     {
-        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name).handle()));
-        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value").handle());
+        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name)));
+        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
     }
 
     return(isSuper);
@@ -217,12 +217,12 @@ int parseArray()
                 break;
 
             case floatconst:
-                ignore genLiteral(MemoryManager::Instance()->newFloat(tokenFloat).handle());
+                ignore genLiteral(MemoryManager::Instance()->newFloat(tokenFloat));
                 ignore nextToken();
                 break;
 
             case nameconst: case namecolon: case symconst:
-                ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString).handle());
+                ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString));
                 ignore nextToken();
                 break;
 
@@ -239,14 +239,14 @@ int parseArray()
                         ignore genLiteral(MemoryManager::Instance()->newInteger(- tokenInteger).handle());
                     else if (token == floatconst) 
                     {
-                        ignore genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat).handle());
+                        ignore genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat));
                     }
                     else
                         compilError(selector,"negation not followed", "by number");
                     ignore nextToken();
                     break;
                 }
-                ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString).handle());
+                ignore genLiteral(MemoryManager::Instance()->newSymbol(tokenString));
                 ignore nextToken();
                 break;
 
@@ -256,7 +256,7 @@ int parseArray()
                 break;
 
             case strconst:
-                ignore genLiteral(MemoryManager::Instance()->newStString(tokenString).handle());
+                ignore genLiteral(MemoryManager::Instance()->newStString(tokenString));
                 ignore nextToken();
                 break;
 
@@ -302,7 +302,7 @@ boolean term()
     }
     else if (token == floatconst) 
     {
-        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newFloat(tokenFloat).handle()));
+        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newFloat(tokenFloat)));
         ignore nextToken();
     }
     else if ((token == binary) && streq(tokenString, "-")) 
@@ -313,7 +313,7 @@ boolean term()
         else if (token == floatconst) 
         {
             genInstruction(PushLiteral,
-                    genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat).handle()));
+                    genLiteral(MemoryManager::Instance()->newFloat(-tokenFloat)));
         }
         else
             compilError(selector,"negation not followed",
@@ -329,13 +329,13 @@ boolean term()
     else if (token == symconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newSymbol(tokenString).handle()));
+                genLiteral(MemoryManager::Instance()->newSymbol(tokenString)));
         ignore nextToken();
     }
     else if (token == strconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newStString(tokenString).handle()));
+                genLiteral(MemoryManager::Instance()->newStString(tokenString)));
         ignore nextToken();
     }
     else if (token == arraybegin) 
@@ -434,7 +434,7 @@ boolean unaryContinuation(boolean superReceiver)
 
         if (! sent) 
         {
-            genMessage(superReceiver, 0, MemoryManager::Instance()->newSymbol(tokenString).handle());
+            genMessage(superReceiver, 0, MemoryManager::Instance()->newSymbol(tokenString));
         }
         /* once a message is sent to super, reciever is not super */
         superReceiver = false;
@@ -446,7 +446,7 @@ boolean unaryContinuation(boolean superReceiver)
 boolean binaryContinuation(boolean superReceiver)
 {   
     boolean superTerm;
-    ObjectHandle messagesym;
+    object messagesym;
 
     superReceiver = unaryContinuation(superReceiver);
     while (parseok && (token == binary)) {
@@ -454,7 +454,7 @@ boolean binaryContinuation(boolean superReceiver)
         ignore nextToken();
         superTerm = term();
         ignore unaryContinuation(superTerm);
-        genMessage(superReceiver, 1, messagesym.handle());
+        genMessage(superReceiver, 1, messagesym);
         superReceiver = false;
         }
     return(superReceiver);
@@ -483,7 +483,7 @@ int optimizeBlock(int instruction, boolean dopop)
         }
     else {
         ignore binaryContinuation(term());
-        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value").handle());
+        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
         }
     codeArray[location] = codeTop+1;
     blockstat = savebstat;
@@ -494,7 +494,7 @@ boolean keyContinuation(boolean superReceiver)
 {   
     int i, j, argumentCount;
     boolean sent, superTerm;
-    ObjectHandle messagesym;
+    object messagesym;
     char pattern[80];
 
     superReceiver = binaryContinuation(superReceiver);
@@ -516,7 +516,7 @@ boolean keyContinuation(boolean superReceiver)
         else if (streq(tokenString, "whileTrue:")) {
             j = codeTop;
             genInstruction(DoSpecial, Duplicate);
-            genMessage(false, 0, MemoryManager::Instance()->newSymbol("value").handle());
+            genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
             i = optimizeBlock(BranchIfFalse, false);
             genInstruction(DoSpecial, PopTop);
             genInstruction(DoSpecial, Branch);
@@ -544,7 +544,7 @@ boolean keyContinuation(boolean superReceiver)
             messagesym = MemoryManager::Instance()->newSymbol(pattern);
 
             if (! sent) {
-                genMessage(superReceiver, argumentCount, messagesym.handle());
+                genMessage(superReceiver, argumentCount, messagesym);
                 }
             }
         superReceiver = false;
@@ -613,9 +613,9 @@ void assignment(char* name)
 
     if (! done) {   /* not known, handle at run time */
         genInstruction(PushArgument, 0);
-        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name).handle()));
+        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name)));
         expression();
-        genMessage(false, 2, MemoryManager::Instance()->newSymbol("assign:value:").handle());
+        genMessage(false, 2, MemoryManager::Instance()->newSymbol("assign:value:"));
         }
 }
 
@@ -628,7 +628,7 @@ void statement()
         if (blockstat == InBlock) {
             /* change return point before returning */
             genInstruction(PushConstant, contextConst);
-            genMessage(false, 0, MemoryManager::Instance()->newSymbol("blockReturn").handle());
+            genMessage(false, 0, MemoryManager::Instance()->newSymbol("blockReturn"));
             genInstruction(DoSpecial, PopTop);
             }
         genInstruction(DoSpecial, StackReturn);
@@ -726,7 +726,7 @@ void block()
 
 void temporaries()
 {   
-    ObjectHandle tempsym;
+    object tempsym;
 
     temporaryTop = 0;
     if ((token == binary) && streq(tokenString, "|")) {
@@ -738,7 +738,7 @@ void temporaries()
                 compilError(selector,"too many temporaries in method","");
             else {
                 tempsym = MemoryManager::Instance()->newSymbol(tokenString);
-                temporaryName[temporaryTop] = tempsym->charPtr();
+                temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
                 }
             ignore nextToken();
             }
@@ -751,7 +751,7 @@ void temporaries()
 
 void messagePattern()
 {   
-    ObjectHandle argsym;
+    object argsym;
 
     argumentTop = 0;
     ignore strcpy(selector, tokenString);
@@ -762,7 +762,7 @@ void messagePattern()
         if (token != nameconst) 
             compilError(selector,"binary message pattern not followed by name",selector);
         argsym = MemoryManager::Instance()->newSymbol(tokenString);
-        argumentName[++argumentTop] = argsym->charPtr();
+        argumentName[++argumentTop] = objectRef(argsym).charPtr();
         ignore nextToken();
         }
     else if (token == namecolon) {  /* keyword message pattern */
@@ -776,7 +776,7 @@ void messagePattern()
             if (++argumentTop > argumentLimit)
                 compilError(selector,"too many arguments in method","");
             argsym = MemoryManager::Instance()->newSymbol(tokenString);
-            argumentName[argumentTop] = argsym->charPtr();
+            argumentName[argumentTop] = objectRef(argsym).charPtr();
             ignore nextToken();
             }
         }

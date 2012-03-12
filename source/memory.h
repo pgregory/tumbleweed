@@ -422,7 +422,7 @@ class MemoryManager
          * \param value The integer value to assign to the object.
          * \return The ID of the new object.
          */
-        ObjectHandle newFloat(double value);
+        object newFloat(double value);
 
         /*! Create a new Method object.
          *
@@ -442,7 +442,7 @@ class MemoryManager
          * \param value The value associated with the key.
          * \return The ID of the new object.
          */
-        ObjectHandle newLink(const ObjectHandle& key, const ObjectHandle& value);
+        object newLink(object key, object value);
 
         /*! Create a new String object.
          *
@@ -453,7 +453,7 @@ class MemoryManager
          * \param str The character string to assign to the object.
          * \return The ID of the new object.
          */
-        ObjectHandle newStString(const char* str);
+        object newStString(const char* str);
 
         /*! Create a new Symbol object.
          *
@@ -466,7 +466,7 @@ class MemoryManager
          * \param name The name of the symbol to find or create.
          * \return The symbol object representing the given name.
          */
-        ObjectHandle newSymbol(const char* name);
+        object newSymbol(const char* name);
 
         /*! Create a new CPointer object.
          *
