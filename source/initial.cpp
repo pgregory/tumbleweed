@@ -117,9 +117,9 @@ void makeInitialImage()
   /* and make a couple common classes, just to hold their places */
   ignore MemoryManager::Instance()->newClass("Link");
   ignore MemoryManager::Instance()->newClass("ByteArray");
-  hashTable->_class = MemoryManager::Instance()->newClass("Array").handle();
-  objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary").handle();
-  objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject").handle();
+  hashTable->_class = MemoryManager::Instance()->newClass("Array");
+  objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
+  objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
   ignore MemoryManager::Instance()->newClass("String");
   nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 

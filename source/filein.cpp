@@ -36,16 +36,16 @@ static char textBuffer[TextBufferSize];
 */
 static object findClass(const char* name)
 {   
-    ObjectHandle newobj;
+    object newobj;
 
     newobj = globalSymbol(name);
-    if (newobj.handle() == nilobj)
+    if (newobj == nilobj)
         newobj = MemoryManager::Instance()->newClass(name);
-    if (newobj->basicAt(sizeInClass) == nilobj) 
+    if (objectRef(newobj).basicAt(sizeInClass) == nilobj) 
     {
-        newobj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
+        objectRef(newobj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
     }
-    return newobj.handle();
+    return newobj;
 }
 
 static object findClassWithMeta(const char* name, object metaObj)

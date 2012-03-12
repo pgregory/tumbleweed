@@ -251,7 +251,7 @@ int parseArray()
                 break;
 
             case charconst:
-                ignore genLiteral(MemoryManager::Instance()->newChar( tokenInteger).handle());
+                ignore genLiteral(MemoryManager::Instance()->newChar( tokenInteger));
                 ignore nextToken();
                 break;
 
@@ -323,7 +323,7 @@ boolean term()
     else if (token == charconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newChar(tokenInteger).handle()));
+                genLiteral(MemoryManager::Instance()->newChar(tokenInteger)));
         ignore nextToken();
     }
     else if (token == symconst) 

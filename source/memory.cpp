@@ -393,57 +393,64 @@ ObjectHandle MemoryManager::newBlock()
     return newObj;
 }
 
-ObjectHandle MemoryManager::newByteArray(int size)
+object MemoryManager::newByteArray(int size)
 {   
-    ObjectHandle newobj(allocByte(size), this);
-    newobj->_class = globalSymbol("ByteArray");
+    object newobj;
+
+    newobj = allocByte(size);
+    objectRef(newobj)._class = globalSymbol("ByteArray");
     return newobj;
 }
 
-ObjectHandle MemoryManager::newChar(int value)
+object MemoryManager::newChar(int value)
 {   
-    ObjectHandle newobj(allocObject(1), this);
-    newobj->basicAtPut(1, newInteger(value));
-    newobj->_class = globalSymbol("Char");
-    return newobj;
+    object newobj;
+
+    newobj = allocObject(1);
+    objectRef(newobj).basicAtPut(1, newInteger(value));
+    objectRef(newobj)._class = globalSymbol("Char");
+    return(newobj);
 }
 
-ObjectHandle MemoryManager::newClass(const char* name)
+object MemoryManager::newClass(const char* name)
 {   
-    ObjectHandle newObj, nameObj, methTable;
+    object newObj, nameObj, methTable;
 
-    newObj = ObjectHandle(allocObject(classSize), this);
-    newObj->_class = globalSymbol("Class");
+    newObj = allocObject(classSize);
+    objectRef(newObj)._class = globalSymbol("Class");
 
     /* now make name */
     nameObj = newSymbol(name);
-    newObj->basicAtPut(nameInClass, nameObj); 
-    methTable = newDictionary(39);
-    newObj->basicAtPut(methodsInClass, methTable);
-    newObj->basicAtPut(sizeInClass, newInteger(classSize));
+    objectRef(newObj).basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
+    objectRef(newObj).basicAtPut(methodsInClass, methTable);
+    objectRef(newObj).basicAtPut(sizeInClass, newInteger(classSize));
 
     /* now put in global symbols table */
-    nameTableInsert(symbols, strHash(name), nameObj.handle(), newObj.handle());
+    nameTableInsert(symbols, strHash(name), nameObj, newObj);
 
     return newObj;
 }
 
-ObjectHandle MemoryManager::newContext(int link, const ObjectHandle& method, const ObjectHandle& args, const ObjectHandle& temp)
+object MemoryManager::newContext(int link, object method, object args, object temp)
 {   
-    ObjectHandle newObj(allocObject(contextSize), this);
-    newObj->_class = globalSymbol("Context");
-    newObj->basicAtPut(linkPtrInContext, newInteger(link));
-    newObj->basicAtPut(methodInContext, method);
-    newObj->basicAtPut(argumentsInContext, args);
-    newObj->basicAtPut(temporariesInContext, temp);
+    object newObj;
+
+    newObj = allocObject(contextSize);
+    objectRef(newObj)._class = globalSymbol("Context");
+    objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
+    objectRef(newObj).basicAtPut(methodInContext, method);
+    objectRef(newObj).basicAtPut(argumentsInContext, args);
+    objectRef(newObj).basicAtPut(temporariesInContext, temp);
     return newObj;
 }
 
-ObjectHandle MemoryManager::newDictionary(int size)
+object MemoryManager::newDictionary(int size)
 {   
-    ObjectHandle newObj(allocObject(1), this);
-    newObj->_class = globalSymbol("Dictionary");
-    newObj->basicAtPut(1, newArray(size));
+    object newObj;
+
+    newObj = allocObject(1);
+    objectRef(newObj)._class = globalSymbol("Dictionary");
+    objectRef(newObj).basicAtPut(1, newArray(size));
     return newObj;
 }
 
