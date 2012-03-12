@@ -211,12 +211,14 @@ typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
  */
 class MemoryManager
 {
+    static const size_t m_defaultInitialSize = 6500;
+    static const size_t m_defaultGrowCount = 5000;
     private:
         //! Default constructor.
         /*! The default constructor is private as the memory manager is implemented
          *  as a singleton, all access is via the Instance() function.
          */
-        MemoryManager(size_t initialSize = 6500);
+        MemoryManager(size_t initialSize = m_defaultInitialSize, size_t growCount = m_defaultGrowCount);
     public:
         //! Destructor
         ~MemoryManager();
@@ -227,6 +229,8 @@ class MemoryManager
          * functionality is via this function.
          */
         static MemoryManager* Instance();
+
+        static void Initialise(size_t initialSize = m_defaultInitialSize, size_t growCount = m_defaultGrowCount);
 
         //! Transfer all unreferenced objects into the free list for reuse.
         void setFreeLists(); 
@@ -260,6 +264,9 @@ class MemoryManager
          * \return The number of free slots.
          */
         size_t freeSlotsCount();
+
+
+        size_t storageSize() const;
 
         /*! Dump object memory stats into a string.
          *

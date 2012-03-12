@@ -75,9 +75,16 @@ MemoryManager* MemoryManager::Instance()
     return m_pInstance;
 }
 
+void MemoryManager::Initialise(size_t initialSize, size_t growCount)
+{
+    if(NULL != m_pInstance)
+        delete(m_pInstance);
+
+    m_pInstance = new MemoryManager(initialSize, growCount);
+}
 
 
-MemoryManager::MemoryManager(size_t initialSize) : noGC(false), growAmount(5000)
+MemoryManager::MemoryManager(size_t initialSize, size_t growCount) : noGC(false), growAmount(growCount)
 {
     objectTable.resize(initialSize);
 
@@ -353,11 +360,12 @@ objectStruct& MemoryManager::objectFromID(object id)
 
 size_t MemoryManager::objectCount()
 {   
-    register int j = 0;
-    for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
-        if (i->referenceCount > 0)
-            j++;
-    return j;
+    return storageSize() - freeSlotsCount();
+}
+
+size_t MemoryManager::storageSize() const
+{
+    return objectTable.size();
 }
 
 size_t MemoryManager::freeSlotsCount()
