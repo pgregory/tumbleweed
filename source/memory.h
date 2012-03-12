@@ -78,8 +78,6 @@ class ObjectHandle
          */
         ObjectHandle& operator=(long o);
 
-        ObjectHandle& operator=(const ObjectHandle& from);
-
         bool operator==(const ObjectHandle& o);
 
     private:
@@ -303,7 +301,7 @@ class MemoryManager
          *          count of object ids.
          * \return The new object.
          */
-        ObjectHandle allocObject(size_t memorySize);
+        object allocObject(size_t memorySize);
 
         /*! Allocate a new byte object.
          *
@@ -313,7 +311,7 @@ class MemoryManager
          *          will be rounded to multiples of object id size.
          * \return The new object.
          */
-        ObjectHandle allocByte(size_t size);
+        object allocByte(size_t size);
 
         /*! Allocate a new string object.
          *
@@ -324,7 +322,7 @@ class MemoryManager
          * \param str The string to copy.
          * \return The new object.
          */
-        ObjectHandle allocStr(register const char* str);
+        object allocStr(register const char* str);
 
         /*! Destroy an object.
          *
@@ -432,7 +430,7 @@ class MemoryManager
          *
          * \return The ID of the new object.
          */
-        ObjectHandle newMethod();
+        object newMethod();
 
         /*! Create a new Link object.
          *
@@ -480,7 +478,7 @@ class MemoryManager
          * \param l The pointer to store in the object data area.
          * \return The new CPointer object containing the pointer provided.
          */
-        ObjectHandle newCPointer(void* l);
+        object newCPointer(void* l);
 
         /*! Register a held reference to an object
          *
@@ -610,15 +608,4 @@ inline ObjectHandle::operator objectStruct&() const
 inline bool ObjectHandle::operator==(const ObjectHandle& o)
 {
   return (m_handle == o.m_handle) && (m_manager == o.m_manager);
-}
-
-inline ObjectHandle& ObjectHandle::operator=(const ObjectHandle& from)
-{
-    if(m_handle && m_manager)
-        m_manager->unrefObject(m_handle);
-    m_handle = from.m_handle;
-    m_manager = from.m_manager;
-    m_manager->refObject(m_handle);
-
-    return *this;
 }

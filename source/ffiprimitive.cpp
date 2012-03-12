@@ -269,7 +269,7 @@ object valueIn(int retMap, FFI_DataType* data)
       break;
 
     case FFI_COBJECT:
-      return MemoryManager::Instance()->newCPointer(data->cPointer).handle();
+      return MemoryManager::Instance()->newCPointer(data->cPointer);
       break;
 
     case FFI_VOID:

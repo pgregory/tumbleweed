@@ -8,7 +8,7 @@ class MemoryManagerTest : public ::testing::Test
     virtual void SetUp() 
     {
       // Allocate a simple object with size.
-      m2_array = m2.allocObject(10);
+      m2_arrayID = m2.allocObject(10);
 
       // Create a MemoryManager with a specific size.
       m3 = new MemoryManager(6);
@@ -29,7 +29,7 @@ class MemoryManagerTest : public ::testing::Test
     MemoryManager m1;
     MemoryManager m2;
     MemoryManager* m3;
-    ObjectHandle  m2_array;
+    object        m2_arrayID;
 };
     
 
@@ -52,7 +52,7 @@ TEST_F(MemoryManagerTest, DereferenceNil)
 
 TEST_F(MemoryManagerTest, ObjectSize)
 {
-  ASSERT_EQ(10, m2_array->size);
+  ASSERT_EQ(10, m2.objectFromID(m2_arrayID).size);
 }
 
 
@@ -63,7 +63,7 @@ TEST_F(MemoryManagerTest, GarbageCollect)
 
   // With GC working, we should be able to reallocate
   // similar objects, without changing the size.
-  m3->allocObject(1)->referenceCount = 1;
+  m3->objectFromID(m3->allocObject(1)).referenceCount = 1;
   EXPECT_EQ(2, m3->objectCount());
 }
 
@@ -74,7 +74,7 @@ TEST_F(MemoryManagerTest, GrowObjectTable)
     m3->refObject(i);
   // Check that the system is able to reallocated the object
   // table to accommodate additional objects.
-  m3->allocObject(1)->referenceCount = 1;
+  m3->objectFromID(m3->allocObject(1)).referenceCount = 1;
   // Should be 7 objects including the new one...
   EXPECT_EQ(7, m3->objectCount());
   // ...and 9 more slots, as growAmount is set to 10.

@@ -101,7 +101,7 @@ MemoryManager::~MemoryManager()
 
 static long numAllocated;
 
-ObjectHandle MemoryManager::allocObject(size_t memorySize)
+object MemoryManager::allocObject(size_t memorySize)
 {
     int i;
     size_t position;
@@ -191,36 +191,36 @@ ObjectHandle MemoryManager::allocObject(size_t memorySize)
     objectTable[position].referenceCount = 0;
     objectTable[position]._class = nilobj;
     objectTable[position].size = memorySize;
-
-    ObjectHandle result(position);
-    return result;
+    return(position);
 }
 
-ObjectHandle MemoryManager::allocByte(size_t size)
+object MemoryManager::allocByte(size_t size)
 {
-    ObjectHandle newObj = allocObject((size + 1) / 2);
+    object newObj;
+
+    newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    newObj->size = -size;
+    objectRef(newObj).size = -size;
     return newObj;
 }
 
-ObjectHandle MemoryManager::allocStr(register const char* str)
+object MemoryManager::allocStr(register const char* str)
 {
-    ObjectHandle newSym;
+    register object newSym;
     char* t;
 
     if(NULL != str)
     {
         newSym = allocByte(1 + strlen(str));
-        t = newSym->charPtr();
+        t = objectRef(newSym).charPtr();
         ignore strcpy(t, str);
     }
     else
     {
         newSym = allocByte(1);
-        newSym->charPtr()[0] = '\0';
+        objectRef(newSym).charPtr()[0] = '\0';
     }
-    return newSym;
+    return(newSym);
 }
 
 bool MemoryManager::destroyObject(object z)
@@ -379,7 +379,7 @@ std::string MemoryManager::statsString()
 
 ObjectHandle MemoryManager::newArray(int size)
 {   
-    ObjectHandle newObj = allocObject(size);
+    ObjectHandle newObj(allocObject(size), this);
     if (arrayClass == nilobj)
         arrayClass = globalSymbol("Array");
     newObj->_class = arrayClass;
@@ -388,21 +388,21 @@ ObjectHandle MemoryManager::newArray(int size)
 
 ObjectHandle MemoryManager::newBlock()
 {   
-    ObjectHandle newObj = allocObject(blockSize);
+    ObjectHandle newObj(allocObject(blockSize), this);
     newObj->_class = globalSymbol("Block");
     return newObj;
 }
 
 ObjectHandle MemoryManager::newByteArray(int size)
 {   
-    ObjectHandle newobj = allocByte(size);
+    ObjectHandle newobj(allocByte(size), this);
     newobj->_class = globalSymbol("ByteArray");
     return newobj;
 }
 
 ObjectHandle MemoryManager::newChar(int value)
 {   
-    ObjectHandle newobj = allocObject(1);
+    ObjectHandle newobj(allocObject(1), this);
     newobj->basicAtPut(1, newInteger(value));
     newobj->_class = globalSymbol("Char");
     return newobj;
@@ -412,7 +412,7 @@ ObjectHandle MemoryManager::newClass(const char* name)
 {   
     ObjectHandle newObj, nameObj, methTable;
 
-    newObj = allocObject(classSize);
+    newObj = ObjectHandle(allocObject(classSize), this);
     newObj->_class = globalSymbol("Class");
 
     /* now make name */
@@ -430,7 +430,7 @@ ObjectHandle MemoryManager::newClass(const char* name)
 
 ObjectHandle MemoryManager::newContext(int link, const ObjectHandle& method, const ObjectHandle& args, const ObjectHandle& temp)
 {   
-    ObjectHandle newObj = allocObject(contextSize);
+    ObjectHandle newObj(allocObject(contextSize), this);
     newObj->_class = globalSymbol("Context");
     newObj->basicAtPut(linkPtrInContext, newInteger(link));
     newObj->basicAtPut(methodInContext, method);
@@ -441,7 +441,7 @@ ObjectHandle MemoryManager::newContext(int link, const ObjectHandle& method, con
 
 ObjectHandle MemoryManager::newDictionary(int size)
 {   
-    ObjectHandle newObj = allocObject(1);
+    ObjectHandle newObj(allocObject(1), this);
     newObj->_class = globalSymbol("Dictionary");
     newObj->basicAtPut(1, newArray(size));
     return newObj;
@@ -449,7 +449,7 @@ ObjectHandle MemoryManager::newDictionary(int size)
 
 ObjectHandle MemoryManager::newFloat(double d)
 {   
-    ObjectHandle newObj = allocByte((int) sizeof (double));
+    ObjectHandle newObj(allocByte((int) sizeof (double)), this);
     ncopy(newObj->charPtr(), (char *) &d, (int) sizeof (double));
     newObj->_class = globalSymbol("Float");
     return newObj;
@@ -457,45 +457,45 @@ ObjectHandle MemoryManager::newFloat(double d)
 
 ObjectHandle MemoryManager::newInteger(int i)
 {   
-    ObjectHandle newObj = allocByte((int) sizeof (int));
+    ObjectHandle newObj(allocByte((int) sizeof (int)), this);
     ncopy(newObj->charPtr(), (char *) &i, (int) sizeof (int));
     newObj->_class = globalSymbol("Integer");
     return newObj;
 }
 
-ObjectHandle MemoryManager::newCPointer(void* l)
+object MemoryManager::newCPointer(void* l)
 {   
-    ObjectHandle newObj;
+  object newObj;
 
-    int s = sizeof(void*);
+  int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
-    ncopy(newObj->charPtr(), (char *) &l, (int) sizeof (void*));
-    newObj->_class = globalSymbol("CPointer");
+    ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
+    objectRef(newObj)._class = globalSymbol("CPointer");
     return newObj;
 }
 
 ObjectHandle MemoryManager::newLink(const ObjectHandle& key, const ObjectHandle& value)
 {   
-    ObjectHandle newObj = allocObject(3);
+    ObjectHandle newObj(allocObject(3), this);
     newObj->_class = globalSymbol("Link");
     newObj->basicAtPut(1, key);
     newObj->basicAtPut(2, value);
     return newObj;
 }
 
-ObjectHandle MemoryManager::newMethod()
+object MemoryManager::newMethod()
 {   
-  ObjectHandle newObj;
+  object newObj;
   
   newObj = allocObject(methodSize);
-  newObj->_class = globalSymbol("Method");
+  objectRef(newObj)._class = globalSymbol("Method");
 
   return newObj;
 }
 
 ObjectHandle MemoryManager::newStString(const char* value)
 {   
-  ObjectHandle newObj = allocStr(value);
+  ObjectHandle newObj(allocStr(value), this);
   if (stringClass == nilobj)
     stringClass = globalSymbol("String");
   newObj->_class = stringClass;
@@ -510,7 +510,7 @@ ObjectHandle MemoryManager::newSymbol(const char* str)
         return newObj;
 
     /* not found, must make */
-    newObj = allocStr(str);
+    newObj = ObjectHandle(allocStr(str), this);
     if (symbolClass == nilobj)
         symbolClass = globalSymbol("Symbol");
     newObj->_class = symbolClass;
