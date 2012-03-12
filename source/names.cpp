@@ -51,7 +51,7 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
             nwLink = MemoryManager::Instance()->newLink(key, value);
             link = table->basicAt(hash+3);
             if (link.handle() == nilobj) {
-                table->basicAtPut(hash+3, nwLink);
+                table->basicAtPut(hash+3, nwLink.handle());
                 }
             else
                 while(1)
@@ -60,7 +60,7 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
                         break;
                         }
                     else if ((nextLink = link->basicAt(3)).handle() == nilobj) {
-                        link->basicAtPut(3, nwLink);
+                        link->basicAtPut(3, nwLink.handle());
                         break;
                         }
                     else

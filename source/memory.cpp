@@ -377,19 +377,23 @@ std::string MemoryManager::statsString()
 }
 
 
-ObjectHandle MemoryManager::newArray(int size)
+object MemoryManager::newArray(int size)
 {   
-    ObjectHandle newObj(allocObject(size), this);
+    object newObj;
+
+    newObj = allocObject(size);
     if (arrayClass == nilobj)
         arrayClass = globalSymbol("Array");
-    newObj->_class = arrayClass;
+    objectRef(newObj)._class = arrayClass;
     return newObj;
 }
 
-ObjectHandle MemoryManager::newBlock()
+object MemoryManager::newBlock()
 {   
-    ObjectHandle newObj(allocObject(blockSize), this);
-    newObj->_class = globalSymbol("Block");
+    object newObj;
+
+    newObj = allocObject(blockSize);
+    objectRef(newObj)._class = globalSymbol("Block");
     return newObj;
 }
 
@@ -464,11 +468,13 @@ object MemoryManager::newFloat(double d)
     return newObj;
 }
 
-ObjectHandle MemoryManager::newInteger(int i)
+object MemoryManager::newInteger(int i)
 {   
-    ObjectHandle newObj(allocByte((int) sizeof (int)), this);
-    ncopy(newObj->charPtr(), (char *) &i, (int) sizeof (int));
-    newObj->_class = globalSymbol("Integer");
+    object newObj;
+
+    newObj = allocByte((int) sizeof (int));
+    ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
+    objectRef(newObj)._class = globalSymbol("Integer");
     return newObj;
 }
 
@@ -537,7 +543,7 @@ object MemoryManager::copyFrom(object obj, int start, int size)
     object newObj;
     int i;
 
-    newObj = newArray(size).handle();
+    newObj = newArray(size);
     for (i = 1; i <= size; i++) 
     {
         objectRef(newObj).basicAtPut(i, objectRef(obj).basicAt(start));
@@ -717,13 +723,6 @@ void objectStruct::basicAtPut(int i, object v)
         sysMemPtr()[i-1] = v;
 }
 
-void objectStruct::basicAtPut(int i, const ObjectHandle& v)
-{
-    if((i <= 0) || (i > size))
-        sysError("index out of range", "basicAtPut");
-    else
-        sysMemPtr()[i-1] = v.handle();
-}
 
 int objectStruct::byteAt(int i)
 {

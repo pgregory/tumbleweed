@@ -250,7 +250,7 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_ULONG_OUT:
     case FFI_CHAR_OUT:
     case FFI_WCHAR_OUT:
-      return MemoryManager::Instance()->newInteger(data->outInteger.integer).handle();
+      return MemoryManager::Instance()->newInteger(data->outInteger.integer);
       break;
 
     case FFI_CHAR:
@@ -265,7 +265,7 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      return MemoryManager::Instance()->newInteger(data->integer).handle();
+      return MemoryManager::Instance()->newInteger(data->integer);
       break;
 
     case FFI_COBJECT:
@@ -315,12 +315,12 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object processClass = globalSymbol("Process");
   ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
   ObjectHandle stack = MemoryManager::Instance()->newArray(50);
-  process->basicAtPut(stackInProcess, stack);
+  process->basicAtPut(stackInProcess, stack.handle());
   process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
   process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
-  stack->basicAtPut(3, context);
+  stack->basicAtPut(3, context.handle());
   stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));
-  stack->basicAtPut(6, bytePointer);
+  stack->basicAtPut(6, bytePointer.handle());
 
   /* change context and byte pointer */
   int argLoc = objectRef(block->basicAt(argumentLocationInBlock)).intValue();

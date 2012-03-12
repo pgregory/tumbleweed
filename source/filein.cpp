@@ -50,27 +50,27 @@ static object findClass(const char* name)
 
 static object findClassWithMeta(const char* name, object metaObj)
 {   
-    ObjectHandle newObj, nameObj, methTable;
+    object newObj, nameObj, methTable;
     int size;
 
     newObj = globalSymbol(name);
-    if (newObj.handle() == nilobj)
+    if (newObj == nilobj)
     {
         size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
         newObj = MemoryManager::Instance()->allocObject(size);
-        newObj->_class = metaObj;
+        objectRef(newObj)._class = metaObj;
 
         /* now make name */
         nameObj = MemoryManager::Instance()->newSymbol(name);
-        newObj->basicAtPut(nameInClass, nameObj);
+        objectRef(newObj).basicAtPut(nameInClass, nameObj);
         methTable = MemoryManager::Instance()->newDictionary(39);
-        newObj->basicAtPut(methodsInClass, methTable);
-        newObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+        objectRef(newObj).basicAtPut(methodsInClass, methTable);
+        objectRef(newObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
         /* now put in global symbols table */
-        nameTableInsert(symbols, strHash(name), nameObj.handle(), newObj.handle());
+        nameTableInsert(symbols, strHash(name), nameObj, newObj);
     }
-    return newObj.handle();
+    return newObj;
 }
 
 /*
@@ -79,12 +79,12 @@ static object findClassWithMeta(const char* name, object metaObj)
 
 static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
-    ObjectHandle classObj, superObj, metaObj;
+    object classObj, superObj, metaObj;
     int i, size, instanceTop;
 
     metaObj = findClass(metaclass);
-    classObj = findClassWithMeta(_class, metaObj.handle());
-    classObj->_class = metaObj.handle();
+    classObj = findClassWithMeta(_class, metaObj);
+    objectRef(classObj)._class = metaObj;
 
     //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
 
@@ -93,14 +93,14 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
     if(NULL != superclass)
     {
         superObj = findClass(superclass);
-        classObj->basicAtPut(superClassInClass, superObj);
-        size = objectRef(superObj->basicAt(sizeInClass)).intValue();
+        objectRef(classObj).basicAtPut(superClassInClass, superObj);
+        size = objectRef(objectRef(superObj).basicAt(sizeInClass)).intValue();
     }
 
     // Set the size up to now.
-    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+    objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
-    return classObj.handle();
+    return classObj;
 }
 
 /*
@@ -150,9 +150,9 @@ static void readRawClassDeclaration()
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
         {
-            vars->basicAtPut(i+1, instanceVariables[i]);
+            vars->basicAtPut(i+1, instanceVariables[i].handle());
         }
-        classObj->basicAtPut(variablesInClass, vars);
+        classObj->basicAtPut(variablesInClass, vars.handle());
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
@@ -198,8 +198,8 @@ static void readClassDeclaration()
     size = objectRef(metaObj->basicAt(sizeInClass)).intValue();
     instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");
     vars = MemoryManager::Instance()->newArray(1);
-    vars->basicAtPut(1, instanceVariables[0]);
-    metaObj->basicAtPut(variablesInClass, vars);
+    vars->basicAtPut(1, instanceVariables[0].handle());
+    metaObj->basicAtPut(variablesInClass, vars.handle());
     metaObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size+1));
 
     // Get the current class size, we'll build on this as 
@@ -218,9 +218,9 @@ static void readClassDeclaration()
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
         {
-            vars->basicAtPut(i+1, instanceVariables[i]);
+            vars->basicAtPut(i+1, instanceVariables[i].handle());
         }
-        classObj->basicAtPut(variablesInClass, vars);
+        classObj->basicAtPut(variablesInClass, vars.handle());
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
@@ -252,7 +252,7 @@ static void readMethods(FILE* fd, boolean printit)
     if (methTable.handle() == nilobj) 
     {  /* must make */
         methTable = MemoryManager::Instance()->newDictionary(MethodTableSize);
-        classObj->basicAtPut(methodsInClass, methTable);
+        classObj->basicAtPut(methodsInClass, methTable.handle());
     }
 
     if(nextToken() == strconst) 
@@ -280,8 +280,8 @@ static void readMethods(FILE* fd, boolean printit)
         theMethod = MemoryManager::Instance()->newMethod();
         if (parse(theMethod.handle(), textBuffer, savetext)) {
             selector = theMethod->basicAt(messageInMethod);
-            theMethod->basicAtPut(methodClassInMethod, classObj);
-            theMethod->basicAtPut(protocolInMethod, protocol);
+            theMethod->basicAtPut(methodClassInMethod, classObj.handle());
+            theMethod->basicAtPut(protocolInMethod, protocol.handle());
             if (printit)
                 dspMethod(cp, selector->charPtr());
             nameTableInsert(methTable.handle(), objectRefHash(selector.handle()), selector.handle(), theMethod.handle());

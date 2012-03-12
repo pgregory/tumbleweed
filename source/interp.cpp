@@ -129,7 +129,7 @@ static object growProcessStack(int top, int toadd)
 
 boolean execute(object aProcess, int maxsteps)
 {   
-  ObjectHandle returnedObject;
+  object returnedObject;
   int returnPoint, timeSliceCounter;
   object *pst, *psb, *rcv, *arg, *temps, *lits, *cntx;
   ObjectHandle contextObject; 
@@ -214,11 +214,11 @@ readMethodInfo:
       case PushConstant:
         switch(low) {
           case 0: case 1: case 2:
-            ipush(MemoryManager::Instance()->newInteger(low).handle());
+            ipush(MemoryManager::Instance()->newInteger(low));
             break;
 
           case minusOne:
-            ipush(MemoryManager::Instance()->newInteger(-1).handle());
+            ipush(MemoryManager::Instance()->newInteger(-1));
             break;
 
           case contextConst:
@@ -235,7 +235,7 @@ readMethodInfo:
                 contextObject = MemoryManager::Instance()->newContext(linkPointer, method.handle(),
                     args.handle(),
                     temp.handle());
-                processStack->basicAtPut(linkPointer+1, contextObject);
+                processStack->basicAtPut(linkPointer+1, contextObject.handle());
                 ipush(contextObject.handle());
                 /* save byte pointer then restore things properly */
                 processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
@@ -360,19 +360,19 @@ doFindMessage:
         byteOffset = 1;
         /* now make linkage area */
         /* position 0 : old linkage pointer */
-        ipush(MemoryManager::Instance()->newInteger(linkPointer).handle());
+        ipush(MemoryManager::Instance()->newInteger(linkPointer));
         linkPointer = processStackTop();
         /* position 1 : context object (nil means stack) */
         ipush(nilobj);
         contextObject = processStack;
         cntx = psb;
         /* position 2 : return point */
-        ipush(MemoryManager::Instance()->newInteger(returnPoint).handle());
+        ipush(MemoryManager::Instance()->newInteger(returnPoint));
         arg = cntx + (returnPoint-1);
         /* position 3 : method */
         ipush(method.handle());
         /* position 4 : bytecode counter */
-        ipush(MemoryManager::Instance()->newInteger(byteOffset).handle());
+        ipush(MemoryManager::Instance()->newInteger(byteOffset));
         /* then make space for temporaries */
         temps = pst+1;
         pst += methodTempSize(method.handle());
@@ -403,10 +403,10 @@ doFindMessage:
             (objectRef(primargs[0])._class == intClass.handle() && 
               objectRef(primargs[1])._class == intClass.handle())) {
           returnedObject = primitive(low+60, primargs);
-          if (returnedObject.handle() != nilobj) {
+          if (returnedObject != nilobj) {
             // pop arguments off stack , push on result 
             stackTopFree();
-            stackTopPut(returnedObject.handle());
+            stackTopPut(returnedObject);
             break;
           }
         }
@@ -464,7 +464,7 @@ doFindMessage:
         while (low-- > 0) {
           stackTopFree();
         }
-        ipush(returnedObject.handle()); 
+        ipush(returnedObject); 
         break;
 
 doReturn:
@@ -473,7 +473,7 @@ doReturn:
         while (processStackTop() >= returnPoint) {
           stackTopFree();
         }
-        ipush(returnedObject.handle()); 
+        ipush(returnedObject); 
         /* now go restart old routine */
         if (linkPointer != 0)
           goto readLinkageBlock;
@@ -493,7 +493,7 @@ doReturn:
           case Duplicate:
             /* avoid possible subtle bug */
             returnedObject = stackTop();
-            ipush(returnedObject.handle());
+            ipush(returnedObject);
             break;
 
           case PopTop:
@@ -509,7 +509,7 @@ doReturn:
           case BranchIfTrue:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj) {
+            if (returnedObject == trueobj.handle()) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -519,7 +519,7 @@ doReturn:
           case BranchIfFalse:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj) {
+            if (returnedObject == falseobj.handle()) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -530,7 +530,7 @@ doReturn:
             ipop(returnedObject);
             i = nextByte();
             if (returnedObject == falseobj.handle()) {
-              ipush(returnedObject.handle());
+              ipush(returnedObject);
               byteOffset = i;
             }
             break;
@@ -539,7 +539,7 @@ doReturn:
             ipop(returnedObject);
             i = nextByte();
             if (returnedObject == trueobj.handle()) {
-              ipush(returnedObject.handle());
+              ipush(returnedObject);
               byteOffset = i;
             }
             break;
@@ -555,8 +555,8 @@ doReturn:
                the class again */
             returnedObject = 
               objectRef(methodClass).basicAt(superClassInClass);
-            if (returnedObject.handle() != nilobj)
-              methodClass = returnedObject.handle();
+            if (returnedObject != nilobj)
+              methodClass = returnedObject;
             goto doFindMessage;
 
           default:
