@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <editline/readline.h>
 #include <dlfcn.h>
 #include <assert.h>
 #include <ffi.h>

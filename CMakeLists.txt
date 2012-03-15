@@ -64,6 +64,11 @@ find_package(LibFFI REQUIRED)
 include_directories(${LIBFFI_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
 
+if(WIN32)
+  add_definitions(-DSO_EXT="dll")
+  set(LIBS ${LIBS} dl)
+endif(WIN32)
+
 function(prefix_sources prefix sources)
   set(_TMP)
   foreach(i IN LISTS ${sources})
@@ -101,6 +106,8 @@ add_subdirectory(ffi_test)
 add_subdirectory(sockets)
 add_subdirectory(linenoise)
 add_subdirectory(trex)
-add_subdirectory(events)
+if(NOT WIN32)
+  add_subdirectory(events)
+endif(NOT WIN32)
 
 
