@@ -49,7 +49,7 @@ void flushCache(object messageToSend, object _class)
 {   
   int hash;
 
-  hash = ((objectRefHash(messageToSend)) + (objectRefHash(_class))) % cacheSize;
+  hash = ((ObjectHandle(messageToSend).hash()) + (ObjectHandle(_class).hash())) % cacheSize;
   methodCache[hash].cacheMessage = nilobj;
 }
 
@@ -73,7 +73,7 @@ static boolean findMethod(object* methodClassLocation)
     methodTable = methodClass->basicAt(methodsInClass);
     if(methodTable == nilobj)
       printf("Null method table on %s\n", objectRef(methodClass->basicAt(nameInClass)).charPtr());
-    method = hashEachElement(methodTable, objectRefHash(messageToSend), messTest);
+    method = hashEachElement(methodTable, ObjectHandle(messageToSend).hash(), messTest);
     if (method != nilobj)
     {
 //      printf("...found\n");
@@ -286,7 +286,7 @@ doSendMessage:
 
 doFindMessage:
         /* look up method in cache */
-        i = ((objectRefHash(messageToSend)) + (objectRefHash(methodClass))) % cacheSize;
+        i = ((ObjectHandle(messageToSend).hash()) + (ObjectHandle(methodClass).hash())) % cacheSize;
         if ((methodCache[i].cacheMessage == messageToSend) &&
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
