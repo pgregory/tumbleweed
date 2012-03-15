@@ -3,20 +3,19 @@ cmake_minimum_required ( VERSION 2.6 )
 
 project (Tumbleweed)
 
-option(TW_BUILD_TESTS "Build all of Tumbleweeds's unit tests." OFF)
-
 set(shared_srcs 
-  source/ffiprimitive.cpp
-  source/filein.cpp
-  source/interp.cpp
-  source/lex.cpp
-  source/memory.cpp
-  source/names.cpp
-  source/parser.cpp
-  source/parser.cpp
-  source/primitive.cpp
-  source/sysprimitive.cpp
-  source/unixio.cpp
+  source/ffiprimitive.c
+  source/filein.c
+  source/interp.c
+  source/lex.c
+  source/memory.c
+  source/names.c
+  source/parser.c
+  source/news.c
+  source/parser.c
+  source/primitive.c
+  source/sysprimitive.c
+  source/unixio.c
 )
 
 set(headers
@@ -27,12 +26,12 @@ set(headers
   source/names.h
 )
   
-set(tw_srcs 
-  source/st.cpp
+set(tw_srcs ${shared_srcs}
+  source/st.c
 )
 
-set(init_srcs 
-  source/initial.cpp
+set(init_srcs ${shared_srcs}
+  source/initial.c
 )
 
 set(common_image_srcs
@@ -65,6 +64,11 @@ find_package(LibFFI REQUIRED)
 include_directories(${LIBFFI_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
 
+if(WIN32)
+  add_definitions(-DSO_EXT="dll")
+  set(LIBS ${LIBS} dl)
+endif(WIN32)
+
 function(prefix_sources prefix sources)
   set(_TMP)
   foreach(i IN LISTS ${sources})
@@ -75,9 +79,6 @@ endfunction(prefix_sources)
 
 prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} image_srcs)
 prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} server_image_srcs)
-
-add_library(libtw ${shared_srcs})
-set_target_properties(libtw PROPERTIES OUTPUT_NAME tw)
 
 add_executable(initial ${init_srcs})
 add_custom_command(
@@ -93,30 +94,20 @@ add_custom_command(
 
 add_executable(tw ${tw_srcs} systemImage serverSystemImage)
 
-target_link_libraries(initial libtw ${LIBS})
-target_link_libraries(tw libtw ${LIBS})
+target_link_libraries(initial ${LIBS})
+target_link_libraries(tw ${LIBS})
 
 install(TARGETS tw RUNTIME DESTINATION .)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/serverSystemImage DESTINATION .)
-
-# Testing
-if(TW_BUILD_TESTS)
-  enable_testing()
-  find_package(GTest REQUIRED)
-  include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/source)
-  add_executable(memory_manager_test
-    test/memory_test.cpp)
-  target_link_libraries(memory_manager_test libtw ${GTEST_BOTH_LIBRARIES} ${LIBS})
-  set(memory_manager_test_args "")
-  GTEST_ADD_TESTS(memory_manager_test "${memory_manager_test_args}" test/memory_test.cpp)
-endif(TW_BUILD_TESTS)
 
 # Modules.
 add_subdirectory(ffi_test)
 add_subdirectory(sockets)
 add_subdirectory(linenoise)
 add_subdirectory(trex)
-add_subdirectory(events)
+if(NOT WIN32)
+  add_subdirectory(events)
+endif(NOT WIN32)
 
 
