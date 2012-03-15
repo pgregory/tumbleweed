@@ -239,10 +239,10 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 
     case 9:     /* duplicate a block, adding a new context to it */
       returnedObject = MemoryManager::Instance()->newBlock();
-      returnedObject->basicAtPut(1, secondarg);
-      returnedObject->basicAtPut(2, objectRef(firstarg).basicAt(2));
-      returnedObject->basicAtPut(3, objectRef(firstarg).basicAt(3));
-      returnedObject->basicAtPut(4, objectRef(firstarg).basicAt(4));
+      returnedObject->basicAtPut(contextInBlock, secondarg);
+      returnedObject->basicAtPut(argumentCountInBlock, objectRef(firstarg).basicAt(2));
+      returnedObject->basicAtPut(argumentLocationInBlock, objectRef(firstarg).basicAt(3));
+      returnedObject->basicAtPut(bytecountPositionInBlock, objectRef(firstarg).basicAt(4));
       break;
 
     default:        /* unknown primitive */

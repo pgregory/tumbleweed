@@ -66,13 +66,13 @@ void goDoIt(const char * text)
     firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
 
     /* put argument on stack */
-    stack->basicAtPut(1, nilobj);   /* argument */
+    stack->basicAtPut(argumentInStack, nilobj);   /* argument */
     /* now make a linkage area in stack */
-    stack->basicAtPut(2, nilobj);   /* previous link */
-    stack->basicAtPut(3, nilobj);   /* context object (nil = stack) */
-    stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));    /* return point */
-    stack->basicAtPut(5, method);   /* method */
-    stack->basicAtPut(6, MemoryManager::Instance()->newInteger(1));    /* byte offset */
+    stack->basicAtPut(prevlinkInStack, nilobj);   /* previous link */
+    stack->basicAtPut(contextInStack, nilobj);   /* context object (nil = stack) */
+    stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));    /* return point */
+    stack->basicAtPut(methodInStack, method);   /* method */
+    stack->basicAtPut(bytepointerInStack, MemoryManager::Instance()->newInteger(1));    /* byte offset */
 
     /* now go execute it */
     while (execute(firstProcess, 15000)) fprintf(stderr,"..");
@@ -90,9 +90,9 @@ void makeInitialImage()
   ObjectHandle objectClass, metaObjectClass;
 
   /* first create the table, without class links */
-  symbols = MemoryManager::Instance()->allocObject(1);
+  symbols = MemoryManager::Instance()->allocObject(dictionarySize);
   hashTable = MemoryManager::Instance()->allocObject(3 * 53);
-  objectRef(symbols).basicAtPut(1, hashTable);
+  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
 
   /* next create #Symbol, Symbol and Class */
   symbolObj = MemoryManager::Instance()->newSymbol("Symbol");

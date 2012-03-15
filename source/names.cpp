@@ -36,7 +36,7 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
     ObjectHandle table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
-    table = objectRef(dict).basicAt(1);
+    table = objectRef(dict).basicAt(tableInDictionary);
 
     if (table->size < 3)
         sysError("attempt to insert into","too small name table");
@@ -55,12 +55,12 @@ noreturn nameTableInsert(object dict, int hash, object key, object value)
                 }
             else
                 while(1)
-                    if (link->basicAt(1) == key) {
-                        link->basicAtPut(2, value);
+                    if (link->basicAt(keyInLink) == key) {
+                        link->basicAtPut(valueInLink, value);
                         break;
                         }
-                    else if ((nextLink = link->basicAt(3)) == nilobj) {
-                        link->basicAtPut(3, nwLink);
+                    else if ((nextLink = link->basicAt(nextInLink)) == nilobj) {
+                        link->basicAtPut(nextInLink, nwLink);
                         break;
                         }
                     else
@@ -75,7 +75,7 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     register object *hp;
     int tablesize;
 
-    table = objectRef(dict).basicAt(1);
+    table = objectRef(dict).basicAt(tableInDictionary);
 
     /* now see if table is valid */
     if ((tablesize = objectRef(table).size) < 3)
@@ -113,11 +113,6 @@ int strHash(const char* str)    /* compute hash value of string ---- strHash */
     if (hash > 16384)
         hash >>= 2;
     return hash;
-}
-
-int objectRefHash(object o)
-{
-    return o;
 }
 
 static object objBuffer;

@@ -460,9 +460,9 @@ object MemoryManager::newDictionary(int size)
 {   
     object newObj;
 
-    newObj = allocObject(1);
+    newObj = allocObject(dictionarySize);
     objectRef(newObj)._class = globalSymbol("Dictionary");
-    objectRef(newObj).basicAtPut(1, newArray(size));
+    objectRef(newObj).basicAtPut(tableInDictionary, newArray(size));
     return newObj;
 }
 
@@ -501,10 +501,10 @@ object MemoryManager::newLink(object key, object value)
 {   
     object newObj;
 
-    newObj = allocObject(3);
+    newObj = allocObject(linkSize);
     objectRef(newObj)._class = globalSymbol("Link");
-    objectRef(newObj).basicAtPut(1, key);
-    objectRef(newObj).basicAtPut(2, value);
+    objectRef(newObj).basicAtPut(keyInLink, key);
+    objectRef(newObj).basicAtPut(valueInLink, value);
     return newObj;
 }
 

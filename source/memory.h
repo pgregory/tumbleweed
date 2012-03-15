@@ -69,6 +69,8 @@ class ObjectHandle
             return m_handle;
         }
 
+        int hash() const;
+
         //! Assignement operator
         /*!
          *  Assign a new handle to be referenced.
@@ -612,6 +614,11 @@ inline ObjectHandle::operator objectStruct&() const
 }
 
 inline ObjectHandle::operator long() const
+{
+    return m_handle;
+}
+
+inline int ObjectHandle::hash() const
 {
     return m_handle;
 }

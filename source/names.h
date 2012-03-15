@@ -43,6 +43,21 @@
 # define stackTopInProcess 2
 # define linkPtrInProcess 3
 
+# define dictionarySize 1
+# define tableInDictionary 1
+
+# define linkSize 3
+# define keyInLink 1
+# define valueInLink 2
+# define nextInLink 3
+
+# define argumentInStack 1
+# define prevlinkInStack 2
+# define contextInStack 3
+# define returnpointInStack 4
+# define methodInStack 5
+# define bytepointerInStack 6
+
 extern ObjectHandle trueobj;      /* the pseudo variable true */
 extern ObjectHandle falseobj;     /* the pseudo variable false */
 
@@ -52,7 +67,6 @@ extern ObjectHandle unSyms[], binSyms[];
 extern noreturn nameTableInsert( OBJ X INT X OBJ X OBJ );
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/
 extern int strHash ( CSTR );
-extern int objectRefHash ( OBJ );
 extern object globalKey ( CSTR );
 extern object nameTableLookup ( OBJ X CSTR );
 # define globalSymbol(s) nameTableLookup(symbols, s)

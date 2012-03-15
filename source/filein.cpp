@@ -284,7 +284,7 @@ static void readMethods(FILE* fd, boolean printit)
             theMethod->basicAtPut(protocolInMethod, protocol);
             if (printit)
                 dspMethod(cp, selector->charPtr());
-            nameTableInsert(methTable, objectRefHash(selector), selector, theMethod);
+            nameTableInsert(methTable, selector.hash(), selector, theMethod);
         }
         else {
             /* get rid of unwanted method */

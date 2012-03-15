@@ -320,9 +320,9 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   process->basicAtPut(stackInProcess, stack);
   process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
   process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
-  stack->basicAtPut(3, context);
-  stack->basicAtPut(4, MemoryManager::Instance()->newInteger(1));
-  stack->basicAtPut(6, bytePointer);
+  stack->basicAtPut(contextInStack, context);
+  stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));
+  stack->basicAtPut(bytepointerInStack, bytePointer);
 
   /* change context and byte pointer */
   int argLoc = objectRef(block->basicAt(argumentLocationInBlock)).intValue();
