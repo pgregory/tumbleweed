@@ -4,7 +4,9 @@ set_target_properties(sockets PROPERTIES
   PREFIX ""
 )
 
-target_link_libraries(sockets ws2_32)
+if(WIN32)
+  target_link_libraries(sockets ws2_32)
+endif(WIN32)
 
 install(TARGETS sockets LIBRARY DESTINATION "modules/sockets")
 install(FILES sockets.st DESTINATION "modules/sockets")
