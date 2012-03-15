@@ -28,7 +28,7 @@ int main(int argc, char** argv)
 
     if (argc != 1) p = argv[1];
 
-    fp = fopen(p, "r");
+    fp = fopen(p, "rb");
 
     if (fp == NULL) 
     {

@@ -10,7 +10,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+extern "C" {
 #include <dlfcn.h>
+}
 #include <assert.h>
 #include <ffi.h>
 #include <limits.h>
