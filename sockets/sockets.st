@@ -116,7 +116,7 @@ Methods Socket 'all'
     | result args |
     args <- Array new: 4.
     args at: 1 put: socketID; at: 2 put: buffer; at: 3 put: (buffer size); at: 4 put: 0.
-    result <- sktFFI call: 'Read' returning: #int taking: #(int string int intOut) as: args.
+    result <- (sktFFI call: 'Read' returning: #int taking: #(int string int intOut) as: args) at: 1.
     ^ result
 |
   bindTo: service with: protocol

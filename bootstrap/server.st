@@ -174,7 +174,7 @@ Methods UndefinedObject 'initial image'
         self createGlobals.
         File new;
             name: 'serverSystemImage';
-            open: 'w';
+            open: 'wb';
             saveImage;
             close.
 ]

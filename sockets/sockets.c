@@ -26,10 +26,10 @@ int Socket(const char* proto, int* errcode)
     *errcode = errno;
 
 #ifndef __WIN32
-  fcntl(sockfd, F_SETFL, O_NONBLOCK);
+//  fcntl(sockfd, F_SETFL, O_NONBLOCK);
 #else
-  u_long iMode = 1;
-  ioctlsocket(sockfd, FIONBIO, &iMode);
+//  u_long iMode = 1;
+//  ioctlsocket(sockfd, FIONBIO, &iMode);
 #endif
 
   return sockfd;
