@@ -134,6 +134,7 @@ Methods UndefinedObject 'initial image'
         " create the initial system process "
         " note the delayed recursive call "
         aBlock <- [ files do: [:f | f notNil ifTrue: [ f open ]].
+                   FFI returnFromSnapshot.
                    systemProcess <- aBlock newProcess.
                    echoInput <- false.
                    scheduler run ].

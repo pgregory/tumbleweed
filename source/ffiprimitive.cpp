@@ -8,6 +8,7 @@
    will replace this file with another.
    */
 
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 extern "C" {
@@ -21,6 +22,7 @@ extern "C" {
 #include "memory.h"
 #include "names.h"
 #include "interp.h"
+
 
 extern ObjectHandle processStack;
 extern int linkPointer;
@@ -376,7 +378,9 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = MemoryManager::Instance()->newCPointer(func);
           else
           {
-            sysWarn("function not found in library", "ffiPrimitive");
+            std::stringstream err;
+            err << "function " << p << " not found in library";
+            sysWarn(err.str().c_str(), "ffiPrimitive");
             returnedObject = nilobj;
           }
         }

@@ -1,6 +1,7 @@
 *
 * Foreign Frame Interface wrapper object
 *
+RawClass MetaFFI Class MetaObject libraries
 Class FFI Object handle name functions
 *
 Methods MetaFFI 'all'
@@ -8,12 +9,32 @@ Methods MetaFFI 'all'
     | newObj |
     newObj <- super new.
     newObj init: aString.
+    libraries isNil ifTrue: [
+      libraries <- Dictionary new
+    ].
+    libraries at: aString put: newObj.
     ^newObj
 |
   test
     | ffi |
     ffi <- FFI new: 'simple1'.
     ffi call: 'my_print' returning: #int taking: #(string) as: #('Hello from Smalltalk')
+]
+Methods MetaFFI 'misc'
+  libraries
+    ^ libraries
+|
+  prepareForSnapshot
+    libraries isNil ifFalse: [
+    libraries binaryDo: [ :x :ffi |
+      ffi close ]
+    ]
+|
+  returnFromSnapshot
+    libraries isNil ifFalse: [
+    libraries binaryDo: [ :x :ffi |
+      ffi open ]
+    ]      
 ]
 *
 Methods FFI 'all'
@@ -38,7 +59,10 @@ Methods FFI 'all'
     ^ <180 name>
 |
   close
-    ^ <184 handle>
+    | result |
+    result <- <184 handle>.
+    handle <- nil.
+    ^ result
 |
   handle
     ^ handle
