@@ -84,7 +84,6 @@ class ObjectHandle
 
     private:
         long    m_handle;
-        MemoryManager*  m_manager;
 };
 
 
@@ -564,53 +563,49 @@ extern MemoryManager* theMemoryManager;
 
 inline ObjectHandle::ObjectHandle() : m_handle(0)
 {
-    m_manager = MemoryManager::Instance();
 }
 
 inline ObjectHandle::ObjectHandle(const ObjectHandle& from)
 {
     m_handle = from.m_handle;
-    m_manager = from.m_manager;
-    if(m_manager && m_handle)
-        m_manager->refObject(m_handle);
+    if(m_handle)
+        MemoryManager::Instance()->refObject(m_handle);
 }
 
 inline ObjectHandle::ObjectHandle(long object) : m_handle(object) 
 {
-    m_manager = MemoryManager::Instance();
-    m_manager->refObject(object);
+    MemoryManager::Instance()->refObject(object);
 }
 
 inline ObjectHandle::ObjectHandle(long object, MemoryManager* manager) : 
-  m_handle(object),
-  m_manager(manager) 
+  m_handle(object)
 {
-    m_manager->refObject(object);
+    MemoryManager::Instance()->refObject(object);
 }
 
 inline ObjectHandle::~ObjectHandle() 
 {
-    m_manager->unrefObject(handle());
+    MemoryManager::Instance()->unrefObject(handle());
 }
 
 inline ObjectHandle& ObjectHandle::operator=(long o)
 {
-    if(m_handle && m_manager)
-        m_manager->unrefObject(m_handle);
+    if(m_handle)
+        MemoryManager::Instance()->unrefObject(m_handle);
     m_handle = o;
-    m_manager->refObject(o);
+    MemoryManager::Instance()->refObject(o);
 
     return *this;
 }
 
 inline objectStruct* ObjectHandle::operator->() const
 {
-  return &m_manager->objectFromID(m_handle);
+  return &MemoryManager::Instance()->objectFromID(m_handle);
 }
 
 inline ObjectHandle::operator objectStruct&() const
 {
-    return m_manager->objectFromID(m_handle);
+    return MemoryManager::Instance()->objectFromID(m_handle);
 }
 
 inline ObjectHandle::operator long() const
