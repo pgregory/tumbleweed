@@ -4,6 +4,7 @@
 
     initial image maker
 */
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,31 +23,29 @@ int initial = 1;    /* making initial image */
 
 int main(int argc, char** argv) 
 {   
-  char methbuf[MAX_PATH];
-    int i;
+	int i;
 
-    makeInitialImage();
+	makeInitialImage();
 
-    initCommonSymbols();
-  initFFISymbols();
+	initCommonSymbols();
+	initFFISymbols();
 
-    for (i = 1; i < argc; i++) {
-        //fprintf(stderr,"%s:\n", argv[i]);
-        ignore sprintf(methbuf, 
-            "x <120 1 '%s' 'r'>. <123 1>. <121 1>", 
-                argv[i]);
-        goDoIt(methbuf);
+	for (i = 1; i < argc; i++) {
+		std::stringstream methbuf;
+		//fprintf(stderr,"%s:\n", argv[i]);
+		methbuf << "x <120 1 '" << argv[i] << "' 'r'>. <123 1>. <121 1>";
+		goDoIt(methbuf.str().c_str());
 
-        }
+	}
 
-    /* when we are all done looking at the arguments, do initialization */
-    fprintf(stderr,"initialization\n");
-    /*debugging = true;*/
-    goDoIt("x nil initialize\n");
-    fprintf(stderr,"finished\n");
+	/* when we are all done looking at the arguments, do initialization */
+	fprintf(stderr,"initialization\n");
+	/*debugging = true;*/
+	goDoIt("x nil initialize\n");
+	fprintf(stderr,"finished\n");
 
-    /* exit and return - belt and suspenders, but it keeps lint happy */
-    exit(0); return 0;
+	/* exit and return - belt and suspenders, but it keeps lint happy */
+	exit(0); return 0;
 }
 
 void goDoIt(const char * text)

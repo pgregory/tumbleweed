@@ -67,6 +67,8 @@ set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
 
 if(WIN32)
   add_definitions(-DSO_EXT="dll")
+else(WIN32)
+  add_definitions(-DSO_EXT="so")
 endif(WIN32)
 
 function(prefix_sources prefix sources)
@@ -85,9 +87,7 @@ set_target_properties(libtw PROPERTIES OUTPUT_NAME tw)
 
 set(LIBS libtw ${LIBS})
 
-if(WIN32)
-  list(APPEND LIBS "dl")
-endif(WIN32)
+list(APPEND LIBS "dl")
 
 add_executable(initial ${init_srcs})
 add_custom_command(
@@ -103,7 +103,6 @@ add_custom_command(
 
 add_executable(tw ${tw_srcs} systemImage serverSystemImage)
 
-message(error ${LIBS})
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})
 

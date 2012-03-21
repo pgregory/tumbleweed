@@ -347,14 +347,14 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 object ffiPrimitive(int number, object* arguments)
 {   
   ObjectHandle returnedObject = nilobj;
-  char libName[MAX_PATH];
+  std::stringstream libName;
 
   switch(number - 180) {
     case 0: /* dlopen */
       {
         char* p = objectRef(arguments[0]).charPtr();
-        sprintf(libName, "%s.%s", p, SO_EXT);
-        FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
+	libName << p << "." << SO_EXT;
+        FFI_LibraryHandle handle = dlopen(libName.str().c_str(), RTLD_LAZY);
         if(NULL != handle)
           returnedObject = MemoryManager::Instance()->newCPointer(handle);
         else 
