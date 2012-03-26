@@ -140,7 +140,12 @@ Methods TestCase 'execution'
         run
             self setUp.
             self performTest.
+            "Should really do valueNowOrOnUnwindDo: here"
             self tearDown
+|
+        run: aTestResult
+            self setUp.
+            [ self performTest ] on: Exception do: [:ex | aTestResult error: 'Test error' in: self]
 |
         performTest
             | args |
@@ -183,6 +188,9 @@ Methods TestSuite 'run'
             result stop.
             ^ result
 |
+        run: aTestResult
+            testCases do: [:each | each run: aTestResult]
+|
         defaultTestResult
             ^ self defaultTestResultClass test: self
 |
@@ -197,9 +205,9 @@ Methods MetaTestResult 'creation'
 
 Methods TestResult 'creation'
         setTest: aTest
-        testName <- aTest name.
-        failures <- List new.
-        errors <- List new
+          testName <- aTest name.
+          failures <- List new.
+          errors <- List new
 ]
 
 Methods TestResult 'run'
@@ -216,7 +224,7 @@ Methods TestResult 'run'
 Methods TestResult 'errors'
         makeRecord: aString in: aTestCase
             | record |
-            record <- Array new: 1.
+            record <- Array new: 2.
             record at: 1 put: aTestCase.
             record at: 2 put: aString.
             ^ record
@@ -238,3 +246,11 @@ Methods TestTestCase 'testing'
             self should: [anumber + 3 = 10]
 ]
 
+
+Methods MetaTestTestCase 'all'
+        testSuite1
+            | suite |
+            suite <- TestSuite named: 'TestTestCase'.
+            suite addTestCase: (TestTestCase selector: #testAdd).
+            ^ suite
+]
