@@ -151,7 +151,7 @@ Methods TestCase 'execution'
                 ] ifFalse: [ false ]
 |
         should: aBlock
-            aBlock value ifFalse: ['error in test case' print]
+            aBlock value ifFalse: [Exception signal]
 ]
 
 Methods MetaTestSuite 'creation'

@@ -63,7 +63,7 @@ Methods Process 'all'
                       (r to: link-1) do: 
                         [:x | s <- s, ' ', 
                             (stack at: x) class asString].
-                      (s, ') [', c, ']') printNoReturn.
+                      (s, ') [', c, ' ', link, ']') printNoReturn.
                       c notNil
                         ifTrue: [
                             s <- ' exceptions('.

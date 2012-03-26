@@ -44,13 +44,13 @@ set(common_image_srcs
   bootstrap/mag.st
   bootstrap/mult.st
   bootstrap/queen.st
-  bootstrap/test.st
   bootstrap/iup.st
   bootstrap/browser.st
   bootstrap/workspace.st
   bootstrap/module.st
   bootstrap/httprequest.st
   bootstrap/exception.st
+  bootstrap/test.st
 )
 
 set(image_srcs ${common_image_srcs}
@@ -102,7 +102,7 @@ add_custom_command(
 #  DEPENDS initial ${server_image_srcs}
 #)
 
-add_executable(tw ${tw_srcs} systemImage serverSystemImage)
+add_executable(tw ${tw_srcs} systemImage)
 
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})
@@ -110,7 +110,7 @@ target_link_libraries(tw ${LIBS})
 
 install(TARGETS tw RUNTIME DESTINATION .)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/serverSystemImage DESTINATION .)
+#install(FILES ${CMAKE_CURRENT_BINARY_DIR}/serverSystemImage DESTINATION .)
 
 # Testing
 if(TW_BUILD_TESTS)

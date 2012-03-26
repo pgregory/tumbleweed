@@ -672,7 +672,8 @@ void body()
 void block()
 {   
     int saveTemporary, argumentCount, fixLocation;
-    object tempsym, newBlk;
+    object tempsym; 
+    ObjectHandle newBlk;
     enum blockstatus savebstat;
 
     saveTemporary = temporaryTop;
@@ -701,8 +702,8 @@ void block()
         ignore nextToken();
         }
     newBlk = MemoryManager::Instance()->newBlock();
-    objectRef(newBlk).basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
-    objectRef(newBlk).basicAtPut(argumentLocationInBlock, 
+    newBlk->basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
+    newBlk->basicAtPut(argumentLocationInBlock, 
         MemoryManager::Instance()->newInteger(saveTemporary + 1));
     genInstruction(PushLiteral, genLiteral(newBlk));
     genInstruction(PushConstant, contextConst);
@@ -712,7 +713,7 @@ void block()
     fixLocation = codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    objectRef(newBlk).basicAtPut(bytecountPositionInBlock, MemoryManager::Instance()->newInteger(codeTop+1));
+    newBlk->basicAtPut(bytecountPositionInBlock, MemoryManager::Instance()->newInteger(codeTop+1));
     blockstat = InBlock;
     body();
     if ((token == closing) && streq(tokenString, "]"))
