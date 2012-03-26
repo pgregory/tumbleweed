@@ -120,6 +120,7 @@ static int unaryPrims(int number, object firstarg)
       fprintf(stderr,"primitive 14 %d\n", static_cast<int>(firstarg));
       break;
 
+
     case 8:     /* change return point - block return */
       /* first get previous link pointer */
       i = objectRef(processStack->basicAt(linkPointer)).intValue();
@@ -571,6 +572,27 @@ static int cPointerUnary(int number, void* firstarg)
   return(returnedObject);
 }
 
+object exceptionPrimitive(int number, object* arguments)
+{
+  ObjectHandle returnedObject;
+
+  switch(number)
+  {
+    case 1:     // 201 on:do:
+      returnedObject = MemoryManager::Instance()->newStString("on:do:");
+      break;
+
+    case 2:     // signal
+      fprintf(stderr, "signal from: %s\n", objectRef(objectRef(objectRef(arguments[0])._class).basicAt(nameInClass)).charPtr());
+      break;
+
+    default:
+      sysError("unknown primitive", "exceptionPrimitive");
+      break;
+  }
+  return returnedObject;
+}
+
 
 /* primitive -
    the main driver for the primitive handler
@@ -637,6 +659,10 @@ object primitive(register int primitiveNumber, object* arguments)
       returnedObject = ffiPrimitive(primitiveNumber, arguments);
       break;
 
+    case 20:
+      returnedObject = exceptionPrimitive(primitiveNumber-200, arguments);
+      break;
+
     default:
       sysError("unknown primitive number","doPrimitive");
       break;
@@ -644,3 +670,4 @@ object primitive(register int primitiveNumber, object* arguments)
 
   return (returnedObject);
 }
+

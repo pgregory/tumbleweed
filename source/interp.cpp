@@ -163,7 +163,7 @@ readLinkageBlock:
     cntx = psb;
     arg = cntx + (returnPoint-1);
     method      = processStackAt(linkPointer+3);
-    temps = cntx + linkPointer + 4;
+    temps = cntx + linkPointer + 5;
   }
   else {    /* read from context object */
     cntx = contextObject->sysMemPtr();
@@ -230,7 +230,7 @@ readMethodInfo:
                 returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
                 ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
                       linkPointer - returnPoint));
-                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 5,
+                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 6,
                       methodTempSize(method)));
                 contextObject = MemoryManager::Instance()->newContext(linkPointer, method,
                     args,
@@ -347,7 +347,7 @@ doFindMessage:
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
-        i = 6 + methodTempSize(method) + methodStackSize(method);
+        i = 7 + methodTempSize(method) + methodStackSize(method);
         j = processStackTop();
         if ((j + i) > processStack->size) 
         {
@@ -374,6 +374,7 @@ doFindMessage:
         /* position 4 : bytecode counter */
         ipush(MemoryManager::Instance()->newInteger(byteOffset));
         /* then make space for temporaries */
+        ipush(MemoryManager::Instance()->newInteger(0));
         temps = pst+1;
         pst += methodTempSize(method);
         /* break if we are too big and probably looping */

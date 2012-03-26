@@ -50,6 +50,7 @@ set(common_image_srcs
   bootstrap/workspace.st
   bootstrap/module.st
   bootstrap/httprequest.st
+  bootstrap/exception.st
 )
 
 set(image_srcs ${common_image_srcs}
@@ -95,11 +96,11 @@ add_custom_command(
   COMMAND initial ${image_srcs}
   DEPENDS initial ${image_srcs}
 )
-add_custom_command(
-  OUTPUT serverSystemImage
-  COMMAND initial ${server_image_srcs}
-  DEPENDS initial ${server_image_srcs}
-)
+#add_custom_command(
+#  OUTPUT serverSystemImage
+#  COMMAND initial ${server_image_srcs}
+#  DEPENDS initial ${server_image_srcs}
+#)
 
 add_executable(tw ${tw_srcs} systemImage serverSystemImage)
 

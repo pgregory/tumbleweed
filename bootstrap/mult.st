@@ -13,7 +13,7 @@ Class Semaphore Object count processList
 Methods Block 'forks'
     newProcess 
         " create a new process to execute block "
-        ^ Process new; context: context ; startAt: bytePointer.
+        ^ Process new; context: context; startAt: bytePointer.
 |
     newProcessWith: args
         (self checkArgumentCount: args size)
@@ -47,7 +47,7 @@ Methods Process 'all'
         " kill current process "
         scheduler removeProcess: self. scheduler yield.
 |
-    trace       | link m r s |
+    trace       | link m c r s |
         " first yield scheduler, forceing store of linkPointer"
         scheduler yield.
         link <- linkPointer.
@@ -56,13 +56,44 @@ Methods Process 'all'
         [ link notNil ] whileTrue:
             [ m <- stack at: link+3. 
               m notNil 
-                ifTrue: [ s <- m signature, ' ('.
+                ifTrue: [ 
+                      c <- stack at: link+1.
+                      s <- m signature, ' ('.
                       r <- stack at: link+2.
                       (r to: link-1) do: 
                         [:x | s <- s, ' ', 
                             (stack at: x) class asString].
-                      (s, ')') print ].
+                      (s, ') [', c, ']') printNoReturn.
+                      c notNil
+                        ifTrue: [
+                            s <- ' exceptions('.
+                            s <- s, c handledException class asString.
+                            (s, ')') print
+                        ] ifFalse: [
+                            ' no exceptions' print
+                        ]
+                ].
               link <- stack at: link ]
+|
+    exceptionHandlerFor: anException 
+        | link m c r s |
+        " first yield scheduler, forceing store of linkPointer"
+        scheduler yield.
+        link <- linkPointer.
+        link <- stack at: link+1.
+        " then trace back chain "
+        [ link notNil ] whileTrue:
+            [ c <- stack at: link+1.
+              c notNil
+                ifTrue: [
+                    (c handledException isKindOf: anException)
+                        ifTrue: [
+                            ^ c
+                        ]
+                ].
+              link <- stack at: link 
+            ].
+        ^ nil
 ]
 Methods Scheduler 'all'
     new
