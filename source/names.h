@@ -26,7 +26,7 @@
 # define methodStackSize(x) objectRef(objectRef(x).basicAt(stackSizeInMethod)).intValue()
 # define methodTempSize(x) objectRef(objectRef(x).basicAt(temporarySizeInMethod)).intValue()
 
-# define contextSize 6
+# define contextSize 8
 # define linkPtrInContext 1
 # define methodInContext 2
 # define argumentsInContext 3
