@@ -146,9 +146,8 @@ Methods TestCase 'execution'
 |
         run: aTestResult
             self setUp.
-            [ 
-                [ self performTest ] on: FailedCheckSignal do: [:ex | aTestResult failure: (ex message) in: self]
-            ] on: Exception do: [:ex | aTestResult error: 'Error' in: self]
+            [ self performTest ] on: FailedCheckSignal do: [:ex | aTestResult failure: (ex message) in: self].
+            self tearDown
 |
         performTest
             | args |
@@ -196,7 +195,7 @@ Methods TestSuite 'run'
             | result |
             result <- self defaultTestResult.
             result start.
-            self run: result.
+            [ self run: result ] on: Exception do: [ :ex | result error: 'Error' in: self ].
             result stop.
             ^ result
 |
@@ -265,6 +264,9 @@ Methods TestTestCase 'testing'
 |
         testFail
             self should: [anumber + 3 = 10] or: '5+3 should equal 10!'
+|
+        testError
+            Exception signal
 ]
 
 
@@ -274,5 +276,6 @@ Methods MetaTestTestCase 'all'
             suite <- TestSuite named: 'TestTestCase'.
             suite addTestCase: (TestTestCase selector: #testAdd).
             suite addTestCase: (TestTestCase selector: #testFail).
+            suite addTestCase: (TestTestCase selector: #testError).
             ^ suite
 ]
