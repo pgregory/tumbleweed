@@ -1,4 +1,4 @@
-Class Exception Object
+Class Exception Object message
 
 Methods MetaException 'all'
     signal
@@ -8,5 +8,12 @@ Methods MetaException 'all'
             ifTrue: [
                 context handlerBlock value: self
             ]
+|
+    signal: aString
+        message <- aString.
+        self signal
+|
+    message
+        ^ message
 ]
 

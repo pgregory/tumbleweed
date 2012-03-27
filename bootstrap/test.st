@@ -108,10 +108,11 @@ Methods Test 'all'
 * New test framework based on the original Kent Beck paper
 *
 
-RawClass MetaTestCase Class MetaObject FailedCheckSignal 
+RawClass MetaTestCase Class MetaObject 
 Class TestCase Object selector
 Class TestSuite Object name testCases
 Class TestResult Object startTime stopTime Time testName failures errors
+Class FailedCheckSignal Exception
 
 Methods MetaTestCase 'creation'
             selector: aSymbol
@@ -145,7 +146,9 @@ Methods TestCase 'execution'
 |
         run: aTestResult
             self setUp.
-            [ self performTest ] on: Exception do: [:ex | aTestResult error: 'Test error' in: self]
+            [ 
+                [ self performTest ] on: FailedCheckSignal do: [:ex | aTestResult failure: (ex message) in: self]
+            ] on: Exception do: [:ex | aTestResult error: 'Error' in: self]
 |
         performTest
             | args |
@@ -156,7 +159,16 @@ Methods TestCase 'execution'
                 ] ifFalse: [ false ]
 |
         should: aBlock
-            aBlock value ifFalse: [Exception signal]
+            self should: aBlock or: 'No message supplied'
+|
+        should: aBlock or: aString
+            aBlock value ifFalse: [FailedCheckSignal signal: aString]
+|
+        shouldnt: aBlock
+            self shouldnt: aBlock or: 'No message supplied'
+|
+        shouldnt: aBlock or: aString
+            aBlock value ifTrue: [FailedCheckSignal signal: aString]
 ]
 
 Methods MetaTestSuite 'creation'
@@ -234,6 +246,12 @@ Methods TestResult 'errors'
 |
         failure: aString in: aTestCase
             failures add: (self makeRecord: aString in: aTestCase)
+|
+        errors
+            ^ errors
+|
+        failures
+            ^ failures
 ]
 
 Class TestTestCase TestCase anumber
@@ -243,7 +261,10 @@ Methods TestTestCase 'testing'
             anumber <- 5.
 |
         testAdd
-            self should: [anumber + 3 = 10]
+            self should: [anumber + 5 = 10] or: '5+5 should equal 10!'
+|
+        testFail
+            self should: [anumber + 3 = 10] or: '5+3 should equal 10!'
 ]
 
 
@@ -252,5 +273,6 @@ Methods MetaTestTestCase 'all'
             | suite |
             suite <- TestSuite named: 'TestTestCase'.
             suite addTestCase: (TestTestCase selector: #testAdd).
+            suite addTestCase: (TestTestCase selector: #testFail).
             ^ suite
 ]
