@@ -36,21 +36,21 @@ static char textBuffer[TextBufferSize];
 */
 static object findClass(const char* name)
 {   
-    object newobj;
+    ObjectHandle newobj;
 
     newobj = globalSymbol(name);
     if (newobj == nilobj)
         newobj = MemoryManager::Instance()->newClass(name);
-    if (objectRef(newobj).basicAt(sizeInClass) == nilobj) 
+    if (newobj->basicAt(sizeInClass) == nilobj) 
     {
-        objectRef(newobj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
+        newobj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
     }
     return newobj;
 }
 
 static object findClassWithMeta(const char* name, object metaObj)
 {   
-    object newObj, nameObj, methTable;
+    ObjectHandle newObj, nameObj, methTable;
     int size;
 
     newObj = globalSymbol(name);
@@ -58,14 +58,14 @@ static object findClassWithMeta(const char* name, object metaObj)
     {
         size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
         newObj = MemoryManager::Instance()->allocObject(size);
-        objectRef(newObj)._class = metaObj;
+        newObj->_class = metaObj;
 
         /* now make name */
         nameObj = MemoryManager::Instance()->newSymbol(name);
-        objectRef(newObj).basicAtPut(nameInClass, nameObj);
+        newObj->basicAtPut(nameInClass, nameObj);
         methTable = MemoryManager::Instance()->newDictionary(39);
-        objectRef(newObj).basicAtPut(methodsInClass, methTable);
-        objectRef(newObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+        newObj->basicAtPut(methodsInClass, methTable);
+        newObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -79,12 +79,12 @@ static object findClassWithMeta(const char* name, object metaObj)
 
 static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
-    object classObj, superObj, metaObj;
+    ObjectHandle classObj, superObj, metaObj;
     int i, size, instanceTop;
 
     metaObj = findClass(metaclass);
     classObj = findClassWithMeta(_class, metaObj);
-    objectRef(classObj)._class = metaObj;
+    classObj->_class = metaObj;
 
     //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
 
@@ -93,12 +93,12 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
     if(NULL != superclass)
     {
         superObj = findClass(superclass);
-        objectRef(classObj).basicAtPut(superClassInClass, superObj);
-        size = objectRef(objectRef(superObj).basicAt(sizeInClass)).intValue();
+        classObj->basicAtPut(superClassInClass, superObj);
+        size = objectRef(superObj->basicAt(sizeInClass)).intValue();
     }
 
     // Set the size up to now.
-    objectRef(classObj).basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
     return classObj;
 }
