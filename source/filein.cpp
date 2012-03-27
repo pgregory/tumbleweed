@@ -34,7 +34,7 @@ static char textBuffer[TextBufferSize];
     in addition, it makes sure it has a size, by setting
     the size to zero if it is nil.
 */
-static object findClass(const char* name)
+static ObjectHandle findClass(const char* name)
 {   
     ObjectHandle newobj;
 
@@ -48,7 +48,7 @@ static object findClass(const char* name)
     return newobj;
 }
 
-static object findClassWithMeta(const char* name, object metaObj)
+static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
 {   
     ObjectHandle newObj, nameObj, methTable;
     int size;
@@ -56,7 +56,7 @@ static object findClassWithMeta(const char* name, object metaObj)
     newObj = globalSymbol(name);
     if (newObj == nilobj)
     {
-        size = objectRef(objectRef(metaObj).basicAt(sizeInClass)).intValue();
+        size = objectRef(metaObj->basicAt(sizeInClass)).intValue();
         newObj = MemoryManager::Instance()->allocObject(size);
         newObj->_class = metaObj;
 
@@ -77,7 +77,7 @@ static object findClassWithMeta(const char* name, object metaObj)
  * Create raw class
  */
 
-static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
+static ObjectHandle createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
     ObjectHandle classObj, superObj, metaObj;
     int i, size, instanceTop;
@@ -156,8 +156,6 @@ static void readRawClassDeclaration()
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
-
-    object methodsClass = objectRef(classObj->basicAt(methodsInClass))._class;
 }
 
 /*

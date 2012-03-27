@@ -72,7 +72,7 @@ void assignment(char* name);
 void setInstanceVariables(object aClass)
 {   
     int i, limit;
-    object vars;
+    ObjectHandle vars;
 
     if (aClass == nilobj)
         instanceTop = 0;
@@ -446,7 +446,7 @@ boolean unaryContinuation(boolean superReceiver)
 boolean binaryContinuation(boolean superReceiver)
 {   
     boolean superTerm;
-    object messagesym;
+    ObjectHandle messagesym;
 
     superReceiver = unaryContinuation(superReceiver);
     while (parseok && (token == binary)) {
@@ -494,7 +494,7 @@ boolean keyContinuation(boolean superReceiver)
 {   
     int i, j, argumentCount;
     boolean sent, superTerm;
-    object messagesym;
+    ObjectHandle messagesym;
     char pattern[80];
 
     superReceiver = binaryContinuation(superReceiver);
@@ -672,7 +672,7 @@ void body()
 void block()
 {   
     int saveTemporary, argumentCount, fixLocation;
-    object tempsym; 
+    ObjectHandle tempsym; 
     ObjectHandle newBlk;
     enum blockstatus savebstat;
 
@@ -728,7 +728,7 @@ void block()
 
 void temporaries()
 {   
-    object tempsym;
+    ObjectHandle tempsym;
 
     temporaryTop = 0;
     if ((token == binary) && streq(tokenString, "|")) {
@@ -753,7 +753,7 @@ void temporaries()
 
 void messagePattern()
 {   
-    object argsym;
+    ObjectHandle argsym;
 
     argumentTop = 0;
     ignore strcpy(selector, tokenString);
@@ -789,7 +789,7 @@ void messagePattern()
 boolean parse(object method, const char* text, boolean savetext)
 {   
     int i;
-    object bytecodes, theLiterals;
+    ObjectHandle bytecodes, theLiterals;
     byte *bp;
 
     lexinit(text);
