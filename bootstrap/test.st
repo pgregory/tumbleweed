@@ -108,15 +108,18 @@ Methods Test 'all'
 * New test framework based on the original Kent Beck paper
 *
 
-RawClass MetaTestCase Class MetaObject 
+RawClass MetaTestCase Class MetaObject failedCheckSignal
 Class TestCase Object selector
 Class TestSuite Object name testCases
 Class TestResult Object startTime stopTime Time testName failures errors
 Class FailedCheckSignal Exception
 
 Methods MetaTestCase 'creation'
-            selector: aSymbol
-            ^ self new setSelector: aSymbol
+        selector: aSymbol
+        ^ self new setSelector: aSymbol
+|
+        initialize
+          failedCheckSignal <- FailedCheckSignal new
 ]
 
 Methods TestCase 'all'
@@ -125,6 +128,9 @@ Methods TestCase 'all'
 | 
         selector
             ^ selector
+|
+        failedCheckSignal
+          ^ failedCheckSignal
 ]
 
 Methods TestCase 'fixture'
@@ -161,13 +167,13 @@ Methods TestCase 'execution'
             self should: aBlock or: 'No message supplied'
 |
         should: aBlock or: aString
-            aBlock value ifFalse: [FailedCheckSignal signal: aString]
+            aBlock value ifFalse: [self failedCheckSignal signalWith: aString]
 |
         shouldnt: aBlock
             self shouldnt: aBlock or: 'No message supplied'
 |
         shouldnt: aBlock or: aString
-            aBlock value ifTrue: [FailedCheckSignal signal: aString]
+            aBlock value ifTrue: [self failedCheckSignal signalWith: aString]
 ]
 
 Methods MetaTestSuite 'creation'
@@ -266,7 +272,7 @@ Methods TestTestCase 'testing'
             self should: [anumber + 3 = 10] or: '5+3 should equal 10!'
 |
         testError
-            Exception signal
+            Exception with: 'Error'; signal
 ]
 
 

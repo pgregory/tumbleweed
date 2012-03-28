@@ -1,6 +1,14 @@
 Class Exception Object message
 
 Methods MetaException 'all'
+    with: aString
+    | ex |
+    ex <- super new.
+    ex message: aString.
+    ^ ex
+]
+
+Methods Exception
     signal
     | context |
         context <- scheduler currentProcess exceptionHandlerFor: self.
@@ -9,9 +17,12 @@ Methods MetaException 'all'
                 context handlerBlock value: self
             ]
 |
-    signal: aString
+    signalWith: aString
         message <- aString.
         self signal
+|
+    message: aString
+        message <- aString
 |
     message
         ^ message

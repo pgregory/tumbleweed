@@ -86,7 +86,7 @@ Methods Process 'all'
             [ c <- stack at: link+1.
               c notNil
                 ifTrue: [
-                    (anException isKindOf: c handledException class)
+                    (anException isKindOf: c handledException)
                         ifTrue: [
                             ^ c
                         ]
