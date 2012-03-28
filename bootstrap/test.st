@@ -112,6 +112,7 @@ RawClass MetaTestCase Class MetaObject failedCheckSignal
 Class TestCase Object selector
 Class TestSuite Object name testCases
 Class TestResult Object startTime stopTime Time testName failures errors
+Class TestRunner Object
 Class FailedCheckSignal Exception
 
 Methods MetaTestCase 'creation'
@@ -123,11 +124,11 @@ Methods MetaTestCase 'creation'
 |
         suite
             | sel suite |
-            suite <- TestSuite named: 'TestTestCase'.
+            suite <- TestSuite named: (self asString).
             self methods binaryDo: [ :selector :m |
               sel <- selector asString copyFrom: 1 to: 4.
               sel = 'test' ifTrue: [
-                suite addTestCase: (TestTestCase selector: selector)
+                suite addTestCase: (self selector: selector)
               ]
             ].
             ^ suite
@@ -197,14 +198,19 @@ Methods TestSuite 'creation'
             name <- aString.
             testCases <- List new 
 |
-        name
-            ^ name
-|
         addTestCase: aTestCase
             testCases add: aTestCase
 |
         addTestCases: aCollection
             aCollection do: [:each | self addTestCase: each]
+]
+
+Methods TestSuite 'accessing'
+    name
+        ^ name
+|
+    testCases
+        ^ testCases
 ]
 
 Methods TestSuite 'run'
@@ -270,24 +276,51 @@ Methods TestResult 'errors'
             ^ failures
 ]
 
-Class TestTestCase TestCase anumber
 
-Methods TestTestCase 'testing'
-        setUp
-            anumber <- 5.
-|
-        testAdd
-            | e |
-            e <- anumber + 5.
-            self should: [e = 10] description: 'expected 10, got ', e asString
-|
-        testFail
-            | e |
-            e <- anumber + 3.
-            self should: [e = 10] description: 'expected 10, got ', e asString
-|
-        testError
-            Exception with: 'Error'; signal
+Methods MetaTestRunner 'running'
+    all
+        | suite result |
+        TestCase subClasses do: [ :t |
+            suite <- t suite.
+            result <- suite run.
+            ('Test: ', (suite name)) printNoReturn.
+            (' : ', (suite testCases size), ' tests') printNoReturn.
+            (', ', (result errors size), ' errors') printNoReturn.
+            (', ', (result failures size), ' failures') print
+        ]
+]
+
+Class TestConversions TestCase 
+Class SetTest TestCase
+Class StringTest TestCase
+Class ArrayTest TestCase
+
+Methods TestConversions 'tests'
+    testConversions
+        " test a few conversion routines "
+        self should: [#abc == #abc asString asSymbol] description: '#abc == #abc asString asSymbol'.
+        self should: [$A == $A asInteger asCharacter] description: '$A == $A asInteger asCharacter'.
+        self should: [12 = 12 asDigit digitValue] description: '12 = 12 asDigit digitValue'.
+        self should: [237 = 237 asString asInteger] description: '237 = 237 asString asInteger'.
+        self should: [43 = 43 asFloat truncated] description: '43 = 43 asFloat truncated'.
+        self should: [$A == ($A asString at: 1)] description: '$A == ($A asString at: 1)'
+]
+
+Methods SetTest 'tests'
+    testEliminateDuplicates
+        " test the collection classes a little"
+        self should: [#(1 2 3 3 2 4 2) asSet = #(1 2 3 4) asSet] description: '#(1 2 3 3 2 4 2) asSet = #(1 2 3 4) asSet'
+]
+
+Methods ArrayTest 'tests'
+    testSort
+        self should: [#(1 5 3 2 4) sort asArray = #(1 2 3 4 5)] description: '#(1 5 3 2 4) sort asArray = #(1 2 3 4 5)'
+]
+
+Methods StringTest 'tests'
+    testComparing
+        self should: ['foo' < 'foo:'] description: 'foo < foo:'.
+        self should: ['foo' < 'fooBar'] description: 'foo < fooBar'
 ]
 
 *
