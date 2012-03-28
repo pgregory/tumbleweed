@@ -120,6 +120,17 @@ Methods MetaTestCase 'creation'
 |
         initialize
           failedCheckSignal <- FailedCheckSignal new
+|
+        suite
+            | sel suite |
+            suite <- TestSuite named: 'TestTestCase'.
+            self methods binaryDo: [ :selector :m |
+              sel <- selector asString copyFrom: 1 to: 4.
+              sel = 'test' ifTrue: [
+                suite addTestCase: (TestTestCase selector: selector)
+              ]
+            ].
+            ^ suite
 ]
 
 Methods TestCase 'all'
@@ -166,13 +177,13 @@ Methods TestCase 'execution'
         should: aBlock
             self should: aBlock or: 'No message supplied'
 |
-        should: aBlock or: aString
+        should: aBlock description: aString
             aBlock value ifFalse: [self failedCheckSignal signalWith: aString]
 |
         shouldnt: aBlock
             self shouldnt: aBlock or: 'No message supplied'
 |
-        shouldnt: aBlock or: aString
+        shouldnt: aBlock description: aString
             aBlock value ifTrue: [self failedCheckSignal signalWith: aString]
 ]
 
@@ -266,24 +277,21 @@ Methods TestTestCase 'testing'
             anumber <- 5.
 |
         testAdd
-            self should: [anumber + 5 = 10] or: '5+5 should equal 10!'
+            | e |
+            e <- anumber + 5.
+            self should: [e = 10] description: 'expected 10, got ', e asString
 |
         testFail
-            self should: [anumber + 3 = 10] or: '5+3 should equal 10!'
+            | e |
+            e <- anumber + 3.
+            self should: [e = 10] description: 'expected 10, got ', e asString
 |
         testError
             Exception with: 'Error'; signal
 ]
 
-
-Methods MetaTestTestCase 'all'
-        testSuite1
-            | suite |
-            suite <- TestSuite named: 'TestTestCase'.
-            suite addTestCase: (TestTestCase selector: #testAdd).
-            suite addTestCase: (TestTestCase selector: #testFail).
-            suite addTestCase: (TestTestCase selector: #testError).
-            ^ suite
-]
-
+*
+* Initialize TestCase to make sure the failedCheckSignal is built.
+*
 ! TestCase initialize
+
