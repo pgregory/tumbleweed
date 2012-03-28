@@ -765,7 +765,10 @@ void objectStruct::byteAtPut(int i, int x)
 object objectStruct::basicAt(int i)
 {
     if(( i <= 0) || (i > size))
+    {
+        fprintf(stderr, "Indexing: %d\n", i);
         sysError("index out of range", "basicAt");
+    }
     else
         return (sysMemPtr()[i-1]);
 

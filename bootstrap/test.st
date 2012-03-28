@@ -285,3 +285,5 @@ Methods MetaTestTestCase 'all'
             suite addTestCase: (TestTestCase selector: #testError).
             ^ suite
 ]
+
+! TestCase initialize

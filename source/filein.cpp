@@ -5,6 +5,7 @@
     routines used in reading in textual descriptions of classes
 */
 
+#include <sstream>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include "memory.h"
 #include "names.h"
 #include "lex.h"
+#include "interp.h"
 
 # define MethodTableSize 39
 
@@ -293,6 +295,56 @@ static void readMethods(FILE* fd, boolean printit)
 
 }
 
+extern ObjectHandle processStack;
+extern int linkPointer;
+
+void runCode(const char * text)
+{   
+    ObjectHandle stack, method, firstProcess;
+
+    method = MemoryManager::Instance()->newMethod();
+    setInstanceVariables(nilobj);
+    bool result = parse(method, text, false);
+
+    firstProcess = MemoryManager::Instance()->allocObject(processSize);
+    stack = MemoryManager::Instance()->allocObject(50);
+
+    /* make a process */
+    firstProcess->basicAtPut(stackInProcess, stack);
+    firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
+    firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+
+    /* put argument on stack */
+    stack->basicAtPut(argumentInStack, nilobj);   /* argument */
+    /* now make a linkage area in stack */
+    stack->basicAtPut(prevlinkInStack, nilobj);   /* previous link */
+    stack->basicAtPut(contextInStack, nilobj);   /* context object (nil = stack) */
+    stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));    /* return point */
+    stack->basicAtPut(methodInStack, method);   /* method */
+    stack->basicAtPut(bytepointerInStack, MemoryManager::Instance()->newInteger(1));    /* byte offset */
+
+    /* now go execute it */
+    ObjectHandle saveProcessStack = processStack;
+    int saveLinkPointer = linkPointer;
+    while (execute(firstProcess, 15000)) fprintf(stderr,"..");
+    // Re-read the stack object, in case it had to grow during execution and 
+    // was replaced.
+    //stack = firstProcess->basicAt(stackInProcess);
+    //object ro = stack->basicAt(1);
+    processStack = saveProcessStack;
+    linkPointer = saveLinkPointer;
+}
+
+//! Read and process any initialization code lines, prefixed with '!'.
+static void runInitialization(FILE* fd, boolean printit)
+{   
+  std::stringstream strCode;
+  // \todo: Find out why we need the extra 'x'!
+  strCode << "x " << &textBuffer[2];
+  runCode(strCode.str().c_str());
+}
+
+
 /*
     fileIn reads in a module definition
 */
@@ -311,6 +363,8 @@ void fileIn(FILE* fd, boolean printit)
             readClassDeclaration();
         else if ((token == nameconst) && streq(tokenString,"Methods"))
             readMethods(fd, printit);
+        else if((token == binary) && streq(tokenString, "!"))
+            runInitialization(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);
         MemoryManager::Instance()->garbageCollect();
