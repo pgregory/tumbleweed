@@ -51,6 +51,8 @@ set(common_image_srcs
   bootstrap/httprequest.st
   bootstrap/exception.st
   bootstrap/test.st
+
+  bootstrap/test_collect.st
 )
 
 set(image_srcs ${common_image_srcs}

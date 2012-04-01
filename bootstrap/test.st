@@ -291,9 +291,6 @@ Methods MetaTestRunner 'running'
 ]
 
 Class TestConversions TestCase 
-Class SetTest TestCase
-Class StringTest TestCase
-Class ArrayTest TestCase
 
 Methods TestConversions 'tests'
     testConversions
@@ -306,22 +303,6 @@ Methods TestConversions 'tests'
         self should: [$A == ($A asString at: 1)] description: '$A == ($A asString at: 1)'
 ]
 
-Methods SetTest 'tests'
-    testEliminateDuplicates
-        " test the collection classes a little"
-        self should: [#(1 2 3 3 2 4 2) asSet = #(1 2 3 4) asSet] description: '#(1 2 3 3 2 4 2) asSet = #(1 2 3 4) asSet'
-]
-
-Methods ArrayTest 'tests'
-    testSort
-        self should: [#(1 5 3 2 4) sort asArray = #(1 2 3 4 5)] description: '#(1 5 3 2 4) sort asArray = #(1 2 3 4 5)'
-]
-
-Methods StringTest 'tests'
-    testComparing
-        self should: ['foo' < 'foo:'] description: 'foo < foo:'.
-        self should: ['foo' < 'fooBar'] description: 'foo < fooBar'
-]
 
 *
 * Initialize TestCase to make sure the failedCheckSignal is built.
