@@ -584,9 +584,6 @@ Methods String 'all'
         ^ '''' , self, ''''
 |
     size
-        ^ super size
-|
-    stringLength
         ^ <81 self>
 |
     words: aBlock   | text index list |

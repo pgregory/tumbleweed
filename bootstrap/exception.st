@@ -1,4 +1,5 @@
 Class Exception Object message
+Class ExceptionHandler Object handledException handlerBlock
 
 Methods MetaException 'all'
     with: aString
@@ -11,10 +12,10 @@ Methods MetaException 'all'
 Methods Exception
     signal
     | context |
-        context <- scheduler currentProcess exceptionHandlerFor: self.
-        context notNil
+        handler <- scheduler currentProcess exceptionHandlerFor: self.
+        handler notNil
             ifTrue: [
-                context handlerBlock value: self
+                handler handlerBlock value: self
             ]
 |
     signalWith: aString
@@ -28,3 +29,25 @@ Methods Exception
         ^ message
 ]
 
+Methods MetaExceptionHandler 'creation'
+    for: anException with: aBlock
+    | handler |
+    handler <- super new.
+    handler handledException: anException.
+    handler handlerBlock: aBlock.
+    ^ handler
+]
+
+Methods ExceptionHandler 'all'
+    handledException
+        ^ handledException
+|
+    handledException: anException
+        handledException <- anException
+|
+    handlerBlock
+        ^ handlerBlock
+|
+    handlerBlock: aBlock
+        handlerBlock <- aBlock
+]

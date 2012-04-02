@@ -374,7 +374,7 @@ doFindMessage:
         /* position 4 : bytecode counter */
         ipush(MemoryManager::Instance()->newInteger(byteOffset));
         /* then make space for temporaries */
-        ipush(MemoryManager::Instance()->newInteger(0));
+        ipush(nilobj);
         temps = pst+1;
         pst += methodTempSize(method);
         /* break if we are too big and probably looping */

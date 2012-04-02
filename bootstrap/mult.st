@@ -47,27 +47,28 @@ Methods Process 'all'
         " kill current process "
         scheduler removeProcess: self. scheduler yield.
 |
-    trace       | link m c r s |
+    trace       | link m h r s |
         " first yield scheduler, forceing store of linkPointer"
         scheduler yield.
         link <- linkPointer.
         link <- stack at: link+1.
         " then trace back chain "
         [ link notNil ] whileTrue:
-            [ m <- stack at: link+3. 
+            [ 
+              m <- stack at: link+3. 
               m notNil 
                 ifTrue: [ 
-                      c <- stack at: link+1.
-                      s <- m signature, ' ('.
+                      h <- stack at: link+5.
+                      s <- '{', link, '}', m signature, ' ('.
                       r <- stack at: link+2.
                       (r to: link-1) do: 
                         [:x | s <- s, ' ', 
                             (stack at: x) class asString].
-                      (s, ') [', c, ' ', link, ']') printNoReturn.
-                      c notNil
+                      (s, ') [', h, ' ', link, ']') printNoReturn.
+                      h notNil
                         ifTrue: [
                             s <- ' exceptions('.
-                            s <- s, c handledException class asString.
+                            s <- s, h handledException class asString.
                             (s, ')') print
                         ] ifFalse: [
                             ' no exceptions' print
@@ -75,20 +76,32 @@ Methods Process 'all'
                 ].
               link <- stack at: link ]
 |
+    recordHandler: aBlock for: anException 
+        | link handler |
+        " first yield scheduler, forceing store of linkPointer"
+        scheduler yield.
+        link <- linkPointer.
+        link <- stack at: link+1.
+        "No point recording the handler in our current frame, as it'll disappear as
+         soon as we're done"
+        link <- stack at: link.
+        handler <- ExceptionHandler for: anException with: aBlock.
+        stack at: link+5 put: handler
+|
     exceptionHandlerFor: anException 
-        | link m c r s |
+        | link handler |
         " first yield scheduler, forceing store of linkPointer"
         scheduler yield.
         link <- linkPointer.
         link <- stack at: link+1.
         " then trace back chain "
         [ link notNil ] whileTrue:
-            [ c <- stack at: link+1.
-              c notNil
+            [ handler <- stack at: link+5.
+              handler notNil
                 ifTrue: [
-                    (anException isKindOf: c handledException)
+                    (anException isKindOf: handler handledException)
                         ifTrue: [
-                            ^ c
+                            ^ handler
                         ]
                 ].
               link <- stack at: link 

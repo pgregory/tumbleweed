@@ -10,7 +10,7 @@ Class Boolean Object
 Class    True Boolean
 Class    False Boolean
 Class Class Object name instanceSize methods superClass variables
-Class Context Object linkLocation method arguments temporaries handledException handlerBlock
+Class Context Object linkLocation method arguments temporaries
 Class Zebra Object
 Class Method Object text message bytecodes literals stackSize temporarySize class watch protocol
 Class Smalltalk Object
@@ -64,8 +64,7 @@ Methods Block 'initialization'
         [ self value not ] whileTrue: aBlock
 |
     on: anException do: aBlock
-        context handledException: anException.
-        context handlerBlock: aBlock.
+        scheduler currentProcess recordHandler: aBlock for: anException.
         ^ self valueAndResumeOnUnwind
 |
     valueAndResumeOnUnwind
@@ -225,19 +224,9 @@ Methods Context 'all'
         <18 self>
             ifFalse: [ ^ smalltalk error: 
                 'incorrect context for block return']
-|
-    handledException
-        ^ handledException
-|
-    handledException: anException
-        handledException <- anException
-|
-    handlerBlock
-        ^ handlerBlock
-|
-    handlerBlock: aBlock
-        handlerBlock <- aBlock
 ]
+
+
 Methods False 'all'
     ifTrue: trueBlock ifFalse: falseBlock
         ^ falseBlock value
