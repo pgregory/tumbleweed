@@ -43,16 +43,15 @@ Methods MetaSocket 'testing'
       ifTrue: [ 'Listening: ' print ]
       ifFalse: [ 'Could not bind to socket: ' print. ^ false ].
     sock listen.
-    'Accepting: ' print.
-    clientsock <- sock accept.
-    'Reading request: ' print.
     data <- ByteArray new: 255.
-    result <- clientsock read: data.
-    ('Read: ', data) print.
-    'Sending: ' print.
-    clientsock send: '<html><body><h1>Hello from Tumbleweed</h1></body></html>'.
-    'Shutting down client' print.
-    clientsock shutdown.
+    'Accepting: ' print.
+    [ true ] whileTrue: [
+      result <- sock accept.
+      clientsock <- Socket new: (result at: 1).
+      result <- clientsock read: data.
+      clientsock send: '<html><body><h1>Hello from Tumbleweed</h1></body></html>'.
+      clientsock shutdown
+    ].
     'Shutting down server' print.
     sock shutdown.
     'Done: ' print

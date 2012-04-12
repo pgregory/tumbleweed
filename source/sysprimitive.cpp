@@ -93,6 +93,18 @@ object sysPrimitive(int number, object* arguments)
       }
       break;
 
+    case 4:
+      {
+        returnedObject = MemoryManager::Instance()->newInteger(MemoryManager::Instance()->objectCount());
+      }
+      break;
+
+    case 5:
+      {
+        returnedObject = MemoryManager::Instance()->newStString(MemoryManager::Instance()->statsString().c_str());
+      }
+      break;
+
     default:
       sysError("unknown primitive","sysPrimitive");
   }
