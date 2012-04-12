@@ -5,6 +5,8 @@
 
 #include "env.h"
 
+#include "gtest/gtest_prod.h"
+
 class MemoryManager;
 struct objectStruct;
 /*! \brief Auto referencing object handle class.
@@ -554,7 +556,7 @@ class MemoryManager
 
         size_t growObjectStore(size_t amount);
 
-        friend class MemoryManagerTest;
+        FRIEND_TEST(MemoryManagerTest, AllocateFromFree);
 };
 
 extern MemoryManager* theMemoryManager;

@@ -80,5 +80,38 @@ TEST_F(MemoryManagerTest, GrowObjectTable)
   EXPECT_EQ(9, MemoryManager::Instance()->freeSlotsCount());
 }
 
+TEST_F(MemoryManagerTest, AllocateFromFree)
+{
+  {
+    ObjectHandle o1 = MemoryManager::Instance()->allocObject(1);
+    ObjectHandle o2 = MemoryManager::Instance()->allocObject(2);
+    ObjectHandle o3 = MemoryManager::Instance()->allocObject(3);
+    ObjectHandle o4 = MemoryManager::Instance()->allocObject(3);
+    ObjectHandle o5 = MemoryManager::Instance()->allocObject(3);
+    EXPECT_EQ(0, MemoryManager::Instance()->freeSlotsCount());
+    EXPECT_EQ(7, MemoryManager::Instance()->objectCount());
+  }
+
+  // As the object handles are scoped, they should free on the
+  // first allocation, allowing the manager to deliver an object
+  // from the free store.
+  ObjectHandle o1 = MemoryManager::Instance()->allocObject(2);
+  // After one allocation, the GC should result in 5 freed, then one 
+  // is reused, resulting in 4 free in the tracker.
+  EXPECT_EQ(1, MemoryManager::Instance()->objectFreeList.count(1));
+  EXPECT_EQ(0, MemoryManager::Instance()->objectFreeList.count(2));
+  EXPECT_EQ(3, MemoryManager::Instance()->objectFreeList.count(3));
+  ObjectHandle o2 = MemoryManager::Instance()->allocObject(2);
+  // After allocating the second, there should be 3 free, 4 objects,
+  // and the three free should all be of size 3.
+  EXPECT_EQ(3, MemoryManager::Instance()->freeSlotsCount());
+  EXPECT_EQ(4, MemoryManager::Instance()->objectCount());
+  EXPECT_EQ(7, MemoryManager::Instance()->storageSize());
+  EXPECT_EQ(0, MemoryManager::Instance()->objectFreeList.count(2));
+  EXPECT_EQ(1, MemoryManager::Instance()->objectFreeList.count(1));
+  EXPECT_EQ(2, MemoryManager::Instance()->objectFreeList.count(3));
+}
+
+
 
 

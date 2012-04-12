@@ -310,6 +310,9 @@ Methods Object 'all'
     = aValue
         ^ self == aValue
 |
+    ~= avalue
+        ^ self ~~ aValue
+|
     asString
         ^ self printString
 |
@@ -457,9 +460,9 @@ Methods UndefinedObject 'all'
 ]
 Methods Object 'errors'
     message: m notRecognizedWithArguments: a
-        ^ smalltalk error: 'not recognized ', (self class printString),
-            ' ', (m printString),
-      ' ', (a printString)
+        | msg |
+        msg <- 'Message ', (m printString), ' not recognized on ', (self class printString), ' with arguments [', (a printString), ']'.
+        Error with: msg; signal
 ]
 *
 Methods MetaCPointer 'creation'

@@ -1,5 +1,6 @@
 Class Exception Object message
 Class ExceptionHandler Object handledException handlerBlock
+Class Error Exception
 
 Methods MetaException 'all'
     with: aString
@@ -16,6 +17,9 @@ Methods Exception
         handler notNil
             ifTrue: [
                 handler handlerBlock value: self
+            ]
+            ifFalse: [
+                smalltalk error: 'Unhandled Exception "', message, '"'
             ]
 |
     signalWith: aString
@@ -50,4 +54,8 @@ Methods ExceptionHandler 'all'
 |
     handlerBlock: aBlock
         handlerBlock <- aBlock
+|
+    handles: anException
+        ^ anException isKindOf: handledException
 ]
+

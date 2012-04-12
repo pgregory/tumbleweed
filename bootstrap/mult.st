@@ -99,7 +99,7 @@ Methods Process 'all'
             [ handler <- stack at: link+5.
               handler notNil
                 ifTrue: [
-                    (anException isKindOf: handler handledException)
+                    (handler handles: anException)
                         ifTrue: [
                             ^ handler
                         ]

@@ -305,7 +305,7 @@ doFindMessage:
               argarray->basicAtPut(j+1, returnedObject);
             }
 //            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-            printf("Failed to find %s\n", messageToSend->charPtr());
+//            printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
             ipush(messageToSend);
             messageToSend = MemoryManager::Instance()->newSymbol("message:notRecognizedWithArguments:");

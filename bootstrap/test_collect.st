@@ -19,6 +19,15 @@ Methods StringTest 'requirements'
 |
     nonEmpty
         ^nonEmpty5ElementsSorted
+|
+    anIndex
+        ^2
+|
+    aValue
+        ^elementInNonEmpty
+|
+    anotherValue
+        ^ self nonEmpty at: 1
 ]
 
 Methods StringTest 'initialisation'
@@ -66,3 +75,18 @@ Methods StringTest 'test - equality'
         self should: [self nonEmpty = self nonEmpty] description: 'self nonEmpty = self nonEmpty'
 ]
 
+Methods StringTest 'test - accessing'
+    testAt
+        self should: [ (string at: 1) = $H ] description: 'string at: 1 = $H'
+]
+
+Methods StringTest 'test - at put'
+    testAtPut
+        self nonEmpty at: self anIndex put: self aValue.
+        self should: [ (self nonEmpty at: self anIndex) = self aValue ] description: 'read value after at:put:'
+|
+    testAtPutTwoValues
+        self nonEmpty at: self anIndex put: self aValue.
+        self nonEmpty at: self anIndex put: self anotherValue.
+        self should: [ (self nonEmpty at: self anIndex) = self anotherValue ] description: 'read value after multiple at:put:'
+]
