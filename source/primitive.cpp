@@ -39,7 +39,9 @@ extern int linkPointer;
 extern double frexp(), ldexp();
 extern object ioPrimitive(INT X OBJP);
 extern object sysPrimitive(INT X OBJP);
+#if defined TW_ENABLE_FFI
 extern object ffiPrimitive(INT X OBJP);
+#endif
 
 
 static object zeroaryPrims(int number)
@@ -67,7 +69,11 @@ static object zeroaryPrims(int number)
       break;
 
     case 4:     /* return time in seconds */
+#if !defined(WIN32)
       i = (short) time((long *) 0);
+#else
+      i = 0;
+#endif
       returnedObject = MemoryManager::Instance()->newInteger(i);
       break;
 
@@ -111,7 +117,7 @@ static int unaryPrims(int number, object firstarg)
       // This specialises the hash for integers, to ensure values are used, not objects,
       // but there are other cases where the value should be considered, like float.
       if(objectRef(firstarg)._class == globalSymbol("Integer"))
-        returnedObject = MemoryManager::Instance()->newInteger(objectRef(firstarg).intValue());
+        returnedObject = MemoryManager::Instance()->newInteger(getInteger(firstarg));
       else
         returnedObject = MemoryManager::Instance()->newInteger(firstarg);
       break;
@@ -123,9 +129,9 @@ static int unaryPrims(int number, object firstarg)
 
     case 8:     /* change return point - block return */
       /* first get previous link pointer */
-      i = objectRef(processStack->basicAt(linkPointer)).intValue();
+      i = getInteger(processStack->basicAt(linkPointer));
       /* then creating context pointer */
-      j = objectRef(objectRef(firstarg).basicAt(1)).intValue();
+      j = getInteger(objectRef(firstarg).basicAt(1));
       if (processStack->basicAt(j+1) != firstarg) 
       {
         returnedObject = falseobj;
@@ -210,17 +216,17 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 4:     /* string cat */
-      ignore strcpy(buffer, objectRef(firstarg).charPtr());
-      ignore strcat(buffer, objectRef(secondarg).charPtr());
+      strcpy(buffer, objectRef(firstarg).charPtr());
+      strcat(buffer, objectRef(secondarg).charPtr());
       returnedObject = MemoryManager::Instance()->newStString(buffer);
       break;
 
     case 5:     /* basicAt: */
-      returnedObject = objectRef(firstarg).basicAt(objectRef(secondarg).intValue());
+      returnedObject = objectRef(firstarg).basicAt(getInteger(secondarg));
       break;
 
     case 6:     /* byteAt: */
-      i = objectRef(firstarg).byteAt(objectRef(secondarg).intValue());
+      i = objectRef(firstarg).byteAt(getInteger(secondarg));
       if (i < 0) i += 256;
       returnedObject = MemoryManager::Instance()->newInteger(i);
       break;
@@ -232,7 +238,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 
     case 8:     /* block start */
       /* first get previous link */
-      i = objectRef(processStack->basicAt(linkPointer)).intValue();
+      i = getInteger(processStack->basicAt(linkPointer));
       /* change context and byte pointer */
       processStack->basicAtPut(i+1, firstarg);
       processStack->basicAtPut(i+4, secondarg);
@@ -265,18 +271,18 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   switch(number) 
   {
     case 1:         /* basicAt:Put: */
-      fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), objectRef(secondarg).intValue(), static_cast<int>(thirdarg));
-      objectRef(firstarg).basicAtPut(objectRef(secondarg).intValue(), thirdarg);
+      fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), getInteger(secondarg), static_cast<int>(thirdarg));
+      objectRef(firstarg).basicAtPut(getInteger(secondarg), thirdarg);
       break;
 
     case 2:         /* basicAt:Put: for bytes */
-      objectRef(firstarg).byteAtPut(objectRef(secondarg).intValue(), objectRef(thirdarg).intValue());
+      objectRef(firstarg).byteAtPut(getInteger(secondarg), getInteger(thirdarg));
       break;
 
     case 3:         /* string copyFrom:to: */
       bp = objectRef(firstarg).charPtr();
-      i = objectRef(secondarg).intValue();
-      j = objectRef(thirdarg).intValue();
+      i = getInteger(secondarg);
+      j = getInteger(thirdarg);
       tp = buffer;
       if (i <= strlen(bp))
         for ( ; (i <= j) && bp[i-1]; i++)
@@ -321,7 +327,7 @@ static int intUnary(int number, object firstarg)
       break;
 
     case 5:     /* set random number */
-      ignore srand((unsigned) firstarg);
+      srand((unsigned) firstarg);
       returnedObject = nilobj;
       break;
 
@@ -341,7 +347,7 @@ static int intUnary(int number, object firstarg)
 
 static object intBinary(register int number, register int firstarg, int secondarg)
 {   
-  boolean binresult;
+  bool binresult;
   long longresult;
   ObjectHandle returnedObject;
 
@@ -473,7 +479,7 @@ static int floatUnary(int number, double firstarg)
   switch(number) 
   {
     case 1:     /* floating value asString */
-      ignore sprintf(buffer,"%g", firstarg);
+      sprintf(buffer,"%g", firstarg);
       returnedObject = MemoryManager::Instance()->newStString(buffer);
       break;
 
@@ -501,7 +507,7 @@ static int floatUnary(int number, double firstarg)
       if (firstarg > 2e9)
         returnedObject = nilobj;
       else {
-        ignore modf(firstarg, &temp);
+        modf(firstarg, &temp);
         ltemp = (long) temp;
         if (longCanBeInt(ltemp))
           returnedObject = MemoryManager::Instance()->newInteger((int) temp);
@@ -521,7 +527,7 @@ static int floatUnary(int number, double firstarg)
 
 static object floatBinary(int number, double first, double second)
 {    
-  boolean binResult;
+  bool binResult;
   ObjectHandle returnedObject;
 
   switch(number) 
@@ -561,7 +567,7 @@ static int cPointerUnary(int number, void* firstarg)
   switch(number) 
   {
     case 1:     /* cPointer value asString */
-      //ignore sprintf(buffer,"0x%X", reinterpret_cast<unsigned int>(firstarg));
+      //sprintf(buffer,"0x%X", reinterpret_cast<unsigned int>(firstarg));
       returnedObject = MemoryManager::Instance()->newStString(buffer);
       break;
     default:
@@ -618,13 +624,13 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
 
     case 5:         /* integer unary operations */
-      returnedObject = intUnary(primitiveNumber-50, objectRef(arguments[0]).intValue());
+      returnedObject = intUnary(primitiveNumber-50, getInteger(arguments[0]));
       break;
 
     case 6: case 7:     /* integer binary operations */
       returnedObject = intBinary(primitiveNumber-60,
-          objectRef(arguments[0]).intValue(), 
-          objectRef(arguments[1]).intValue());
+          getInteger(arguments[0]), 
+          getInteger(arguments[1]));
       break;
 
     case 8:         /* string unary */
@@ -656,7 +662,11 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
 
     case 18:
+#if defined TW_ENABLE_FFI
       returnedObject = ffiPrimitive(primitiveNumber, arguments);
+#else
+      sysError("FFI not enabled on this platform", "");
+#endif
       break;
 
     case 20:

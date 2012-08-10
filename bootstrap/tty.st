@@ -57,11 +57,7 @@ Methods Class 'all'
 Methods Smalltalk 'all'
     getPrompt: aString
         | command |
-        Module require: 'linenoise'.
-        "^ <151 aString>"
-        command <- LineNoise getPrompt: aString.
-        LineNoise addHistory: command.
-        ^ command
+        ^ <151 aString>
 |
     inquire: aString    | response |
         response <- self getPrompt: aString.

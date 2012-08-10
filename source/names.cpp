@@ -31,7 +31,7 @@
 # include "memory.h"
 # include "names.h"
 
-noreturn nameTableInsert(object dict, int hash, object key, object value)
+void nameTableInsert(object dict, int hash, object key, object value)
 {   
     ObjectHandle table, link, nwLink, nextLink, tablentry;
 
@@ -131,7 +131,7 @@ object globalKey(const char *str)   /* return key associated with global symbol 
 {
     objBuffer = nilobj;
     charBuffer = str;
-    ignore hashEachElement(symbols, strHash(str), strTest);
+    hashEachElement(symbols, strHash(str), strTest);
     return objBuffer;
 }
 
@@ -154,7 +154,7 @@ const char *binStrs[] = {"+", "-", "<", ">", "<=", ">=", "=", "~=", "*",
 0};
 
 /* initialize common symbols used by the parser and interpreter */
-noreturn initCommonSymbols()
+void initCommonSymbols()
 {   int i;
 
     trueobj = globalSymbol("true");

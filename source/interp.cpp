@@ -20,7 +20,7 @@
 # include "interp.h"
 
 ObjectHandle trueobj, falseobj;
-boolean watching = 0;
+bool watching = 0;
 extern object primitive( INT X OBJP );
 
 /*
@@ -58,7 +58,7 @@ void flushCache(object messageToSend, object _class)
    given a message and a class to start looking in,
    find the method associated with the message
    */
-static boolean findMethod(object* methodClassLocation)
+static bool findMethod(object* methodClassLocation)
 {   
   ObjectHandle methodTable, methodClass;
 
@@ -127,7 +127,7 @@ static object growProcessStack(int top, int toadd)
   return newStack;
 }
 
-boolean execute(object aProcess, int maxsteps)
+bool execute(object aProcess, int maxsteps)
 {   
   object returnedObject;
   int returnPoint, timeSliceCounter;
@@ -146,9 +146,9 @@ boolean execute(object aProcess, int maxsteps)
   /* unpack the instance variables from the process */
   processStack    = objectRef(aProcess).basicAt(stackInProcess);
   psb = processStack->sysMemPtr();
-  j = objectRef(objectRef(aProcess).basicAt(stackTopInProcess)).intValue();
+  j = getInteger(objectRef(aProcess).basicAt(stackTopInProcess));
   pst = psb + (j-1);
-  linkPointer     = objectRef(objectRef(aProcess).basicAt(linkPtrInProcess)).intValue();
+  linkPointer     = getInteger(objectRef(aProcess).basicAt(linkPtrInProcess));
 
   /* set the process time-slice counter before entering loop */
   timeSliceCounter = maxsteps;
@@ -156,8 +156,8 @@ boolean execute(object aProcess, int maxsteps)
   /* retrieve current values from the linkage area */
 readLinkageBlock:
   contextObject  = processStackAt(linkPointer+1);
-  returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
-  byteOffset  = objectRef(processStackAt(linkPointer+4)).intValue();
+  returnPoint = getInteger(processStackAt(linkPointer+2));
+  byteOffset  = getInteger(processStackAt(linkPointer+4));
   if (contextObject == nilobj) {
     contextObject = processStack;
     cntx = psb;
@@ -172,7 +172,10 @@ readLinkageBlock:
     temps = objectRef(contextObject->basicAt(temporariesInContext)).sysMemPtr();
   }
 
-  rcv = objectRef(argumentsAt(0)).sysMemPtr();
+#if !defined TW_SMALLINTEGER_AS_OBJECT
+  if((argumentsAt(0) & 1) == 0)
+#endif
+    rcv = objectRef(argumentsAt(0)).sysMemPtr();
 
 readMethodInfo:
   lits           = objectRef(method->basicAt(literalsInMethod)).sysMemPtr();
@@ -227,7 +230,7 @@ readMethodInfo:
               if (contextObject == processStack) 
               {
                 /* not yet, do it now - first get real return point */
-                returnPoint = objectRef(processStackAt(linkPointer+2)).intValue();
+                returnPoint = getInteger(processStackAt(linkPointer+2));
                 ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
                       linkPointer - returnPoint));
                 ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 6,
@@ -238,7 +241,8 @@ readMethodInfo:
                 processStack->basicAtPut(linkPointer+1, contextObject);
                 ipush(contextObject);
                 /* save byte pointer then restore things properly */
-                processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+                ObjectHandle temp2(MemoryManager::Instance()->newInteger(byteOffset));
+                processStack->basicAtPut(linkPointer+4, temp2);
                 goto readLinkageBlock;
 
               }
@@ -282,7 +286,7 @@ readMethodInfo:
 doSendMessage:
         arg = psb + (returnPoint-1);
         rcv = objectRef(argumentsAt(0)).sysMemPtr();
-        methodClass = objectRef(argumentsAt(0))._class;
+        methodClass = getClass(argumentsAt(0));
 
 doFindMessage:
         /* look up method in cache */
@@ -334,7 +338,7 @@ doFindMessage:
           ipush(argarray);
           messageToSend = MemoryManager::Instance()->newSymbol("watchWith:");
           /* try again - if fail really give up */
-          methodClass = method->_class;
+          methodClass = getClass(method);
           if (! findMethod(&methodClass)) {
             sysWarn("can't find","watch method");
             /* just quit */
@@ -401,8 +405,8 @@ doFindMessage:
         /* and overflow does not occur */
         primargs = pst - 1;
         if ((! watching) && (low <= 12) &&
-            (objectRef(primargs[0])._class == intClass && 
-              objectRef(primargs[1])._class == intClass)) {
+            (getClass(primargs[0]) == intClass && 
+              getClass(primargs[1]) == intClass)) {
           returnedObject = primitive(low+60, primargs);
           if (returnedObject != nilobj) {
             // pop arguments off stack , push on result 
@@ -431,7 +435,7 @@ doFindMessage:
             break;
 
           case 11: /* class of object */
-            returnedObject = objectRef(*primargs)._class;
+            returnedObject = getClass(*primargs);
             break;
           case 21: /* object equality test */
             if (*primargs == *(primargs+1))
@@ -439,20 +443,20 @@ doFindMessage:
             else returnedObject = falseobj;
             break;
           case 25: /* basicAt: */
-            j = objectRef(*(primargs+1)).intValue();
+            j = getInteger(*(primargs+1));
             returnedObject = objectRef(*primargs).basicAt(j);
             break;
           case 31: /* basicAt:Put:*/
-            j = objectRef(*(primargs+1)).intValue();
+            j = getInteger(*(primargs+1));
             objectRef(*primargs).basicAtPut(j, *(primargs+2));
             returnedObject = nilobj;
             break;
           case 53: /* set time slice */
-            timeSliceCounter = objectRef(*primargs).intValue();
+            timeSliceCounter = getInteger(*primargs);
             returnedObject = nilobj;
             break;
           case 58: /* allocObject */
-            j = objectRef(*primargs).intValue();
+            j = getInteger(*primargs);
             returnedObject = MemoryManager::Instance()->allocObject(j);
             break;
           case 87: /* value of symbol */
@@ -469,8 +473,8 @@ doFindMessage:
         break;
 
 doReturn:
-        returnPoint = objectRef(processStack->basicAt(linkPointer + 2)).intValue();
-        linkPointer = objectRef(processStack->basicAt(linkPointer)).intValue();
+        returnPoint = getInteger(processStack->basicAt(linkPointer + 2));
+        linkPointer = getInteger(processStack->basicAt(linkPointer));
         while (processStackTop() >= returnPoint) {
           stackTopFree();
         }

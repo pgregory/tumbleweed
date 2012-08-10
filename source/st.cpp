@@ -16,7 +16,9 @@
 ObjectHandle firstProcess;
 int initial = 0;    /* not making initial image */
 
-extern noreturn initFFISymbols();   /* FFI symbols */
+#if defined TW_ENABLE_FFI
+extern void initFFISymbols();   /* FFI symbols */
+#endif
 
 int main(int argc, char** argv)
 {
@@ -40,7 +42,9 @@ int main(int argc, char** argv)
     MemoryManager::Instance()->garbageCollect();
 
     initCommonSymbols();
+#if defined TW_ENABLE_FFI
     initFFISymbols();
+#endif
 
     firstProcess = globalSymbol("systemProcess");
     if (firstProcess == nilobj) 

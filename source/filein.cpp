@@ -21,7 +21,7 @@
 /*
     the following are switch settings, with default values
 */
-boolean savetext = true;
+bool savetext = true;
 
 /*
     we read the input a line at a time, putting lines into the following
@@ -58,7 +58,7 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
     newObj = globalSymbol(name);
     if (newObj == nilobj)
     {
-        size = objectRef(metaObj->basicAt(sizeInClass)).intValue();
+        size = getInteger(metaObj->basicAt(sizeInClass));
         newObj = MemoryManager::Instance()->allocObject(size);
         newObj->_class = metaObj;
 
@@ -82,7 +82,7 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
 static ObjectHandle createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
     ObjectHandle classObj, superObj, metaObj;
-    int i, size, instanceTop;
+    int size;
 
     metaObj = findClass(metaclass);
     classObj = findClassWithMeta(_class, metaObj);
@@ -96,7 +96,7 @@ static ObjectHandle createRawClass(const char* _class, const char* metaclass, co
     {
         superObj = findClass(superclass);
         classObj->basicAtPut(superClassInClass, superObj);
-        size = objectRef(superObj->basicAt(sizeInClass)).intValue();
+        size = getInteger(superObj->basicAt(sizeInClass));
     }
 
     // Set the size up to now.
@@ -118,17 +118,17 @@ static void readRawClassDeclaration()
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = strdup(tokenString);
+    className = _strdup(tokenString);
     size = 0;
     if (nextToken() == nameconst) 
     { /* read metaclass name */
-        metaName = strdup(tokenString);
-        ignore nextToken();
+        metaName = _strdup(tokenString);
+        nextToken();
     }
     if (token == nameconst) 
     { /* read superclass name */
-        superName = strdup(tokenString);
-        ignore nextToken();
+        superName = _strdup(tokenString);
+        nextToken();
     }
 
     classObj = createRawClass(className, metaName, superName);
@@ -138,7 +138,7 @@ static void readRawClassDeclaration()
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
-    size = objectRef(classObj->basicAt(sizeInClass)).intValue();
+    size = getInteger(classObj->basicAt(sizeInClass));
 
     if (token == nameconst) 
     {     /* read instance var names */
@@ -147,7 +147,7 @@ static void readRawClassDeclaration()
         {
             instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(tokenString);
             size++;
-            ignore nextToken();
+            nextToken();
         }
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
@@ -178,11 +178,11 @@ static void readClassDeclaration()
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = strdup(tokenString);
+    className = _strdup(tokenString);
     if (nextToken() == nameconst) 
     { /* read superclass name */
-        superName = strdup(tokenString);
-        ignore nextToken();
+        superName = _strdup(tokenString);
+        nextToken();
     }
     // todo: sprintf eradication!
     sprintf(metaClassName, "Meta%s", className);
@@ -195,7 +195,7 @@ static void readClassDeclaration()
     classObj = createRawClass(className, metaClassName, superName);
     classObj->_class = metaObj;
 
-    size = objectRef(metaObj->basicAt(sizeInClass)).intValue();
+    size = getInteger(metaObj->basicAt(sizeInClass));
     instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");
     vars = MemoryManager::Instance()->newArray(1);
     vars->basicAtPut(1, instanceVariables[0]);
@@ -204,7 +204,7 @@ static void readClassDeclaration()
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
-    size = objectRef(classObj->basicAt(sizeInClass)).intValue();
+    size = getInteger(classObj->basicAt(sizeInClass));
 
     if (token == nameconst) 
     {     /* read instance var names */
@@ -213,7 +213,7 @@ static void readClassDeclaration()
         {
             instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(tokenString);
             size++;
-            ignore nextToken();
+            nextToken();
         }
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
@@ -232,13 +232,14 @@ static void readClassDeclaration()
 /*
     readClass reads a class method description
 */
-static void readMethods(FILE* fd, boolean printit)
+static void readMethods(FILE* fd, bool printit)
 {   
     ObjectHandle classObj, methTable, theMethod, selector;
 # define LINEBUFFERSIZE 16384
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
     ObjectHandle protocol;
 
+    lineBuffer[0] = '\0';
     protocol = nilobj;
     if (nextToken() != nameconst)
         sysError("missing name","following Method keyword");
@@ -269,7 +270,7 @@ static void readMethods(FILE* fd, boolean printit)
         while((eoftest = fgets(lineBuffer, LINEBUFFERSIZE, fd)) != NULL) {
             if ((lineBuffer[0] == '|') || (lineBuffer[0] == ']'))
                 break;
-            ignore strcat(textBuffer, lineBuffer);
+            strcat(textBuffer, lineBuffer);
         }
         if (eoftest == NULL) {
             sysError("unexpected end of file","while reading method");
@@ -336,7 +337,7 @@ void runCode(const char * text)
 }
 
 //! Read and process any initialization code lines, prefixed with '!'.
-static void runInitialization(FILE* fd, boolean printit)
+static void runInitialization(FILE* fd, bool printit)
 {   
   std::stringstream strCode;
   // \todo: Find out why we need the extra 'x'!
@@ -348,7 +349,7 @@ static void runInitialization(FILE* fd, boolean printit)
 /*
     fileIn reads in a module definition
 */
-void fileIn(FILE* fd, boolean printit)
+void fileIn(FILE* fd, bool printit)
 {
     while(fgets(textBuffer, TextBufferSize, fd) != NULL) 
     {

@@ -23,8 +23,8 @@
 # define methodClassInMethod 7
 # define watchInMethod 8
 # define protocolInMethod 9
-# define methodStackSize(x) objectRef(objectRef(x).basicAt(stackSizeInMethod)).intValue()
-# define methodTempSize(x) objectRef(objectRef(x).basicAt(temporarySizeInMethod)).intValue()
+# define methodStackSize(x) getInteger(objectRef(x).basicAt(stackSizeInMethod))
+# define methodTempSize(x) getInteger(objectRef(x).basicAt(temporarySizeInMethod))
 
 # define contextSize 8
 # define linkPtrInContext 1
@@ -61,10 +61,10 @@
 extern ObjectHandle trueobj;      /* the pseudo variable true */
 extern ObjectHandle falseobj;     /* the pseudo variable false */
 
-extern noreturn initCommonSymbols();    /* common symbols */
+extern void initCommonSymbols();    /* common symbols */
 extern ObjectHandle unSyms[], binSyms[];
 
-extern noreturn nameTableInsert( OBJ X INT X OBJ X OBJ );
+extern void nameTableInsert( OBJ X INT X OBJ X OBJ );
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/
 extern int strHash ( CSTR );
 extern object globalKey ( CSTR );

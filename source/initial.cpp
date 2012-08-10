@@ -16,7 +16,9 @@
 void makeInitialImage();
 void goDoIt(const char * text);
 
-extern noreturn initFFISymbols();   /* FFI symbols */
+#if defined TW_ENABLE_FFI
+extern void initFFISymbols();   /* FFI symbols */
+#endif
 
 ObjectHandle firstProcess;
 int initial = 1;    /* making initial image */
@@ -28,7 +30,9 @@ int main(int argc, char** argv)
 	makeInitialImage();
 
 	initCommonSymbols();
-	initFFISymbols();
+#if defined TW_ENABLE_FFI
+    initFFISymbols();
+#endif
 
 	for (i = 1; i < argc; i++) {
 		std::stringstream methbuf;
@@ -54,7 +58,7 @@ void goDoIt(const char * text)
 
     method = MemoryManager::Instance()->newMethod();
     setInstanceVariables(nilobj);
-    ignore parse(method, text, false);
+    parse(method, text, false);
 
     firstProcess = MemoryManager::Instance()->allocObject(processSize);
     stack = MemoryManager::Instance()->allocObject(50);
@@ -114,12 +118,12 @@ void makeInitialImage()
 
   /* now fix up classes for symbol table */
   /* and make a couple common classes, just to hold their places */
-  ignore MemoryManager::Instance()->newClass("Link");
-  ignore MemoryManager::Instance()->newClass("ByteArray");
+  MemoryManager::Instance()->newClass("Link");
+  MemoryManager::Instance()->newClass("ByteArray");
   hashTable->_class = MemoryManager::Instance()->newClass("Array");
   objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
   objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
-  ignore MemoryManager::Instance()->newClass("String");
+  MemoryManager::Instance()->newClass("String");
   nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 
   classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));

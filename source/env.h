@@ -31,30 +31,6 @@ typedef unsigned char byte;
 
 # define streq(a,b) (strcmp(a,b) == 0)
 
-//# define true 1
-//# define false 0
-
-    /* define the datatype boolean */
-# ifdef NOTYPEDEF
-# define boolean int
-# endif
-# ifndef NOTYPEDEF
-typedef int boolean;
-# endif
-
-    /* define a bit of lint silencing */
-    /*  ignore means ``i know this function returns something,
-        but I really, really do mean to ignore it */
-# ifdef NOVOID
-# define ignore
-# define noreturn
-# define void int
-# endif
-# ifndef NOVOID
-# define ignore (void)
-# define noreturn void
-# endif
-
 /* prototypes are another problem.  If they are available, they should be
 used; but if they are not available their use will cause compiler errors.
 To get around this we define a lot of symbols which become nothing if
@@ -64,7 +40,7 @@ prototypes aren't available */
 # define OBJ object
 # define OBJP object *
 # define INT int
-# define BOOL boolean
+# define BOOL bool
 # define STR char *
 # define CSTR const char *
 # define FLOAT double
@@ -76,13 +52,13 @@ prototypes aren't available */
 #if defined(__APPLE__)
 #define SO_EXT  "so"
 #define MAX_PATH  PATH_MAX
-#elif defined(__CYGWIN__)
+#elif defined(__CYGWIN__) || defined(__WIN32__)
 #define SO_EXT  "dll"
 #define MAX_PATH  PATH_MAX
 #endif
 
 #endif
 
-noreturn sysWarn(const char* s1, const char* s2);
-noreturn compilWarn(const char* selector, const char* str1, const char* str2);
-noreturn compilError(const char* selector, const char* str1, const char* str2);
+void sysWarn(const char* s1, const char* s2);
+void compilWarn(const char* selector, const char* str1, const char* str2);
+void compilError(const char* selector, const char* str1, const char* str2);

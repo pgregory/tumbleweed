@@ -36,4 +36,4 @@ extern tokentype token;     /* token variety */
 extern char tokenString[];  /* text of current token */
 extern int tokenInteger;    /* integer (or character) value of token */
 extern double tokenFloat;   /* floating point value of token */
-extern noreturn lexinit(const char* str);  /* initialization routine */
+extern void lexinit(const char* str);  /* initialization routine */

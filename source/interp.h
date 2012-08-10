@@ -43,5 +43,5 @@
 
 # define cacheSize 211
 
-boolean execute(object aProcess, int maxsteps);
+bool execute(object aProcess, int maxsteps);
 void flushCache(object messageToSend, object _class);

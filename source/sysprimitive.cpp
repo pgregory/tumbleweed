@@ -10,56 +10,56 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
+//#include <dlfcn.h>
 
 #include "env.h"
 #include "memory.h"
 #include "names.h"
 
-extern boolean parseok;
+extern bool parseok;
 
 static char gLastError[1024];
 
 /* report a fatal system error */
-noreturn sysError(const char* s1, const char* s2)
+void sysError(const char* s1, const char* s2)
 {
-  ignore fprintf(stderr,"%s\n%s\n", s1, s2);
-  ignore snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
-  ignore abort();
+  fprintf(stderr,"%s\n%s\n", s1, s2);
+  _snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
+  abort();
 }
 
 /* report a nonfatal system error */
-noreturn sysWarn(const char * s1, const char * s2)
+void sysWarn(const char * s1, const char * s2)
 {
-  ignore fprintf(stderr,"%s\n%s\n", s1, s2);
+  fprintf(stderr,"%s\n%s\n", s1, s2);
 }
 
-noreturn compilWarn(const char* selector, const char* str1, const char* str2)
+void compilWarn(const char* selector, const char* str1, const char* str2)
 {
-  ignore fprintf(stderr,"compiler warning: Method %s : %s %s\n", 
+  fprintf(stderr,"compiler warning: Method %s : %s %s\n", 
       selector, str1, str2);
 }
 
 
-noreturn compilError(const char* selector, const char* str1, const char* str2)
+void compilError(const char* selector, const char* str1, const char* str2)
 {
-  ignore fprintf(stderr,"compiler error: Method %s : %s %s\n", 
+  fprintf(stderr,"compiler error: Method %s : %s %s\n", 
       selector, str1, str2);
-  ignore snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
+  _snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
   parseok = false;
 }
 
-noreturn dspMethod(char* cp, char* mp)
+void dspMethod(char* cp, char* mp)
 {
-  ignore fprintf(stderr,"%s %s\n", cp, mp);
+  fprintf(stderr,"%s %s\n", cp, mp);
 }
 
 void givepause()
 {   
   char buffer[80];
 
-  ignore fprintf(stderr,"push return to continue\n");
-  ignore fgets(buffer,80,stdin);
+  fprintf(stderr,"push return to continue\n");
+  fgets(buffer,80,stdin);
 }
 
 object sysPrimitive(int number, object* arguments)
@@ -79,6 +79,10 @@ object sysPrimitive(int number, object* arguments)
               add_history(p);
               returnedObject = MemoryManager::Instance()->newStString(p);
               }*/
+        char command[256];
+        printf("%s", objectRef(arguments[0]).charPtr());
+        gets(command);
+        returnedObject = MemoryManager::Instance()->newStString(command);
       break;
 
     case 2: /* get last error */ 

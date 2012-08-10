@@ -4,15 +4,15 @@
    Unix specific input and output routines
    written by tim budd, January 1988
    */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
 
 #include "env.h"
 #include "memory.h"
 #include "names.h"
 
-void fileIn(FILE* fd, boolean printit);
+void fileIn(FILE* fd, bool printit);
 
 /* i/o primitives - necessarily rather UNIX dependent;
    basically, files are all kept in a large array.
@@ -30,12 +30,12 @@ object ioPrimitive(int number, object* arguments)
 
   returnedObject = nilobj;
 
-  i = objectRef(arguments[0]).intValue();
+  i = getInteger(arguments[0]);
 
   switch(number) 
   {
     case 0:     /* file open */
-      i = objectRef(arguments[0]).intValue();
+      i = getInteger(arguments[0]);
       p = objectRef(arguments[1]).charPtr();
       if(NULL == p)
         returnedObject = nilobj;
@@ -58,7 +58,7 @@ object ioPrimitive(int number, object* arguments)
       break;
 
     case 1:     /* file close - recover slot */
-      if (fp[i]) ignore fclose(fp[i]);
+      if (fp[i]) fclose(fp[i]);
       fp[i] = NULL;
       break;
 
@@ -99,11 +99,11 @@ object ioPrimitive(int number, object* arguments)
     case 8:     /* print no return */
     case 9:     /* print string */
       if (! fp[i]) break; 
-      ignore fputs(objectRef(arguments[1]).charPtr(), fp[i]);
+      fputs(objectRef(arguments[1]).charPtr(), fp[i]);
       if (number == 8)
-        ignore fflush(fp[i]);
+        fflush(fp[i]);
       else
-        ignore fputc('\n', fp[i]);
+        fputc('\n', fp[i]);
       break;
 
     default:

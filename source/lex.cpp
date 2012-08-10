@@ -30,12 +30,12 @@ static char cc;         /* current character */
 static long longresult;     /* value used when building int tokens */
 
 /* lexinit - initialize the lexical analysis routines */
-noreturn lexinit(const char* str)
+void lexinit(const char* str)
 {
     pushindex = 0;
     cp = str;
     /* get first token */
-    ignore nextToken();
+    nextToken();
 }
 
 /* pushBack - push one character back into the input */
@@ -61,7 +61,7 @@ char peek()
 }
 
 /* isClosing - characters which can close an expression */
-static boolean isClosing(char c)
+static bool isClosing(char c)
 {
     switch(c) {
         case '.': case ']': case ')': case ';':
@@ -72,7 +72,7 @@ static boolean isClosing(char c)
 }
 
 /* isSymbolChar - characters which can be part of symbols */
-static boolean isSymbolChar(char c)
+static bool isSymbolChar(char c)
 {
     if (isdigit(c) || isalpha(c)) return(true);
     if (isspace(c) || isClosing(c)) return(false);
@@ -80,7 +80,7 @@ static boolean isSymbolChar(char c)
 }
 
 /* singleBinary - binary characters that cannot be continued */
-static boolean singleBinary(char c)
+static bool singleBinary(char c)
 {
     switch(c) {
         case '[': case '(': case ')': case ']':
@@ -90,7 +90,7 @@ static boolean singleBinary(char c)
 }
 
 /* binarySecond - return true if char can be second char in binary symbol */
-static boolean binarySecond(char c)
+static bool binarySecond(char c)
 {
     if (isalpha(c) || isdigit(c) || isspace(c) || isClosing(c) ||
         singleBinary(c))
@@ -101,7 +101,7 @@ static boolean binarySecond(char c)
 tokentype nextToken()
 {   
     char *tp;
-    boolean sign;
+    bool sign;
 
     /* skip over blanks and comments */
     while(nextChar() && (isspace(cc) || (cc == '"')))
@@ -167,7 +167,7 @@ tokentype nextToken()
         if (nextChar() && cc == 'e') {  /* possible float */
             if (nextChar() && cc == '-') {
                 sign = true;
-                ignore nextChar();
+                nextChar();
                 }
             else
                 sign = false;
@@ -176,7 +176,7 @@ tokentype nextToken()
                 if (sign) *tp++ = '-';
                 while (cc && isdigit(cc)) {
                     *tp++ = cc;
-                    ignore nextChar();
+                    nextChar();
                     }
                 if (cc) pushBack(cc);
                 *tp = '\0';

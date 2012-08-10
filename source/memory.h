@@ -5,7 +5,9 @@
 
 #include "env.h"
 
+#if defined TW_UNIT_TESTS
 #include "gtest/gtest_prod.h"
+#endif
 
 class MemoryManager;
 struct objectStruct;
@@ -187,9 +189,9 @@ extern object symbols;
 extern void sysError(const char*, const char*);
 extern void dspMethod(char*, char*);
 extern void initMemoryManager();
-extern boolean debugging;
+extern bool debugging;
 void setInstanceVariables(object aClass);
-boolean parse(object method, const char* text, boolean savetext);
+bool parse(object method, const char* text, bool savetext);
 void givepause();
 
 
@@ -556,12 +558,23 @@ class MemoryManager
 
         size_t growObjectStore(size_t amount);
 
+#if defined TW_UNIT_TESTS
         FRIEND_TEST(MemoryManagerTest, AllocateFromFree);
+#endif
 };
 
 extern MemoryManager* theMemoryManager;
 
-#define objectRef(x) (MemoryManager::Instance()->objectFromID(x))
+//#define TW_SMALLINTEGER_AS_OBJECT
+// TODO: Need to deal with SmallIntegers here
+#define objectRef(x) (MemoryManager::Instance()->objectFromID((x)))
+#if defined TW_SMALLINTEGER_AS_OBJECT
+#define getInteger(x) (objectRef((x)).intValue())
+#define getClass(x) (objectRef((x))._class)
+#else
+#define getInteger(x) ((x) >> 1)
+#define getClass(x) (((x)&1)? globalSymbol("Integer") : (objectRef((x))._class))
+#endif
 
 inline ObjectHandle::ObjectHandle() : m_handle(0)
 {

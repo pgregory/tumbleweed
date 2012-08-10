@@ -32,7 +32,7 @@
 #include "names.h"
 
 
-boolean debugging = false;
+bool debugging = false;
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
@@ -112,7 +112,7 @@ object MemoryManager::allocObject(size_t memorySize)
 {
     int i;
     size_t position;
-    boolean done;
+    bool done;
     TObjectFreeListIterator tpos;
 
     /* first try the free lists, this is fastest */
@@ -198,7 +198,7 @@ object MemoryManager::allocObject(size_t memorySize)
     objectTable[position].referenceCount = 0;
     objectTable[position]._class = nilobj;
     objectTable[position].size = memorySize;
-    return(position);
+    return(position << 1);
 }
 
 object MemoryManager::allocByte(size_t size)
@@ -220,7 +220,7 @@ object MemoryManager::allocStr(register const char* str)
     {
         newSym = allocByte(1 + strlen(str));
         t = objectRef(newSym).charPtr();
-        ignore strcpy(t, str);
+        strcpy(t, str);
     }
     else
     {
@@ -283,7 +283,7 @@ void MemoryManager::visit(register object x)
     int i, s;
     object *p;
 
-    if (x) 
+    if (x && (!(x&1))) 
     {
         if (--(objectFromID(x).referenceCount) == -1) 
         {
@@ -330,14 +330,14 @@ int MemoryManager::garbageCollect()
 
     for (j=objectTable.size()-1; j>0; j--) 
     {
-        if (objectFromID(j).referenceCount == 0) 
+        if (objectTable[j].referenceCount == 0) 
         {
             if(destroyObject(j))
                 f++;
         } 
         else
         {
-            if (0!=(objectFromID(j).referenceCount = -objectFromID(j).referenceCount))
+            if (0!=(objectTable[j].referenceCount = -objectTable[j].referenceCount))
                 c++;
         }
     }
@@ -354,7 +354,7 @@ int MemoryManager::garbageCollect()
 
 objectStruct& MemoryManager::objectFromID(object id)
 {
-    return objectTable[id];
+    return objectTable[(id >> 1)];
 }
 
 
@@ -478,12 +478,16 @@ object MemoryManager::newFloat(double d)
 
 object MemoryManager::newInteger(int i)
 {   
+#if defined TW_SMALLINTEGER_AS_OBJECT
     object newObj;
 
     newObj = allocByte((int) sizeof (int));
     ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
     objectRef(newObj)._class = globalSymbol("Integer");
     return newObj;
+#else
+    return (i << 1) + 1;
+#endif
 }
 
 object MemoryManager::newCPointer(void* l)
@@ -590,7 +594,7 @@ void MemoryManager::imageRead(FILE* fp)
 {   
   long i, size;
 
-  ignore fr(fp, (char *) &symbols, sizeof(object));
+  fr(fp, (char *) &symbols, sizeof(object));
   i = 0;
 
   while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) 
@@ -602,25 +606,25 @@ void MemoryManager::imageRead(FILE* fp)
         // Grow enough, plus a bit.
         growObjectStore(i - objectTable.size() + 500);
     }
-    objectFromID(i)._class = dummyObject.cl;
-    if ((objectFromID(i)._class < 0) || 
-        ((objectFromID(i)._class) >= objectTable.size())) 
+    objectTable[i]._class = dummyObject.cl;
+    if ((objectTable[i]._class < 0) || 
+        ((objectTable[i]._class) >= objectTable.size())) 
     {
         // Grow enough, plus a bit.
-        growObjectStore(objectFromID(i)._class - objectTable.size() + 500);
+        growObjectStore(objectTable[i]._class - objectTable.size() + 500);
     }
-    objectFromID(i).size = size = dummyObject.ds;
+    objectTable[i].size = size = dummyObject.ds;
     if (size < 0) size = ((- size) + 1) / 2;
     if (size != 0) 
     {
-      objectFromID(i).memory = mBlockAlloc((int) size);
-      ignore fr(fp, (char *) objectFromID(i).memory,
+      objectTable[i].memory = mBlockAlloc((int) size);
+      fr(fp, (char *) objectTable[i].memory,
           sizeof(object) * (int) size);
     }
     else
-      objectFromID(i).memory = (object *) 0;
+      objectTable[i].memory = (object *) 0;
 
-    objectFromID(i).referenceCount = 666;
+    objectTable[i].referenceCount = 666;
   }
   setFreeLists();
 }
@@ -640,21 +644,21 @@ void MemoryManager::imageWrite(FILE* fp)
 {   
   long i, size;
 
-  MemoryManager::Instance()->garbageCollect();
+  garbageCollect();
 
   fw(fp, (char *) &symbols, sizeof(object));
 
   for (i = 0; i < objectTable.size(); i++) 
   {
-    if (MemoryManager::Instance()->objectFromID(i).referenceCount > 0) 
+    if (objectTable[i].referenceCount > 0) 
     {
       dummyObject.di = i;
-      dummyObject.cl = MemoryManager::Instance()->objectFromID(i)._class;
-      dummyObject.ds = size = MemoryManager::Instance()->objectFromID(i).size;
+      dummyObject.cl = objectTable[i]._class;
+      dummyObject.ds = size = objectTable[i].size;
       fw(fp, (char *) &dummyObject, sizeof(dummyObject));
       if (size < 0) size = ((- size) + 1) / 2;
       if (size != 0)
-        fw(fp, (char *) MemoryManager::Instance()->objectFromID(i).memory,
+        fw(fp, (char *) objectTable[i].memory,
             sizeof(object) * size);
     }
   }
