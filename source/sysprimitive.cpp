@@ -14,7 +14,6 @@
 #include "env.h"
 #include "memory.h"
 #include "names.h"
-#include "readline/readline.h"
 
 extern bool parseok;
 

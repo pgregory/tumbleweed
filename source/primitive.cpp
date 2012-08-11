@@ -28,7 +28,9 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#if !defined WIN32
 #include <sys/time.h>
+#endif
 
 #include "env.h"
 #include "memory.h"
@@ -88,11 +90,15 @@ static object zeroaryPrims(int number)
     
     case 7:
       {
+#if !defined WIN32
         struct timeval tv;
         gettimeofday(&tv, NULL);
         long time_in_mill = 
           (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
         returnedObject = MemoryManager::Instance()->newInteger(time_in_mill);
+#else
+        returnedObject = MemoryManager::Instance()->newInteger(0);
+#endif
       }
       break;
 
