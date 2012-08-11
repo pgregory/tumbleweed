@@ -10,11 +10,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <dlfcn.h>
 
 #include "env.h"
 #include "memory.h"
 #include "names.h"
+#include "readline/readline.h"
 
 extern bool parseok;
 
@@ -24,7 +24,7 @@ static char gLastError[1024];
 void sysError(const char* s1, const char* s2)
 {
   fprintf(stderr,"%s\n%s\n", s1, s2);
-  _snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
+  //_snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
   abort();
 }
 
@@ -45,7 +45,7 @@ void compilError(const char* selector, const char* str1, const char* str2)
 {
   fprintf(stderr,"compiler error: Method %s : %s %s\n", 
       selector, str1, str2);
-  _snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
+  //_snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
   parseok = false;
 }
 
@@ -74,11 +74,6 @@ object sysPrimitive(int number, object* arguments)
       break;
 
     case 1: /* readline, with history support */
-      /*      {
-              char* p = readline(objectRef(arguments[0]).charPtr());
-              add_history(p);
-              returnedObject = MemoryManager::Instance()->newStString(p);
-              }*/
         char command[256];
         printf("%s", objectRef(arguments[0]).charPtr());
         gets(command);

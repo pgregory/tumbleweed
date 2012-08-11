@@ -28,6 +28,8 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <sys/time.h>
+
 #include "env.h"
 #include "memory.h"
 #include "names.h"
@@ -47,7 +49,7 @@ extern object ffiPrimitive(INT X OBJP);
 static object zeroaryPrims(int number)
 {   
   short i;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   returnedObject = nilobj;
   switch(number) {
@@ -83,6 +85,16 @@ static object zeroaryPrims(int number)
     case 6:
       returnedObject = MemoryManager::Instance()->newCPointer(NULL);
       break;
+    
+    case 7:
+      {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        long time_in_mill = 
+          (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
+        returnedObject = MemoryManager::Instance()->newInteger(time_in_mill);
+      }
+      break;
 
     case 9:
       exit(0);
@@ -97,7 +109,8 @@ static object zeroaryPrims(int number)
 static int unaryPrims(int number, object firstarg)
 {   
   int i, j, saveLinkPointer;
-  ObjectHandle returnedObject, saveProcessStack;
+  object returnedObject;
+  ObjectHandle saveProcessStack;
 
   returnedObject = firstarg;
   switch(number) {
@@ -194,7 +207,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 {   
   char buffer[2000];
   int i;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   returnedObject = firstarg;
   switch(number) 
@@ -246,10 +259,10 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 
     case 9:     /* duplicate a block, adding a new context to it */
       returnedObject = MemoryManager::Instance()->newBlock();
-      returnedObject->basicAtPut(contextInBlock, secondarg);
-      returnedObject->basicAtPut(argumentCountInBlock, objectRef(firstarg).basicAt(2));
-      returnedObject->basicAtPut(argumentLocationInBlock, objectRef(firstarg).basicAt(3));
-      returnedObject->basicAtPut(bytecountPositionInBlock, objectRef(firstarg).basicAt(4));
+      objectRef(returnedObject).basicAtPut(contextInBlock, secondarg);
+      objectRef(returnedObject).basicAtPut(argumentCountInBlock, objectRef(firstarg).basicAt(2));
+      objectRef(returnedObject).basicAtPut(argumentLocationInBlock, objectRef(firstarg).basicAt(3));
+      objectRef(returnedObject).basicAtPut(bytecountPositionInBlock, objectRef(firstarg).basicAt(4));
       break;
 
     default:        /* unknown primitive */
@@ -265,7 +278,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   // todo: Fixed length buffer
   char *bp, *tp, buffer[4096];
   int i, j;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   returnedObject = firstarg;
   switch(number) 
@@ -311,7 +324,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
 
 static int intUnary(int number, object firstarg)
 {   
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number) 
   {
@@ -349,7 +362,7 @@ static object intBinary(register int number, register int firstarg, int secondar
 {   
   bool binresult;
   long longresult;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number) 
   {
@@ -431,7 +444,7 @@ overflow:
 
 static int strUnary(int number, char* firstargument)
 {   
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number) 
   {
@@ -528,7 +541,7 @@ static int floatUnary(int number, double firstarg)
 static object floatBinary(int number, double first, double second)
 {    
   bool binResult;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number) 
   {
@@ -562,7 +575,7 @@ static object floatBinary(int number, double first, double second)
 static int cPointerUnary(int number, void* firstarg)
 {   
   char buffer[20];
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number) 
   {
@@ -580,7 +593,7 @@ static int cPointerUnary(int number, void* firstarg)
 
 object exceptionPrimitive(int number, object* arguments)
 {
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number)
   {
@@ -606,7 +619,7 @@ object exceptionPrimitive(int number, object* arguments)
 object primitive(register int primitiveNumber, object* arguments)
 {   
   register int primitiveGroup = primitiveNumber / 10;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(primitiveGroup) 
   {

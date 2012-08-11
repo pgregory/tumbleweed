@@ -111,30 +111,27 @@ static ObjectHandle createRawClass(const char* _class, const char* metaclass, co
 static void readRawClassDeclaration()
 {   
     ObjectHandle classObj, vars;
-    char* className, *metaName, *superName;
+    std::string className, metaName, superName;
     int i, size, instanceTop;
     // todo: fixed length variables array!
     ObjectHandle instanceVariables[15];
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = _strdup(tokenString);
+    className = tokenString;
     size = 0;
     if (nextToken() == nameconst) 
     { /* read metaclass name */
-        metaName = _strdup(tokenString);
+        metaName = tokenString;
         nextToken();
     }
     if (token == nameconst) 
     { /* read superclass name */
-        superName = _strdup(tokenString);
+        superName = tokenString;
         nextToken();
     }
 
-    classObj = createRawClass(className, metaName, superName);
-    free(className);
-    free(metaName);
-    free(superName);
+    classObj = createRawClass(className.c_str(), metaName.c_str(), superName.c_str());
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
@@ -166,7 +163,7 @@ static void readRawClassDeclaration()
 static void readClassDeclaration()
 {   
     ObjectHandle classObj, metaObj, vars;
-    char* className, *superName;
+    std::string className, superName;
     int i, size, instanceTop;
     // todo: fixed length variables array!
     ObjectHandle instanceVariables[15];
@@ -174,25 +171,23 @@ static void readClassDeclaration()
     char metaClassName[100];
     char metaSuperClassName[100];
 
-    className = superName = NULL;
-
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = _strdup(tokenString);
+    className = tokenString;
     if (nextToken() == nameconst) 
     { /* read superclass name */
-        superName = _strdup(tokenString);
+        superName = tokenString;
         nextToken();
     }
     // todo: sprintf eradication!
-    sprintf(metaClassName, "Meta%s", className);
-    if(NULL != superName)
-        sprintf(metaSuperClassName, "Meta%s", superName);
+    sprintf(metaClassName, "Meta%s", className.c_str());
+    if(!superName.empty())
+        sprintf(metaSuperClassName, "Meta%s", superName.c_str());
     else
         sprintf(metaSuperClassName, "Class");
 
     metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
-    classObj = createRawClass(className, metaClassName, superName);
+    classObj = createRawClass(className.c_str(), metaClassName, superName.c_str());
     classObj->_class = metaObj;
 
     size = getInteger(metaObj->basicAt(sizeInClass));
@@ -224,9 +219,6 @@ static void readClassDeclaration()
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
-
-    free(className);
-    free(superName);
 }
 
 /*

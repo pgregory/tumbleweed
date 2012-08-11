@@ -5,6 +5,12 @@ project (Tumbleweed)
 
 option(TW_BUILD_TESTS "Build all of Tumbleweeds's unit tests." OFF)
 option(TW_ENABLE_FFI "Enable FFI for native module support." ON)
+option(TW_SMALLINTEGER_AS_OBJECT "Disable the special handling of small integers, use objects instead." OFF)
+
+if(TW_SMALLINTEGER_AS_OBJECT)
+  add_definitions(-DTW_SMALLINTEGER_AS_OBJECT)
+endif(TW_SMALLINTEGER_AS_OBJECT)
+
 
 set(shared_srcs 
   source/filein.cpp
@@ -51,6 +57,8 @@ set(common_image_srcs
   bootstrap/httprequest.st
   bootstrap/exception.st
   bootstrap/test.st
+  bootstrap/time.st
+  bootstrap/bench.st
 
   bootstrap/test_collect.st
 )

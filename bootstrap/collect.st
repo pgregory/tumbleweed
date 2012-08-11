@@ -366,7 +366,46 @@ Methods IndexedCollection 'all'
     values
         ^ self binaryInject: List new
             into: [:s :i :x | s add: x ]
+|
+    atAllPut: anObject
+        | to size |
+        "Unroll completely for small collections..."
+        (size <- self size) = 0 ifTrue: [ ^self ].
+        self at: 1 put: anObject. size = 1 ifTrue: [ ^self ].
+        self at: 2 put: anObject. size = 2 ifTrue: [ ^self ].
+        self at: 3 put: anObject. size = 3 ifTrue: [ ^self ].
+        self at: 4 put: anObject. to <- 4.
+        "...and use memcpy repeatedly for larger ones."
+        [ size > to ] whileTrue: [
+            self
+                replaceFrom: to + 1
+                to: ((to <- to + to) min: size)
+                with: self
+                startingAt: 1 ].
+|
+    replaceFrom: start to: stop with: replacementCollection startingAt: repStart 
+        | delta maxStop minStop |
+        "Replace the items from start to stop with replacementCollection's items
+        from repStart to repStart+stop-start"
+        minStop <- start - 1.
+        maxStop <- self size min: minStop + replacementCollection size.
+        (minStop <= stop and: [stop <= maxStop]) 
+         ifFalse: 
+             [^SystemExceptions.ArgumentOutOfRange 
+                 signalOn: stop
+                 mustBeBetween: minStop
+                 and: maxStop].
+        delta <- start - repStart.
+        repStart > start
+         ifTrue: [
+             (start to: stop) do: [:i |
+                 self at: i put: (replacementCollection at: i - delta)] ]
+         ifFalse: [
+             (stop to: start by: -1) do: [:i |
+                 self at: i put: (replacementCollection at: i - delta)] ]
 ]
+
+
 Methods Interval 'all'
     do: aBlock      | current |
         current <- lower.

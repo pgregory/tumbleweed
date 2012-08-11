@@ -49,7 +49,7 @@ void flushCache(object messageToSend, object _class)
 {   
   int hash;
 
-  hash = ((ObjectHandle(messageToSend).hash()) + (ObjectHandle(_class).hash())) % cacheSize;
+  hash = ((hashObject(messageToSend)) + (hashObject(_class))) % cacheSize;
   methodCache[hash].cacheMessage = nilobj;
 }
 
@@ -60,7 +60,7 @@ void flushCache(object messageToSend, object _class)
    */
 static bool findMethod(object* methodClassLocation)
 {   
-  ObjectHandle methodTable, methodClass;
+  object methodTable, methodClass;
 
   method = nilobj;
   methodClass = *methodClassLocation;
@@ -68,12 +68,12 @@ static bool findMethod(object* methodClassLocation)
 
 //  printf("Looking for %s starting at %d\n", objectRef(messageToSend).charPtr(), methodClass);
   for (; methodClass != nilobj; methodClass = 
-      methodClass->basicAt(superClassInClass)) {
+      objectRef(methodClass).basicAt(superClassInClass)) {
 //    printf("Looking for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-    methodTable = methodClass->basicAt(methodsInClass);
+    methodTable = objectRef(methodClass).basicAt(methodsInClass);
     if(methodTable == nilobj)
-      printf("Null method table on %s\n", objectRef(methodClass->basicAt(nameInClass)).charPtr());
-    method = hashEachElement(methodTable, ObjectHandle(messageToSend).hash(), messTest);
+      printf("Null method table on %s\n", objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
+    method = hashEachElement(methodTable, hashObject(messageToSend), messTest);
     if (method != nilobj)
     {
 //      printf("...found\n");
@@ -285,12 +285,15 @@ readMethodInfo:
 
 doSendMessage:
         arg = psb + (returnPoint-1);
-        rcv = objectRef(argumentsAt(0)).sysMemPtr();
+#if !defined TW_SMALLINTEGER_AS_OBJECT
+        if((argumentsAt(0) & 1) == 0)
+#endif
+          rcv = objectRef(argumentsAt(0)).sysMemPtr();
         methodClass = getClass(argumentsAt(0));
 
 doFindMessage:
         /* look up method in cache */
-        i = ((ObjectHandle(messageToSend).hash()) + (ObjectHandle(methodClass).hash())) % cacheSize;
+        i = ((hashObject(messageToSend)) + (hashObject(methodClass))) % cacheSize;
         if ((methodCache[i].cacheMessage == messageToSend) &&
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
@@ -552,7 +555,10 @@ doReturn:
           case SendToSuper:
             i = nextByte();
             messageToSend = literalsAt(i);
-            rcv = objectRef(argumentsAt(0)).sysMemPtr();
+#if !defined TW_SMALLINTEGER_AS_OBJECT
+            if((argumentsAt(0) & 1) == 0)
+#endif
+              rcv = objectRef(argumentsAt(0)).sysMemPtr();
             methodClass = method->basicAt(methodClassInMethod);
             /* if there is a superclass, use it
                otherwise for class Object (the only 

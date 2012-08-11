@@ -93,6 +93,11 @@ class ObjectHandle
 
 typedef long object;
 
+inline int hashObject(object o)
+{
+    return o;
+}
+
 
 /*! \brief Object structure
  *
