@@ -47,8 +47,7 @@ bool parseok;            /* parse still ok? */
 extern char peek();
 int codeTop;            /* top position filled in code array */
 byte codeArray[codeLimit];  /* bytecode array */
-int literalTop;         /*  ... etc. */
-ObjectHandle literalArray[literalLimit];
+std::vector<ObjectHandle> literalArray;
 int temporaryTop;
 char *temporaryName[temporaryLimit];
 int argumentTop;
@@ -110,13 +109,8 @@ void genInstruction(int high, int low)
 
 int genLiteral(object aLiteral)
 {
-    if (literalTop >= literalLimit)
-        compilError(selector,"too many literals in method","");
-    else 
-    {
-        literalArray[++literalTop] = aLiteral;
-    }
-    return(literalTop - 1);
+    literalArray.push_back(aLiteral);
+    return(literalArray.size()-1);
 }
 
 void genInteger(int val)    /* generate an integer push */
@@ -201,7 +195,7 @@ int parseArray()
     int i, size, base;
     ObjectHandle newLit, obj;
 
-    base = literalTop;
+    base = literalArray.size();
     nextToken();
     while (parseok && (token != closing)) 
     {
@@ -274,14 +268,13 @@ int parseArray()
                     tokenString);
         else
             nextToken();
-    size = literalTop - base;
+    size = literalArray.size() - base;
     newLit = MemoryManager::Instance()->newArray(size);
     for (i = size; i >= 1; i--) 
     {
-        obj = literalArray[literalTop];
+        obj = literalArray.back();
         newLit->basicAtPut(i, obj);
-        literalArray[literalTop] = nilobj;
-        literalTop = literalTop - 1;
+        literalArray.pop_back();
     }
     return(genLiteral(newLit));
 }
@@ -796,8 +789,10 @@ bool parse(object method, const char* text, bool savetext)
     parseok = true;
     blockstat = NotInBlock;
     codeTop = 0;
-    literalTop = temporaryTop = argumentTop =0;
+    temporaryTop = argumentTop =0;
     maxTemporary = 0;
+
+    literalArray.clear();
 
     messagePattern();
     if (parseok)
@@ -820,10 +815,10 @@ bool parse(object method, const char* text, bool savetext)
             }
         objectRef(method).basicAtPut(messageInMethod, MemoryManager::Instance()->newSymbol(selector));
         objectRef(method).basicAtPut(bytecodesInMethod, bytecodes);
-        if (literalTop > 0) {
-            theLiterals = MemoryManager::Instance()->newArray(literalTop);
-            for (i = 1; i <= literalTop; i++) {
-                objectRef(theLiterals).basicAtPut(i, literalArray[i]);
+        if (!literalArray.empty()) {
+            theLiterals = MemoryManager::Instance()->newArray(literalArray.size());
+            for (i = 1; i <= literalArray.size(); i++) {
+                objectRef(theLiterals).basicAtPut(i, literalArray[i-1]);
                 }
             objectRef(method).basicAtPut(literalsInMethod, theLiterals);
             }

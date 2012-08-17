@@ -170,7 +170,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
   object realValue;
 
   object sclass = globalSymbol("Symbol");
-  object vclass = objectRef(value)._class;
+  object vclass = getClass(value);
   if(vclass == sclass)
     realValue = globalSymbol(objectRef(value).charPtr());
   else
@@ -184,7 +184,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_CHAR_OUT:
     case FFI_WCHAR_OUT:
       data->outInteger.pointer = &data->outInteger.integer;
-      data->outInteger.integer = objectRef(realValue).intValue();
+      data->outInteger.integer = getInteger(realValue);
       ptr = &data->outInteger.pointer;
       break;
     case FFI_DOUBLE_OUT:
@@ -194,7 +194,7 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
       ptr = &data->outFloat.pointer;
       break;
     case FFI_CHAR:
-      data->integer = objectRef(realValue).intValue();
+      data->integer = getInteger(realValue);
       ptr = &data->integer;
       break;
     case FFI_STRING:
@@ -208,9 +208,9 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      if(objectRef(realValue)._class == globalSymbol("Integer"))
-        data->integer = objectRef(realValue).intValue();
-      else if(objectRef(realValue)._class == globalSymbol("Float"))
+      if(getClass(realValue) == globalSymbol("Integer"))
+        data->integer = getInteger(realValue);
+      else if(getClass(realValue) == globalSymbol("Float"))
         data->integer = (int)objectRef(realValue).floatValue();
       ptr = &data->integer;
       break;
@@ -327,7 +327,7 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   stack->basicAtPut(bytepointerInStack, bytePointer);
 
   /* change context and byte pointer */
-  int argLoc = objectRef(block->basicAt(argumentLocationInBlock)).intValue();
+  int argLoc = getInteger(block->basicAt(argumentLocationInBlock));
   object temps = context->basicAt(temporariesInContext);
   for(arg = 0; arg < data->numArgs; ++arg)
     objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));

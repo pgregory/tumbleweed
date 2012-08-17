@@ -36,18 +36,6 @@ used; but if they are not available their use will cause compiler errors.
 To get around this we define a lot of symbols which become nothing if
 prototypes aren't available */
 
-# define X ,
-# define OBJ object
-# define OBJP object *
-# define INT int
-# define BOOL bool
-# define STR char *
-# define CSTR const char *
-# define FLOAT double
-# define NOARGS void
-# define FILEP FILE *
-# define FUNC ()
-
 
 #if defined(__APPLE__)
 #define SO_EXT  "so"

@@ -54,7 +54,10 @@ void nameTableInsert(object dict, int hash, object key, object value)
                 table->basicAtPut(hash+3, nwLink);
                 }
             else
+            {
+                int iter = 0;
                 while(1)
+                {
                     if (link->basicAt(keyInLink) == key) {
                         link->basicAtPut(valueInLink, value);
                         break;
@@ -65,7 +68,10 @@ void nameTableInsert(object dict, int hash, object key, object value)
                         }
                     else
                         link = nextLink;
+                    iter++;
+                }
             }
+        }
     }
 }
 
@@ -141,8 +147,9 @@ object nameTableLookup(object dict, const char* str)
     return hashEachElement(dict, strHash(str), strTest);
 }
 
-ObjectHandle unSyms[12];
-ObjectHandle binSyms[30];
+std::vector<ObjectHandle> booleanSyms;
+std::vector<ObjectHandle> unSyms;
+std::vector<ObjectHandle> binSyms;
 
 const char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
 "basicSize", "print", "printString", 0};
@@ -155,12 +162,13 @@ const char *binStrs[] = {"+", "-", "<", ">", "<=", ">=", "=", "~=", "*",
 
 /* initialize common symbols used by the parser and interpreter */
 void initCommonSymbols()
-{   int i;
+{   
+    int i;
 
-    trueobj = globalSymbol("true");
-    falseobj = globalSymbol("false");
+    booleanSyms.push_back(globalSymbol("true"));
+    booleanSyms.push_back(globalSymbol("false"));
     for (i = 0; unStrs[i]; i++)
-        unSyms[i] = MemoryManager::Instance()->newSymbol(unStrs[i]);
+        unSyms.push_back(MemoryManager::Instance()->newSymbol(unStrs[i]));
     for (i = 0; binStrs[i]; i++)
-        binSyms[i] = MemoryManager::Instance()->newSymbol(binStrs[i]);
+        binSyms.push_back(MemoryManager::Instance()->newSymbol(binStrs[i]));
 }

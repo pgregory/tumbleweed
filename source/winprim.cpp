@@ -11,7 +11,7 @@
 # include "memory.h"
 # include "names.h"
 
-extern object trueobj, falseobj;
+extern object booleanSyms[booleanTrue], booleanSyms[booleanFalse];
 extern boolean parseok;
 extern int initial;
 
@@ -374,8 +374,8 @@ object *arguments;
     
     case 202:   /* asky a binary question */
         i = waskync(objectRef(arguments[0]).charPtr(), intValue(arguments[1]));
-        if (i == 1) returnedObject = trueobj;
-        else if (i == 0) returnedObject = falseobj;
+        if (i == 1) returnedObject = booleanSyms[booleanTrue];
+        else if (i == 0) returnedObject = booleanSyms[booleanFalse];
         break;
 
     case 203:   /* ask for a file */

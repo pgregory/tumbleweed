@@ -42,6 +42,8 @@ static object intClass = nilobj;    /* the class Integer */
 static object stringClass = nilobj; /* the class String */
 static object symbolClass = nilobj; /* the class Symbol */
 
+ObjectHandle* ObjectHandle::head = NULL;
+ObjectHandle* ObjectHandle::tail = NULL;
 
 /*
     in theory the objectTable should only be accessible to the memory
@@ -320,8 +322,12 @@ int MemoryManager::garbageCollect()
     visit(symbols);
 
     /* Visit any explicitly held references from the use of ObjectHandle */
-    for(TObjectRefs::iterator i = objectReferences.begin(), iend = objectReferences.end(); i != iend; ++i)
-        visit(i->first);
+    ObjectHandle* explicitRef = ObjectHandle::getListHead();
+    while(explicitRef)
+    {
+        visit(*explicitRef);
+        explicitRef = explicitRef->next();
+    }
 
     /* add new garbage to objectFreeList 
     * toggle referenceCount 
@@ -344,7 +350,7 @@ int MemoryManager::garbageCollect()
 
     if (debugging)
     {
-        fprintf(stderr," %d references.\n",objectReferences.size());
+        fprintf(stderr," %d references.\n",ObjectHandle::numTotalHandles());
         fprintf(stderr," %d objects - %d freed.\n",c,f);
     }
 
@@ -669,21 +675,6 @@ void MemoryManager::disableGC(bool disable)
     noGC = disable;
 }
 
-void MemoryManager::refObject(long o)
-{
-    objectReferences[o]++;
-}
-
-void MemoryManager::unrefObject(long o)
-{
-    TObjectRefs::iterator i;
-    if((i = objectReferences.find(o)) != objectReferences.end())
-    {
-        if(--i->second <= 0)
-            objectReferences.erase(i);
-    }
-}
-
 
 size_t MemoryManager::growObjectStore(size_t amount)
 {
@@ -807,4 +798,32 @@ void* objectStruct::cPointerValue()
     int s = sizeof(void*);
     ncopy((char *) &l, charPtr(), (int) sizeof(void*));
     return l;
+}
+
+int ObjectHandle::numTotalHandles()
+{
+    if(NULL == ObjectHandle::head)
+        return 0;
+    else
+    {
+        int total = 1;
+        ObjectHandle* head = ObjectHandle::head;
+        while(head->m_next)
+        {
+            ++total;
+            head = head->m_next;
+        }
+        return total;
+    }
+}
+
+
+ObjectHandle* ObjectHandle::getListHead()
+{
+    return ObjectHandle::head;
+}
+
+ObjectHandle* ObjectHandle::getListTail()
+{
+    return ObjectHandle::tail;
 }

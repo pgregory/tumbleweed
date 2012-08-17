@@ -6,6 +6,8 @@
     symbolic definitions for the bytecodes
 */
 
+#include "memory.h"
+
 # define Extended 0
 # define PushInstance 1
 # define PushArgument 2
@@ -43,5 +45,5 @@
 
 # define cacheSize 211
 
-bool execute(object aProcess, int maxsteps);
-void flushCache(object messageToSend, object _class);
+extern bool execute(object aProcess, int maxsteps);
+extern void flushCache(object messageToSend, object _class);

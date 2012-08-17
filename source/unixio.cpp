@@ -93,7 +93,7 @@ object ioPrimitive(int number, object* arguments)
 
     case 7:     /* write an object image */
       if (fp[i]) MemoryManager::Instance()->imageWrite(fp[i]);
-      returnedObject = trueobj;
+      returnedObject = booleanSyms[booleanTrue];
       break;
 
     case 8:     /* print no return */

@@ -41,10 +41,10 @@ extern ObjectHandle processStack;
 extern int linkPointer;
 
 extern double frexp(), ldexp();
-extern object ioPrimitive(INT X OBJP);
-extern object sysPrimitive(INT X OBJP);
+extern object ioPrimitive(int, object*);
+extern object sysPrimitive(int, object*);
 #if defined TW_ENABLE_FFI
-extern object ffiPrimitive(INT X OBJP);
+extern object ffiPrimitive(int, object*);
 #endif
 
 
@@ -153,7 +153,7 @@ static int unaryPrims(int number, object firstarg)
       j = getInteger(objectRef(firstarg).basicAt(1));
       if (processStack->basicAt(j+1) != firstarg) 
       {
-        returnedObject = falseobj;
+        returnedObject = booleanSyms[booleanFalse];
         break;
       }
       /* first change link pointer to that of creator */
@@ -162,7 +162,7 @@ static int unaryPrims(int number, object firstarg)
       /* then change return point to that of creator */
       processStack->basicAtPut(i+2, 
           processStack->basicAt(j+2));
-      returnedObject = trueobj;
+      returnedObject = booleanSyms[booleanTrue];
       break;
 
     case 9:         /* process execute */
@@ -174,7 +174,7 @@ static int unaryPrims(int number, object firstarg)
       signal(SIGINT, brkfun);
       if (setjmp(jb)) 
       {
-        returnedObject = falseobj;
+        returnedObject = booleanSyms[booleanFalse];
       }
       else
 # endif
@@ -183,14 +183,14 @@ static int unaryPrims(int number, object firstarg)
         ctrlbrk(brkfun);
       if (setjmp(jb)) 
       {
-        returnedObject = falseobj;
+        returnedObject = booleanSyms[booleanFalse];
       }
       else
 # endif
         if (execute(firstarg, 5000))
-          returnedObject = trueobj;
+          returnedObject = booleanSyms[booleanTrue];
         else
-          returnedObject = falseobj;
+          returnedObject = booleanSyms[booleanFalse];
       /* then restore previous environment */
       processStack = saveProcessStack;
       linkPointer = saveLinkPointer;
@@ -220,9 +220,9 @@ static int binaryPrims(int number, object firstarg, object secondarg)
   {
     case 1:     /* object identity test */
       if (firstarg == secondarg)
-        returnedObject = trueobj;
+        returnedObject = booleanSyms[booleanTrue];
       else
-        returnedObject = falseobj;
+        returnedObject = booleanSyms[booleanFalse];
       break;
 
     case 2:     /* set class of object */
@@ -315,10 +315,10 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
       if (parse(thirdarg, objectRef(secondarg).charPtr(), false)) {
         flushCache(objectRef(thirdarg).basicAt(messageInMethod), firstarg);
         objectRef(thirdarg).basicAtPut(methodClassInMethod, firstarg);
-        returnedObject = trueobj;
+        returnedObject = booleanSyms[booleanTrue];
       }
       else
-        returnedObject = falseobj;
+        returnedObject = booleanSyms[booleanFalse];
       break;
 
     default:        /* unknown primitive */
@@ -434,9 +434,9 @@ static object intBinary(register int number, register int firstarg, int secondar
   }
   if ((number >= 2) && (number <= 7))
     if (binresult)
-      returnedObject = trueobj;
+      returnedObject = booleanSyms[booleanTrue];
     else
-      returnedObject = falseobj;
+      returnedObject = booleanSyms[booleanFalse];
   else
     returnedObject = MemoryManager::Instance()->newInteger(firstarg);
   return(returnedObject);
@@ -569,9 +569,9 @@ static object floatBinary(int number, double first, double second)
 
   if ((number >= 2) && (number <= 7))
     if (binResult)
-      returnedObject = trueobj;
+      returnedObject = booleanSyms[booleanTrue];
     else
-      returnedObject = falseobj;
+      returnedObject = booleanSyms[booleanFalse];
   else
     returnedObject = MemoryManager::Instance()->newFloat(first);
   return(returnedObject);

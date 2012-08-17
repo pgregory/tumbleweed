@@ -129,8 +129,8 @@ void makeInitialImage()
   classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
   /* finally at least make true and false to be distinct */
-  trueobj = MemoryManager::Instance()->newSymbol("true");
+  ObjectHandle trueobj = MemoryManager::Instance()->newSymbol("true");
   nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-  falseobj = MemoryManager::Instance()->newSymbol("false");
+  ObjectHandle falseobj = MemoryManager::Instance()->newSymbol("false");
   nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
 }
