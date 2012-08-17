@@ -59,7 +59,35 @@
 # define bytepointerInStack 6
 
 extern void initCommonSymbols();    /* common symbols */
-extern std::vector<ObjectHandle> unSyms, binSyms;
+
+
+enum ClassSymbols {
+    kArray = 0,
+    kBlock,
+    kByteArray,
+    kChar,
+    kClass,
+    kContext,
+    kDictionary,
+    kFloat,
+    kInteger,
+    kCPointer,
+    kLink,
+    kMethod,
+    kString,
+    kSymbol,
+    kProcess,
+
+    k__lastClass,
+};
+
+#if defined TW_IS_INITIAL
+# define CLASSOBJECT(cname) (globalSymbol(#cname))
+#else
+# define CLASSOBJECT(cname) (classSyms[k##cname])
+#endif
+
+extern std::vector<ObjectHandle> unSyms, binSyms, classSyms;
 
 # define booleanTrue 0
 # define booleanFalse 1
