@@ -3,6 +3,9 @@
     Written by Tim Budd, Oregon State University, July 1987
 */
 
+#ifndef MEMORY_H_INCLUDED
+#define MEMORY_H_INCLUDED
+
 #include "env.h"
 
 #if defined TW_UNIT_TESTS
@@ -86,8 +89,25 @@ class ObjectHandle
          */
         ObjectHandle& operator=(long o);
 
+        ObjectHandle& operator=(const ObjectHandle& from);
+
+        ObjectHandle* next() const;
+        ObjectHandle* prev() const;
+
+    static int numTotalHandles();
+    static ObjectHandle* getListHead();
+    static ObjectHandle* getListTail();
+
     private:
         long    m_handle;
+        ObjectHandle* m_next;
+        ObjectHandle* m_prev;
+
+    static  ObjectHandle* head;
+    static  ObjectHandle* tail;      
+
+    void removeFromList();
+    void appendToList();
 };
 
 
@@ -496,29 +516,6 @@ class MemoryManager
          */
         object newCPointer(void* l);
 
-        /*! Register a held reference to an object
-         *
-         * Objects registered via this mechanism will be guaranteed not to be collected
-         * during garbage collection, until the matching unrefObject is called. This 
-         * should not normally be used, instead use the ObjectHandle class to maintain
-         * references. Internally, the memory manager maintains a count of references
-         * registered against each object.
-         *
-         * \param o The object to register a reference against.
-         */
-        void refObject(long o);
-        /*! Release a previously registered object reference.
-         *
-         * Partner call to refObject, that releases a held reference. If the object is 
-         * found in the internally managed reference table, the count of references is 
-         * reduced by 1. If it is zero or less, the reference is dropped entirely, meaning
-         * that the object is once again visible to the garbage collection, provided it is
-         * not referenced internally within the object memory space.
-         *
-         * \param o The object to release.
-         */
-        void unrefObject(long o);
-
         /*! Switch garbage collection on or off.
          *
          * Passing true will disable all GC, false will re-enable it. Calls to disableGC
@@ -581,46 +578,59 @@ extern MemoryManager* theMemoryManager;
 #define getClass(x) (((x)&1)? globalSymbol("Integer") : (objectRef((x))._class))
 #endif
 
-inline ObjectHandle::ObjectHandle() : m_handle(0)
+
+inline ObjectHandle::ObjectHandle() : 
+    m_prev(NULL),
+    m_next(NULL),
+    m_handle(0)
 {
+    appendToList();
 }
 
-inline ObjectHandle::ObjectHandle(const ObjectHandle& from)
+inline ObjectHandle::ObjectHandle(const ObjectHandle& from) :
+    m_prev(NULL),
+    m_next(NULL)
 {
     m_handle = from.m_handle;
-    if(m_handle)
-        MemoryManager::Instance()->refObject(m_handle);
+    appendToList();
 }
 
-inline ObjectHandle::ObjectHandle(long object) : m_handle(object) 
+inline ObjectHandle::ObjectHandle(long object) : 
+    m_prev(NULL),
+    m_next(NULL),
+    m_handle(object) 
 {
-    MemoryManager::Instance()->refObject(object);
+    appendToList();
 }
 
 inline ObjectHandle::ObjectHandle(long object, MemoryManager* manager) : 
-  m_handle(object)
+    m_prev(NULL),
+    m_next(NULL),
+    m_handle(object)
 {
-    MemoryManager::Instance()->refObject(object);
+    appendToList();
 }
 
 inline ObjectHandle::~ObjectHandle() 
 {
-    MemoryManager::Instance()->unrefObject(handle());
+    removeFromList();
 }
 
 inline ObjectHandle& ObjectHandle::operator=(long o)
 {
-    if(m_handle)
-        MemoryManager::Instance()->unrefObject(m_handle);
     m_handle = o;
-    MemoryManager::Instance()->refObject(o);
+    return *this;
+}
 
+inline ObjectHandle& ObjectHandle::operator=(const ObjectHandle& from)
+{
+    m_handle = from.m_handle;
     return *this;
 }
 
 inline objectStruct* ObjectHandle::operator->() const
 {
-  return &MemoryManager::Instance()->objectFromID(m_handle);
+    return &MemoryManager::Instance()->objectFromID(m_handle);
 }
 
 inline ObjectHandle::operator objectStruct&() const
@@ -637,3 +647,47 @@ inline int ObjectHandle::hash() const
 {
     return m_handle;
 }
+
+inline void ObjectHandle::appendToList()
+{
+    // Register the handle with the global list.
+    if(NULL == ObjectHandle::tail)
+        ObjectHandle::head = ObjectHandle::tail = this;
+    else
+    {
+        ObjectHandle::tail->m_next = this;
+        m_prev = ObjectHandle::tail;
+        ObjectHandle::tail = this;
+    }
+}
+
+inline void ObjectHandle::removeFromList()
+{
+    // Unlink from the list pointers
+    if(NULL != m_prev)
+        m_prev->m_next = m_next;
+
+    if(NULL != m_next)
+        m_next->m_prev = m_prev;
+
+    if(ObjectHandle::head == this)
+        ObjectHandle::head = m_next;
+    if(ObjectHandle::tail == this)
+        ObjectHandle::tail = m_prev;
+}
+
+inline ObjectHandle* ObjectHandle::next() const
+{
+    return m_next;
+}
+
+inline ObjectHandle* ObjectHandle::prev() const
+{
+    return m_prev;
+}
+
+
+
+
+#endif
+

@@ -30,7 +30,7 @@ typedef enum tokensyms { nothing, nameconst, namecolon,
 
 # endif
 
-extern tokentype nextToken(NOARGS);
+extern tokentype nextToken();
 
 extern tokentype token;     /* token variety */
 extern char tokenString[];  /* text of current token */

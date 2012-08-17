@@ -11,6 +11,10 @@ if(TW_SMALLINTEGER_AS_OBJECT)
   add_definitions(-DTW_SMALLINTEGER_AS_OBJECT)
 endif(TW_SMALLINTEGER_AS_OBJECT)
 
+#find_package( Boost 1.36.0 )
+#if(Boost_FOUND)
+#   include_directories(${Boost_INCLUDE_DIRS})
+#endif()
 
 set(shared_srcs 
   source/filein.cpp
@@ -64,20 +68,21 @@ set(common_image_srcs
 )
 
 if(TW_ENABLE_FFI)
-    find_package(LibFFI REQUIRED)
-    set(shared_srcs ${shared_srcs} source/ffiprimitive.cpp)
-    set(ffi_image_srcs
-        bootstrap/ffi.st
-        )
+  find_package(LibFFI REQUIRED)
+  set(shared_srcs ${shared_srcs} source/ffiprimitive.cpp)
+  set(ffi_image_srcs
+      bootstrap/ffi.st
+      )
+  add_definitions(-DTW_ENABLE_FFI)
 endif(TW_ENABLE_FFI)
 
 set(image_srcs ${common_image_srcs} ${ffi_image_srcs}
   bootstrap/tty.st
 )
 
-set(server_image_srcs ${common_image_srcs} ${ffi_image_srcs}
-  bootstrap/server.st
-)
+#set(server_image_srcs ${common_image_srcs} ${ffi_image_srcs}
+#  bootstrap/server.st
+#)
 
 
 include_directories(${LIBFFI_INCLUDE_DIRS})
@@ -98,7 +103,7 @@ function(prefix_sources prefix sources)
 endfunction(prefix_sources)
 
 prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} image_srcs)
-prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} server_image_srcs)
+#prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} server_image_srcs)
 
 add_library(libtw ${shared_srcs} ${headers})
 set_target_properties(libtw PROPERTIES OUTPUT_NAME tw)
@@ -148,7 +153,7 @@ endif(TW_BUILD_TESTS)
 
 # Modules.
 #add_subdirectory(ffi_test)
-#add_subdirectory(sockets)
+add_subdirectory(sockets)
 #add_subdirectory(linenoise)
 #add_subdirectory(trex)
 if(NOT WIN32)

@@ -58,16 +58,17 @@
 # define methodInStack 5
 # define bytepointerInStack 6
 
-extern ObjectHandle trueobj;      /* the pseudo variable true */
-extern ObjectHandle falseobj;     /* the pseudo variable false */
-
 extern void initCommonSymbols();    /* common symbols */
-extern ObjectHandle unSyms[], binSyms[];
+extern std::vector<ObjectHandle> unSyms, binSyms;
 
-extern void nameTableInsert( OBJ X INT X OBJ X OBJ );
+# define booleanTrue 0
+# define booleanFalse 1
+extern std::vector<ObjectHandle> booleanSyms;
+
+extern void nameTableInsert( object, int, object, object);
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/
-extern int strHash ( CSTR );
-extern object globalKey ( CSTR );
-extern object nameTableLookup ( OBJ X CSTR );
+extern int strHash ( const char* );
+extern object globalKey ( const char* );
+extern object nameTableLookup ( object, const char* );
 # define globalSymbol(s) nameTableLookup(symbols, s)
 object hashEachElement(object dict, register int hash, int(*fun)(object));

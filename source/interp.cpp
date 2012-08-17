@@ -19,9 +19,8 @@
 # include "names.h"
 # include "interp.h"
 
-ObjectHandle trueobj, falseobj;
 bool watching = 0;
-extern object primitive( INT X OBJP );
+extern object primitive( int, object* );
 
 /*
    the following variables are local to this module
@@ -35,6 +34,7 @@ static int messTest(object obj)
 }
 
 /* a cache of recently executed methods is used for fast lookup */
+#if defined TW_METHOD_CACHE
 # define cacheSize 211
 static struct 
 {
@@ -43,14 +43,17 @@ static struct
   ObjectHandle cacheClass;    /* the class of the method */
   ObjectHandle cacheMethod;   /* the method itself */
 } methodCache[cacheSize];
+#endif
 
 /* flush an entry from the cache (usually when its been recompiled) */
 void flushCache(object messageToSend, object _class)
 {   
+#if defined TW_METHOD_CACHE
   int hash;
 
   hash = ((hashObject(messageToSend)) + (hashObject(_class))) % cacheSize;
   methodCache[hash].cacheMessage = nilobj;
+#endif
 }
 
 /*
@@ -143,6 +146,8 @@ bool execute(object aProcess, int maxsteps)
   byte *bp;
   ObjectHandle intClass = globalSymbol("Integer");
 
+  MemoryManager* memmgr = MemoryManager::Instance();
+
   /* unpack the instance variables from the process */
   processStack    = objectRef(aProcess).basicAt(stackInProcess);
   psb = processStack->sysMemPtr();
@@ -217,11 +222,11 @@ readMethodInfo:
       case PushConstant:
         switch(low) {
           case 0: case 1: case 2:
-            ipush(MemoryManager::Instance()->newInteger(low));
+            ipush(memmgr->newInteger(low));
             break;
 
           case minusOne:
-            ipush(MemoryManager::Instance()->newInteger(-1));
+            ipush(memmgr->newInteger(-1));
             break;
 
           case contextConst:
@@ -231,17 +236,17 @@ readMethodInfo:
               {
                 /* not yet, do it now - first get real return point */
                 returnPoint = getInteger(processStackAt(linkPointer+2));
-                ObjectHandle args(MemoryManager::Instance()->copyFrom(processStack, returnPoint, 
+                ObjectHandle args(memmgr->copyFrom(processStack, returnPoint, 
                       linkPointer - returnPoint));
-                ObjectHandle temp(MemoryManager::Instance()->copyFrom(processStack, linkPointer + 6,
+                ObjectHandle temp(memmgr->copyFrom(processStack, linkPointer + 6,
                       methodTempSize(method)));
-                contextObject = MemoryManager::Instance()->newContext(linkPointer, method,
+                contextObject = memmgr->newContext(linkPointer, method,
                     args,
                     temp);
                 processStack->basicAtPut(linkPointer+1, contextObject);
                 ipush(contextObject);
                 /* save byte pointer then restore things properly */
-                ObjectHandle temp2(MemoryManager::Instance()->newInteger(byteOffset));
+                ObjectHandle temp2(memmgr->newInteger(byteOffset));
                 processStack->basicAtPut(linkPointer+4, temp2);
                 goto readLinkageBlock;
 
@@ -255,11 +260,11 @@ readMethodInfo:
             break;
 
           case trueConst:
-            ipush(trueobj);
+            ipush(booleanSyms[booleanTrue]);
             break;
 
           case falseConst:
-            ipush(falseobj);
+            ipush(booleanSyms[booleanFalse]);
             break;
 
           default:
@@ -294,19 +299,24 @@ doSendMessage:
 doFindMessage:
         /* look up method in cache */
         i = ((hashObject(messageToSend)) + (hashObject(methodClass))) % cacheSize;
+#if defined TW_METHOD_CACHE
         if ((methodCache[i].cacheMessage == messageToSend) &&
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
           methodClass = methodCache[i].cacheClass;
 //          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
         }
-        else {
+        else 
+#endif
+        {
+#if defined TW_METHOD_CACHE
           methodCache[i].lookupClass = methodClass;
+#endif
           if (! findMethod(&methodClass)) {
             /* not found, we invoke a smalltalk method */
             /* to recover */
             j = processStackTop() - returnPoint;
-            argarray = MemoryManager::Instance()->newArray(j+1);
+            argarray = memmgr->newArray(j+1);
             for (; j >= 0; j--) {
               ipop(returnedObject);
               argarray->basicAtPut(j+1, returnedObject);
@@ -315,7 +325,7 @@ doFindMessage:
 //            printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
             ipush(messageToSend);
-            messageToSend = MemoryManager::Instance()->newSymbol("message:notRecognizedWithArguments:");
+            messageToSend = memmgr->newSymbol("message:notRecognizedWithArguments:");
             ipush(argarray);
             /* try again - if fail really give up */
             if (! findMethod(&methodClass)) {
@@ -324,22 +334,24 @@ doFindMessage:
               return false;
             }
           }
+#if defined TW_METHOD_CACHE
           methodCache[i].cacheMessage = messageToSend;
           methodCache[i].cacheMethod = method;
           methodCache[i].cacheClass = methodClass;
+#endif
         }
 
         if (watching && (method->basicAt(watchInMethod) != nilobj)) {
           /* being watched, we send to method itself */
           j = processStackTop() - returnPoint;
-          argarray = MemoryManager::Instance()->newArray(j+1);
+          argarray = memmgr->newArray(j+1);
           for (; j >= 0; j--) {
             ipop(returnedObject);
             argarray->basicAtPut(j+1, returnedObject);
           }
           ipush(method); /* push method */
           ipush(argarray);
-          messageToSend = MemoryManager::Instance()->newSymbol("watchWith:");
+          messageToSend = memmgr->newSymbol("watchWith:");
           /* try again - if fail really give up */
           methodClass = getClass(method);
           if (! findMethod(&methodClass)) {
@@ -350,7 +362,7 @@ doFindMessage:
         }
 
         /* save the current byte pointer */
-        processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
+        processStack->basicAtPut(linkPointer+4, memmgr->newInteger(byteOffset));
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
@@ -367,19 +379,19 @@ doFindMessage:
         byteOffset = 1;
         /* now make linkage area */
         /* position 0 : old linkage pointer */
-        ipush(MemoryManager::Instance()->newInteger(linkPointer));
+        ipush(memmgr->newInteger(linkPointer));
         linkPointer = processStackTop();
         /* position 1 : context object (nil means stack) */
         ipush(nilobj);
         contextObject = processStack;
         cntx = psb;
         /* position 2 : return point */
-        ipush(MemoryManager::Instance()->newInteger(returnPoint));
+        ipush(memmgr->newInteger(returnPoint));
         arg = cntx + (returnPoint-1);
         /* position 3 : method */
         ipush(method);
         /* position 4 : bytecode counter */
-        ipush(MemoryManager::Instance()->newInteger(byteOffset));
+        ipush(memmgr->newInteger(byteOffset));
         /* then make space for temporaries */
         ipush(nilobj);
         temps = pst+1;
@@ -393,7 +405,7 @@ doFindMessage:
         /* they are so common */
         if ((! watching) && (low <= 1)) {
           if (stackTop() == nilobj) {
-            stackTopPut((low?falseobj:trueobj));
+            stackTopPut((low?booleanSyms[booleanFalse]:booleanSyms[booleanTrue]));
             break;
           }
         }
@@ -434,7 +446,7 @@ doFindMessage:
         switch(i) {
           case 5:   /* set watch */
             watching = ! watching;
-            returnedObject = watching?trueobj:falseobj;
+            returnedObject = watching?booleanSyms[booleanTrue]:booleanSyms[booleanFalse];
             break;
 
           case 11: /* class of object */
@@ -442,8 +454,8 @@ doFindMessage:
             break;
           case 21: /* object equality test */
             if (*primargs == *(primargs+1))
-              returnedObject = trueobj;
-            else returnedObject = falseobj;
+              returnedObject = booleanSyms[booleanTrue];
+            else returnedObject = booleanSyms[booleanFalse];
             break;
           case 25: /* basicAt: */
             j = getInteger(*(primargs+1));
@@ -460,7 +472,7 @@ doFindMessage:
             break;
           case 58: /* allocObject */
             j = getInteger(*primargs);
-            returnedObject = MemoryManager::Instance()->allocObject(j);
+            returnedObject = memmgr->allocObject(j);
             break;
           case 87: /* value of symbol */
             returnedObject = globalSymbol(objectRef(*primargs).charPtr());
@@ -517,7 +529,7 @@ doReturn:
           case BranchIfTrue:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj) {
+            if (returnedObject == booleanSyms[booleanTrue]) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -527,7 +539,7 @@ doReturn:
           case BranchIfFalse:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj) {
+            if (returnedObject == booleanSyms[booleanFalse]) {
               /* leave nil on stack */
               pst++;
               byteOffset = i;
@@ -537,7 +549,7 @@ doReturn:
           case AndBranch:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == falseobj) {
+            if (returnedObject == booleanSyms[booleanFalse]) {
               ipush(returnedObject);
               byteOffset = i;
             }
@@ -546,7 +558,7 @@ doReturn:
           case OrBranch:
             ipop(returnedObject);
             i = nextByte();
-            if (returnedObject == trueobj) {
+            if (returnedObject == booleanSyms[booleanTrue]) {
               ipush(returnedObject);
               byteOffset = i;
             }
@@ -585,9 +597,9 @@ doReturn:
   /* before returning we put back the values in the current process */
   /* object */
 
-  processStack->basicAtPut(linkPointer+4, MemoryManager::Instance()->newInteger(byteOffset));
-  objectRef(aProcess).basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(processStackTop()));
-  objectRef(aProcess).basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(linkPointer));
+  processStack->basicAtPut(linkPointer+4, memmgr->newInteger(byteOffset));
+  objectRef(aProcess).basicAtPut(stackTopInProcess, memmgr->newInteger(processStackTop()));
+  objectRef(aProcess).basicAtPut(linkPtrInProcess, memmgr->newInteger(linkPointer));
 
   return true;
 }

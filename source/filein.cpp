@@ -5,16 +5,18 @@
     routines used in reading in textual descriptions of classes
 */
 
+
 #include <sstream>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "lex.h"
+#include "interp.h"
 #include "env.h"
 #include "memory.h"
 #include "names.h"
-#include "lex.h"
-#include "interp.h"
 
 # define MethodTableSize 39
 
