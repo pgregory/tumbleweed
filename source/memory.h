@@ -13,7 +13,7 @@
 #endif
 
 class MemoryManager;
-struct objectStruct;
+struct ObjectStruct;
 /*! \brief Auto referencing object handle class.
  *
  * Use this class to hold a reference to a newly created object so
@@ -61,11 +61,11 @@ class ObjectHandle
         ~ObjectHandle();
 
         //! Cast to object struct
-        operator objectStruct&() const;
+        operator ObjectStruct&() const;
 
         operator long() const;
 
-        objectStruct* operator->() const;
+        ObjectStruct* operator->() const;
 
         /*! Accessor for the object ID referenced
          *
@@ -123,7 +123,7 @@ inline int hashObject(object o)
  *
  * The default structure that represents all objects int he system.
  */
-struct objectStruct 
+struct ObjectStruct 
 {
     //! ID of the object that defines the class of this object.
     object _class;
@@ -198,9 +198,7 @@ struct objectStruct
 
 };
 
-
 # define nilobj (object) 0
-
 # define mBlockAlloc(size) (object *) calloc((unsigned) size, sizeof(object))
 
 /*
@@ -224,7 +222,7 @@ void givepause();
 #include <vector>
 #include <string>
 
-typedef std::vector<objectStruct>     TObjectTable;
+typedef std::vector<ObjectStruct>     TObjectTable;
 typedef TObjectTable::iterator  TObjectTableIterator;
 typedef std::multimap<size_t, object>    TObjectFreeList;
 typedef std::map<object, size_t>    TObjectFreeListInv;
@@ -314,7 +312,7 @@ class MemoryManager
          * \param id The object ID to dereference.
          * \return A reference to the ObjectStruct
          */
-        objectStruct& objectFromID(object id);
+        ObjectStruct& objectFromID(object id);
 
         /*! Copy data from an object into a new array.
          *
@@ -565,17 +563,60 @@ class MemoryManager
 #endif
 };
 
-extern MemoryManager* theMemoryManager;
+inline MemoryManager* MemoryManager::Instance()
+{
+    if(NULL == m_pInstance)
+        m_pInstance = new MemoryManager();
+
+    return m_pInstance;
+}
+
+inline ObjectStruct& MemoryManager::objectFromID(object id)
+{
+    return objectTable[(id >> 1)];
+}
+
+
+inline object* ObjectStruct::sysMemPtr()
+{
+    return memory;
+}
+
+inline byte* ObjectStruct::bytePtr()
+{
+    return (byte *)sysMemPtr();
+}
+
+inline char* ObjectStruct::charPtr()
+{
+    return (char *)sysMemPtr();
+}
+
+
+inline void ObjectStruct::basicAtPut(int i, object v)
+{
+    if((i <= 0) || (i > size))
+        sysError("index out of range", "basicAtPut");
+    else
+        sysMemPtr()[i-1] = v;
+}
+
+
 
 //#define TW_SMALLINTEGER_AS_OBJECT
 // TODO: Need to deal with SmallIntegers here
 #define objectRef(x) (MemoryManager::Instance()->objectFromID((x)))
 #if defined TW_SMALLINTEGER_AS_OBJECT
+
 #define getInteger(x) (objectRef((x)).intValue())
 #define getClass(x) (objectRef((x))._class)
+
 #else
+
+extern object g_intClass;
 #define getInteger(x) ((x) >> 1)
-#define getClass(x) (((x)&1)? globalSymbol("Integer") : (objectRef((x))._class))
+#define getClass(x) (((x)&1)? ((classSyms[kInteger] == 0)? (globalSymbol("Integer")) : classSyms[kInteger].handle()) : (objectRef((x))._class))
+
 #endif
 
 
@@ -628,12 +669,12 @@ inline ObjectHandle& ObjectHandle::operator=(const ObjectHandle& from)
     return *this;
 }
 
-inline objectStruct* ObjectHandle::operator->() const
+inline ObjectStruct* ObjectHandle::operator->() const
 {
     return &MemoryManager::Instance()->objectFromID(m_handle);
 }
 
-inline ObjectHandle::operator objectStruct&() const
+inline ObjectHandle::operator ObjectStruct&() const
 {
     return MemoryManager::Instance()->objectFromID(m_handle);
 }

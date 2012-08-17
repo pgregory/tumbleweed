@@ -37,11 +37,6 @@ bool debugging = false;
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
 
-static object arrayClass = nilobj;  /* the class Array */
-static object intClass = nilobj;    /* the class Integer */
-static object stringClass = nilobj; /* the class String */
-static object symbolClass = nilobj; /* the class Symbol */
-
 ObjectHandle* ObjectHandle::head = NULL;
 ObjectHandle* ObjectHandle::tail = NULL;
 
@@ -68,14 +63,6 @@ void ncopy(register char* p, register char* q, register int n)
         *p++ = *q++;
 }
 
-
-MemoryManager* MemoryManager::Instance()
-{
-    if(NULL == m_pInstance)
-        m_pInstance = new MemoryManager();
-
-    return m_pInstance;
-}
 
 void MemoryManager::Initialise(size_t initialSize, size_t growCount)
 {
@@ -234,7 +221,7 @@ object MemoryManager::allocStr(register const char* str)
 
 bool MemoryManager::destroyObject(object z)
 {
-    register struct objectStruct *p;
+    register struct ObjectStruct *p;
     register int i;
     int size;
     bool deleted = false;
@@ -358,11 +345,6 @@ int MemoryManager::garbageCollect()
     return f;
 }
 
-objectStruct& MemoryManager::objectFromID(object id)
-{
-    return objectTable[(id >> 1)];
-}
-
 
 size_t MemoryManager::objectCount()
 {   
@@ -396,9 +378,7 @@ object MemoryManager::newArray(int size)
     object newObj;
 
     newObj = allocObject(size);
-    if (arrayClass == nilobj)
-        arrayClass = globalSymbol("Array");
-    objectRef(newObj)._class = arrayClass;
+    objectRef(newObj)._class = CLASSOBJECT(Array);
     return newObj;
 }
 
@@ -407,7 +387,7 @@ object MemoryManager::newBlock()
     object newObj;
 
     newObj = allocObject(blockSize);
-    objectRef(newObj)._class = globalSymbol("Block");
+    objectRef(newObj)._class = CLASSOBJECT(Block);
     return newObj;
 }
 
@@ -416,7 +396,7 @@ object MemoryManager::newByteArray(int size)
     object newobj;
 
     newobj = allocByte(size);
-    objectRef(newobj)._class = globalSymbol("ByteArray");
+    objectRef(newobj)._class = CLASSOBJECT(ByteArray);
     return newobj;
 }
 
@@ -426,7 +406,7 @@ object MemoryManager::newChar(int value)
 
     newobj = allocObject(1);
     objectRef(newobj).basicAtPut(1, newInteger(value));
-    objectRef(newobj)._class = globalSymbol("Char");
+    objectRef(newobj)._class = CLASSOBJECT(Char);
     return(newobj);
 }
 
@@ -435,7 +415,7 @@ object MemoryManager::newClass(const char* name)
     object newObj, nameObj, methTable;
 
     newObj = allocObject(classSize);
-    objectRef(newObj)._class = globalSymbol("Class");
+    objectRef(newObj)._class = CLASSOBJECT(Class);
 
     /* now make name */
     nameObj = newSymbol(name);
@@ -454,7 +434,7 @@ object MemoryManager::newContext(int link, object method, object args, object te
     object newObj;
 
     newObj = allocObject(contextSize);
-    objectRef(newObj)._class = globalSymbol("Context");
+    objectRef(newObj)._class = CLASSOBJECT(Context);
     objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
     objectRef(newObj).basicAtPut(methodInContext, method);
     objectRef(newObj).basicAtPut(argumentsInContext, args);
@@ -467,7 +447,7 @@ object MemoryManager::newDictionary(int size)
     object newObj;
 
     newObj = allocObject(dictionarySize);
-    objectRef(newObj)._class = globalSymbol("Dictionary");
+    objectRef(newObj)._class = CLASSOBJECT(Dictionary);
     objectRef(newObj).basicAtPut(tableInDictionary, newArray(size));
     return newObj;
 }
@@ -478,7 +458,7 @@ object MemoryManager::newFloat(double d)
 
     newObj = allocByte((int) sizeof (double));
     ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
-    objectRef(newObj)._class = globalSymbol("Float");
+    objectRef(newObj)._class = CLASSOBJECT(Float);
     return newObj;
 }
 
@@ -489,7 +469,7 @@ object MemoryManager::newInteger(int i)
 
     newObj = allocByte((int) sizeof (int));
     ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
-    objectRef(newObj)._class = globalSymbol("Integer");
+    objectRef(newObj)._class = CLASSOBJECT(Integer);
     return newObj;
 #else
     return (i << 1) + 1;
@@ -498,12 +478,12 @@ object MemoryManager::newInteger(int i)
 
 object MemoryManager::newCPointer(void* l)
 {   
-  object newObj;
+    object newObj;
 
-  int s = sizeof(void*);
+    int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
     ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
-    objectRef(newObj)._class = globalSymbol("CPointer");
+    objectRef(newObj)._class = CLASSOBJECT(CPointer);
     return newObj;
 }
 
@@ -512,7 +492,7 @@ object MemoryManager::newLink(object key, object value)
     object newObj;
 
     newObj = allocObject(linkSize);
-    objectRef(newObj)._class = globalSymbol("Link");
+    objectRef(newObj)._class = CLASSOBJECT(Link);
     objectRef(newObj).basicAtPut(keyInLink, key);
     objectRef(newObj).basicAtPut(valueInLink, value);
     return newObj;
@@ -522,7 +502,7 @@ object MemoryManager::newMethod()
 {   object newObj;
 
     newObj = allocObject(methodSize);
-    objectRef(newObj)._class = globalSymbol("Method");
+    objectRef(newObj)._class = CLASSOBJECT(Method);
     return newObj;
 }
 
@@ -531,9 +511,7 @@ object MemoryManager::newStString(const char* value)
   object newObj;
 
     newObj = allocStr(value);
-    if (stringClass == nilobj)
-        stringClass = globalSymbol("String");
-    objectRef(newObj)._class = stringClass;
+    objectRef(newObj)._class = CLASSOBJECT(String);
     return(newObj);
 }
 
@@ -548,9 +526,7 @@ object MemoryManager::newSymbol(const char* str)
 
     /* not found, must make */
     newObj = allocStr(str);
-    if (symbolClass == nilobj)
-        symbolClass = globalSymbol("Symbol");
-    objectRef(newObj)._class = symbolClass;
+    objectRef(newObj)._class = CLASSOBJECT(Symbol);
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
     return newObj;
 }
@@ -679,13 +655,13 @@ void MemoryManager::disableGC(bool disable)
 size_t MemoryManager::growObjectStore(size_t amount)
 {
     // Empty object to use when resizing.
-    objectStruct empty = {nilobj, 0, 0, NULL};
+    ObjectStruct empty = {nilobj, 0, 0, NULL};
 
     size_t currentSize = objectTable.size();
     objectTable.resize(objectTable.size()+amount, empty);
 
     if(debugging)
-        fprintf(stderr, "Growing object store to %d\n", objectTable.size());
+        fprintf(stderr, "Growing object store to %d\n", static_cast<int>(objectTable.size()));
 
     // Add all new objects to the free list.
     for(size_t i = currentSize; i < objectTable.size(); ++i)
@@ -702,32 +678,9 @@ void MemoryManager::setGrowAmount(size_t amount)
 }
 
 
-object* objectStruct::sysMemPtr()
-{
-    return memory;
-}
-
-byte* objectStruct::bytePtr()
-{
-    return (byte *)sysMemPtr();
-}
-
-char* objectStruct::charPtr()
-{
-    return (char *)sysMemPtr();
-}
 
 
-void objectStruct::basicAtPut(int i, object v)
-{
-    if((i <= 0) || (i > size))
-        sysError("index out of range", "basicAtPut");
-    else
-        sysMemPtr()[i-1] = v;
-}
-
-
-int objectStruct::byteAt(int i)
+int ObjectStruct::byteAt(int i)
 {
     byte* bp;
     unsigned char t;
@@ -743,7 +696,7 @@ int objectStruct::byteAt(int i)
     return i;
 }
 
-void objectStruct::byteAtPut(int i, int x)
+void ObjectStruct::byteAtPut(int i, int x)
 {
     byte *bp;
     if ((i <= 0) || (i > 2 * - size)) 
@@ -757,7 +710,7 @@ void objectStruct::byteAtPut(int i, int x)
     }
 }
 
-object objectStruct::basicAt(int i)
+object ObjectStruct::basicAt(int i)
 {
     if(( i <= 0) || (i > size))
     {
@@ -770,7 +723,7 @@ object objectStruct::basicAt(int i)
     return nilobj;
 }
 
-double objectStruct::floatValue()
+double ObjectStruct::floatValue()
 {   
     double d;
 
@@ -778,7 +731,7 @@ double objectStruct::floatValue()
     return d;
 }
 
-int objectStruct::intValue()
+int ObjectStruct::intValue()
 {   
     int d;
 
@@ -788,7 +741,7 @@ int objectStruct::intValue()
     return d;
 }
 
-void* objectStruct::cPointerValue()
+void* ObjectStruct::cPointerValue()
 {   
     if(NULL == charPtr())
         sysError("invalid cPointer","cPointerValue");

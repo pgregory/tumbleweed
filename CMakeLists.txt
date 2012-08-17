@@ -110,13 +110,12 @@ set_target_properties(libtw PROPERTIES OUTPUT_NAME tw)
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
-set(LIBS libtw ${LIBS})
-
 if(NOT WIN32)
 list(APPEND LIBS "dl")
 endif(NOT WIN32)
 
-add_executable(initial ${init_srcs})
+add_executable(initial ${shared_srcs} ${init_srcs})
+set_target_properties(initial PROPERTIES COMPILE_DEFINITIONS TW_IS_INITIAL=1)
 add_custom_command(
   OUTPUT systemImage
   COMMAND initial ${image_srcs}
@@ -128,7 +127,7 @@ add_custom_command(
 #  DEPENDS initial ${server_image_srcs}
 #)
 
-add_executable(tw ${tw_srcs} systemImage)
+add_executable(tw ${shared_srcs} ${tw_srcs})
 
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})

@@ -284,7 +284,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   switch(number) 
   {
     case 1:         /* basicAt:Put: */
-      fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), getInteger(secondarg), static_cast<int>(thirdarg));
+      fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), static_cast<int>(getInteger(secondarg)), static_cast<int>(thirdarg));
       objectRef(firstarg).basicAtPut(getInteger(secondarg), thirdarg);
       break;
 
