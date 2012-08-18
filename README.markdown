@@ -21,14 +21,12 @@ rewrite to version 4.
 Status
 ------
 
-So far, the majority of the work has been on updating
-the VM, and enhancing the basic language support.
+Work is underway to update and improve the system as
+a whole, focusing in the following areas.
 
- * Added a foreign function interface using libffi.
+ * Add a foreign function interface using libffi.
    This allows direct access to shared library
    functionality without having to extend the VM. 
-   Primary initial use is to enable the IUP based
-   GUI library.
  * Extend the basic language functionality to include
    MetaClass support. The MetaClass support follows the
    standard Smalltalk approach, all classes have a unique
@@ -36,6 +34,11 @@ the VM, and enhancing the basic language support.
    created. MetaClasses support class methods and data.
  * Extend the basic language class hierarchy to support
    method categories.
+ * Replace the memory management with a simple mark/sweep
+   garbage collection scheme.
+ * Various optimisations to the language interpreter to
+   improve message throughput.
+
 
 Building and Getting Started
 ----------------------------
@@ -46,9 +49,33 @@ of source. The following instructions are for Posix
 based systems, Windows is similar, the required changes
 should be obvious.
 
+The CMake configuration exposes some options to control
+the build.
+
+ * TW_BUILD_TESTS
+   
+   Enable the Google Test based unit testing. You will
+   need to make sure the GTEST_* options are also correctly
+   setup.
+ 
+ * TW_ENABLE_FFI
+   
+   Enable the support for dynamically binding shared
+   libraries via the libffi library. You'll need to make
+   sure that LIBFFI_* options are also correctly setup.
+ 
+ * TW_SMALLINTEGER_AS_OBJECT
+   
+   By default Tumbleweed treats small integers as a 
+   special type for efficiency. This flag will switch
+   to treating them as normal objects. There is a 
+   significant performance hit with this approach, it is
+   only really to be used while the new approach is being
+   finalised.
+
 Get the source from github:
 
-    git clone https://pgregory@github.com/pgregory/tumbleweed.git
+    git clone git://github.com/pgregory/tumbleweed.git
 
 Make a build directory, and configure with cmake:
 
@@ -70,19 +97,9 @@ Run Tumbleweed:
 You can then run standard Smalltalk like commands from the
 command prompt.
 
-    > 'Hello, World!' printstring
+    > 'Hello, World!' print
     'Hello, World!'
-    object count 6942
+    'Hello, World!'
 
-You can launch a class Browser to examine the class hierarchy
-in the current running image.
-
-    > Browser open
-
-From within the browser you can view the class hierarchy by
-selecting the class from the class list, you'll see a list
-of protocols for that class, select a protocol to see a list
-of methods. Seleting a method in the list shows the source
-to the method in the lower panel, you can edit the source and 
-hit accept to change the method implementation.
-
+The second 'Hello, World!' is because Tumbleweed by default
+echos the result of an expression.
