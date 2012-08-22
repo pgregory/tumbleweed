@@ -127,7 +127,7 @@ add_custom_command(
 #  DEPENDS initial ${server_image_srcs}
 #)
 
-add_executable(tw ${shared_srcs} ${tw_srcs})
+add_executable(tw ${shared_srcs} ${tw_srcs} systemImage)
 
 target_link_libraries(initial ${LIBS})
 target_link_libraries(tw ${LIBS})
