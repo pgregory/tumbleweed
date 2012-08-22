@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
-#ifndef __WIN32
+#ifndef WIN32
+#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/fcntl.h>
 #include <netinet/in.h>
@@ -25,7 +25,7 @@ int Socket(const char* proto, int* errcode)
   if(sockfd < 0)
     *errcode = errno;
 
-#ifndef __WIN32
+#ifndef WIN32
 //  fcntl(sockfd, F_SETFL, O_NONBLOCK);
 #else
 //  u_long iMode = 1;
@@ -37,7 +37,7 @@ int Socket(const char* proto, int* errcode)
 
 int Shutdown(int sockfd, int* errcode)
 {
-#ifndef __WIN32
+#ifndef WIN32
   int res = shutdown(sockfd, SHUT_RDWR);
 #else
   int res = shutdown(sockfd, SD_BOTH);
@@ -160,7 +160,7 @@ int Accept(int sockfd, int* errcode)
 {
   struct sockaddr_in socketaddr;
   int newsockfd;
-#ifndef __WIN32
+#ifndef WIN32
   socklen_t client_len;
 #else
   int client_len;
@@ -192,7 +192,7 @@ int Close(int sockfd, int* errcode)
 
 int Read(int sockfd, char* buffer, int len, int* errcode)
 {
-  ssize_t res;
+  size_t res;
   if((res = read(sockfd, buffer, len)) < 0)
     *errcode = errno;
 
@@ -201,7 +201,7 @@ int Read(int sockfd, char* buffer, int len, int* errcode)
 
 int eagain()
 {
-#ifndef __WIN32
+#ifndef WIN32
   return EAGAIN;
 #else
   return WSAEWOULDBLOCK;
