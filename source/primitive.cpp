@@ -30,6 +30,9 @@
 #include <time.h>
 #if !defined WIN32
 #include <sys/time.h>
+#else
+#include <Windows.h>
+#define SECS_BETWEEN_EPOCHS 11644473600
 #endif
 
 #include "env.h"
@@ -50,7 +53,7 @@ extern object ffiPrimitive(int, object*);
 
 static object zeroaryPrims(int number)
 {   
-  short i;
+  long i;
   object returnedObject;
 
   returnedObject = nilobj;
@@ -76,7 +79,14 @@ static object zeroaryPrims(int number)
 #if !defined(WIN32)
       i = (short) time((long *) 0);
 #else
-      i = 0;
+      {
+        FILETIME ft_now;
+        GetSystemTimeAsFileTime(&ft_now);
+        LONGLONG unix_time = ((LONGLONG) ft_now.dwHighDateTime << 32LL) + ft_now.dwLowDateTime;
+        unix_time /= 10000000LL; // Convert to seconds
+        unix_time += SECS_BETWEEN_EPOCHS; // Convert between win32 epoch (Jan 1 1601) and Unix epoch (Jan 1 1970)
+        i = static_cast<unsigned long>(unix_time);
+      }
 #endif
       returnedObject = MemoryManager::Instance()->newInteger(i);
       break;
@@ -97,7 +107,10 @@ static object zeroaryPrims(int number)
           (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
         returnedObject = MemoryManager::Instance()->newInteger(time_in_mill);
 #else
-        returnedObject = MemoryManager::Instance()->newInteger(0);
+		SYSTEMTIME st_now;
+		GetSystemTime(&st_now);
+		long ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
+        returnedObject = MemoryManager::Instance()->newInteger(ms_now);
 #endif
       }
       break;
