@@ -15,6 +15,10 @@
 #include "memory.h"
 #include "names.h"
 
+#if !defined WIN32
+#include "editline/readline.h"
+#endif
+
 extern bool parseok;
 
 static char gLastError[1024];
@@ -72,11 +76,20 @@ object sysPrimitive(int number, object* arguments)
             objectRef(arguments[0]).charPtr()));
       break;
 
-    case 1: /* readline, with history support */
+    case 1: /* editline, with history support */
+      {
+#if defined WIN32
         char command[256];
         printf("%s", objectRef(arguments[0]).charPtr());
         gets(command);
         returnedObject = MemoryManager::Instance()->newStString(command);
+#else
+        char* command = readline(objectRef(arguments[0]).charPtr());
+        returnedObject = MemoryManager::Instance()->newStString(command);
+        add_history(command);
+        free(command);
+#endif
+      }
       break;
 
     case 2: /* get last error */ 

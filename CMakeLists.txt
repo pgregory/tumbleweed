@@ -16,6 +16,7 @@ endif(TW_SMALLINTEGER_AS_OBJECT)
 #   include_directories(${Boost_INCLUDE_DIRS})
 #endif()
 
+
 set(shared_srcs 
   source/filein.cpp
   source/interp.cpp
@@ -92,6 +93,9 @@ if(WIN32)
     add_definitions(-DSO_EXT="dll" -D_CRT_SECURE_NO_WARNINGS)
 else(WIN32)
   add_definitions(-DSO_EXT="so")
+  find_library(TW_EDITLINE_LIBRARY "edit")
+  find_path(TW_EDITLINE_INCLUDE_DIR "editline/readline.h")
+  include_directories(${TW_EDITLINE_INCLUDE_DIR})
 endif(WIN32)
 
 function(prefix_sources prefix sources)
@@ -111,7 +115,7 @@ source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
 if(NOT WIN32)
-list(APPEND LIBS "dl")
+  list(APPEND LIBS "dl" ${TW_EDITLINE_LIBRARY})
 endif(NOT WIN32)
 
 add_executable(initial ${shared_srcs} ${init_srcs})
@@ -151,8 +155,9 @@ if(TW_BUILD_TESTS)
 endif(TW_BUILD_TESTS)
 
 # Modules.
-#add_subdirectory(ffi_test)
+add_subdirectory(ffi_test)
 add_subdirectory(sockets)
+add_subdirectory(sfml)
 #add_subdirectory(linenoise)
 #add_subdirectory(trex)
 if(NOT WIN32)
