@@ -23,6 +23,7 @@ extern "C" {
 #include "names.h"
 #include "interp.h"
 
+extern ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, ObjectHandle* args, int cargs);
 
 extern ObjectHandle processStack;
 extern int linkPointer;
@@ -30,22 +31,36 @@ extern int linkPointer;
 typedef void* FFI_LibraryHandle;
 typedef void* FFI_FunctionHandle;
 
-typedef union FFI_DataType_U
+typedef struct FFI_DataType_U
 {
-  char* charPtr;
-  int   integer;
-  void* cPointer;
-  float _float;
-  struct 
-  {
-    void* pointer;
-    int integer;
-  } outInteger;
-  struct 
-  {
-    void* pointer;
+  int typemap;
+  ffi_type* type;
+  void* ptr;
+  union {
+    char* charPtr;
+    int   integer;
+    void* cPointer;
     float _float;
-  } outFloat;
+    struct 
+    {
+      void* pointer;
+      int integer;
+    } outInteger;
+    struct 
+    {
+      void* pointer;
+      float _float;
+    } outFloat;
+    struct
+    {
+      ffi_type* type;
+      object _class;
+      struct FFI_DataType_U* members;
+      int numMembers;
+      size_t size;
+      void* pointer;
+    } externalData;
+  };
 } FFI_DataType;
 
 typedef enum FFI_Symbols_E 
@@ -75,6 +90,8 @@ typedef enum FFI_Symbols_E
   FFI_WSTRING_OUT,
   FFI_COBJECT,
   FFI_SMALLTALK,
+  FFI_EXTERNALDATA,
+  FFI_EXTERNALDATAOUT,
 } FFI_Symbols;
 
 
@@ -104,7 +121,9 @@ static const char* ffiStrs[] =
   "wstring",            // FFI_WSTRING,
   "wstringOut",         // FFI_WSTRING_OUT
   "cObject",            // FFI_COBJECT,
-  "smalltalk"           // FFI_SMALLTALK,
+  "smalltalk",          // FFI_SMALLTALK,
+  "external",           // FFI_EXTERNALDATA,
+  "externalOut",        // FFI_EXTERNALDATAOUT,
 };
 
 static int ffiNumStrs = sizeof(ffiStrs)/sizeof(ffiStrs[0]);
@@ -135,7 +154,40 @@ static void* ffiLSTTypes[] =
   &ffi_type_pointer,    // FFI_WSTRING,
   &ffi_type_pointer,    // FFI_WSTRING_OUT
   &ffi_type_pointer,    // FFI_COBJECT,
-  &ffi_type_pointer     // FFI_SMALLTALK,
+  &ffi_type_pointer,    // FFI_SMALLTALK,
+  &ffi_type_pointer,    // FFI_EXTERNALDATA,
+  &ffi_type_pointer,    // FFI_EXTERNALDATAOUT,
+};
+
+static size_t ffiLSTTypeSizes[] = 
+{
+  sizeof(unsigned char),  // FFI_CHAR,
+  sizeof(void*),          // FFI_CHAR_OUT,
+  sizeof(void*),          // FFI_STRING,
+  sizeof(void*),          // FFI_STRING_OUT,
+  sizeof(void*),          // FFI_SYMBOL,
+  sizeof(void*),          // FFI_SYMBOL_OUT,
+  sizeof(int),            // FFI_INT,
+  sizeof(void*),          // FFI_INT_OUT,
+  sizeof(unsigned int),   // FFI_UINT,
+  sizeof(void*),          // FFI_UINT_OUT,
+  sizeof(long),           // FFI_LONG,
+  sizeof(void*),          // FFI_LONG_OUT
+  sizeof(unsigned int),   // FFI_ULONG,
+  sizeof(void*),          // FFI_ULONG_OUT,
+  sizeof(double),         // FFI_DOUBLE,
+  sizeof(void*),          // FFI_DOUBLE_OUT,
+  sizeof(long double),    // FFI_LONGDOUBLE,
+  sizeof(void*),          // FFI_LONG_DOUBLE_OUT,
+  0,                      // FFI_VOID,
+  sizeof(short),          // FFI_WCHAR,
+  sizeof(void*),          // FFI_WCHAR_OUT,
+  sizeof(void*),          // FFI_WSTRING,
+  sizeof(void*),          // FFI_WSTRING_OUT
+  sizeof(void*),          // FFI_COBJECT,
+  sizeof(void*),          // FFI_SMALLTALK,
+  sizeof(void*),          // FFI_EXTERNALDATA,
+  sizeof(void*),          // FFI_EXTERNALDATAOUT,
 };
 
 void initFFISymbols()
@@ -164,9 +216,9 @@ int mapType(object symbol)
   return FFI_VOID;
 }
 
-void* valueOut(int argMap, object value, FFI_DataType* data)
+
+void valueOut(object value, FFI_DataType* data)
 {
-  void* ptr;
   object realValue;
 
   object sclass = globalSymbol("Symbol");
@@ -175,7 +227,8 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     realValue = globalSymbol(objectRef(value).charPtr());
   else
     realValue = value;
-  switch(argMap)
+
+  switch(data->typemap)
   {
     case FFI_INT_OUT:
     case FFI_UINT_OUT:
@@ -185,48 +238,69 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
     case FFI_WCHAR_OUT:
       data->outInteger.pointer = &data->outInteger.integer;
       data->outInteger.integer = getInteger(realValue);
-      ptr = &data->outInteger.pointer;
+      data->ptr = &data->outInteger.pointer;
+      data->type = &ffi_type_pointer;
       break;
     case FFI_DOUBLE_OUT:
     case FFI_LONGDOUBLE_OUT:
       data->outFloat.pointer = &data->outFloat._float;
       data->outFloat._float = objectRef(realValue).floatValue();
-      ptr = &data->outFloat.pointer;
+      data->ptr = &data->outFloat.pointer;
+      data->type = &ffi_type_pointer;
       break;
     case FFI_CHAR:
       data->integer = getInteger(realValue);
-      ptr = &data->integer;
+      data->ptr = &data->integer;
+      data->type = &ffi_type_uchar;
       break;
     case FFI_STRING:
     case FFI_STRING_OUT:
     case FFI_SYMBOL:
     case FFI_SYMBOL_OUT:
       data->charPtr = objectRef(realValue).charPtr();
-      ptr = &data->charPtr;
+      data->ptr = &data->charPtr;
+      data->type = &ffi_type_pointer;
       break;
-    case FFI_INT:
     case FFI_UINT:
-    case FFI_LONG:
     case FFI_ULONG:
       if(getClass(realValue) == globalSymbol("Integer"))
         data->integer = getInteger(realValue);
       else if(getClass(realValue) == globalSymbol("Float"))
         data->integer = (int)objectRef(realValue).floatValue();
-      ptr = &data->integer;
+      data->ptr = &data->integer;
+      data->type = &ffi_type_uint32;
+    case FFI_INT:
+    case FFI_LONG:
+      if(getClass(realValue) == globalSymbol("Integer"))
+        data->integer = getInteger(realValue);
+      else if(getClass(realValue) == globalSymbol("Float"))
+        data->integer = (int)objectRef(realValue).floatValue();
+      data->ptr = &data->integer;
+      data->type = &ffi_type_sint32;
       break;
     case FFI_DOUBLE:
+      // \todo: How to check type.
+      data->_float = objectRef(realValue).floatValue();
+      data->ptr = &data->_float;
+      data->type = &ffi_type_double;
+      break;
     case FFI_LONGDOUBLE:
       // \todo: How to check type.
       data->_float = objectRef(realValue).floatValue();
-      ptr = &data->_float;
+      data->ptr = &data->_float;
+      data->type = &ffi_type_longdouble;
       break;
     case FFI_VOID:
+      data->type = &ffi_type_void;
       break;
     case FFI_WCHAR:
+      data->type = &ffi_type_uint16;
       break;
     case FFI_WSTRING:
+      data->type = &ffi_type_pointer;
       break;
     case FFI_WSTRING_OUT:
+      data->type = &ffi_type_pointer;
       break;
     case FFI_COBJECT:
       {
@@ -234,15 +308,146 @@ void* valueOut(int argMap, object value, FFI_DataType* data)
         void* f = objectRef(realValue).cPointerValue();
         int s = sizeof(f);
         data->cPointer = f;
-        ptr = &data->cPointer;
+        data->ptr = &data->cPointer;
+        data->type = &ffi_type_pointer;
       }
       break;
     case FFI_SMALLTALK:
+      data->type = &ffi_type_pointer;
+      break;
+    case FFI_EXTERNALDATA:
+    case FFI_EXTERNALDATAOUT:
+      {
+        // Check the argument, see if it's a type of ExternalData  
+        // Initially, check just for responding to 'fields'
+        ObjectHandle args[1];
+        args[0] = MemoryManager::Instance()->newSymbol("fields");
+        ObjectHandle result = sendMessageToObject(value, "respondsTo:", args, 1);
+        if(result == booleanSyms[booleanTrue])
+        {
+          result = sendMessageToObject(value, "fields", NULL, 0);
+          // \todo: type check return.
+          // Now process the returned array
+          int ctypes = objectRef(result).size;
+          // Create an ffi_type to represent this structure.
+          ffi_type* ed_type = new ffi_type;
+          // \todo: check leakage.
+          ffi_type** ed_type_elements = new ffi_type*[ctypes + 1];
+          FFI_DataType* members = new FFI_DataType[ctypes];
+          size_t size = 0;
+          for(int i = 0; i < ctypes; ++i)
+          {
+            // Read the types from the returned array.
+            ObjectHandle type = result->basicAt(i+1);
+            ObjectHandle name = type->basicAt(1);
+            ObjectHandle basetype = type->basicAt(2);
+            int argmap = mapType(basetype);
+            ed_type_elements[i] = static_cast<ffi_type*>(ffiLSTTypes[argmap]);
+            size += ffiLSTTypeSizes[argmap];
+          }
+          // leak:
+          void* f = calloc(1, size);
+          char* pf = static_cast<char*>(f);
+          for(int i = 0; i < ctypes; ++i)
+          {
+            // Read the types from the returned array.
+            ObjectHandle type = result->basicAt(i+1);
+            ObjectHandle name = type->basicAt(1);
+            ObjectHandle basetype = type->basicAt(2);
+            ObjectHandle args[1];
+            args[0] = MemoryManager::Instance()->newInteger(i+1);
+            ObjectHandle memberval = sendMessageToObject(value, "member:", args, 1); 
+            int argmap = mapType(basetype);
+            members[i].typemap = argmap;
+            valueOut(memberval, &members[i]);
+            ed_type_elements[i] = members[i].type;
+            memcpy(pf, members[i].ptr, ffiLSTTypeSizes[argmap]);
+            pf += ffiLSTTypeSizes[argmap];
+          }
+          ed_type_elements[ctypes] = NULL;
+          ed_type->size = ed_type->alignment = 0;
+          ed_type->elements = ed_type_elements;
+          ed_type->type = FFI_TYPE_STRUCT;
+
+          data->externalData.type = ed_type;
+          data->externalData.size = size;
+          data->externalData.members = members;
+          data->externalData._class = getClass(realValue);
+          data->externalData.numMembers = ctypes;
+          data->externalData.pointer = f;
+
+          if(data->typemap == FFI_EXTERNALDATA)
+          {
+            data->ptr = f;
+            data->type = ed_type;
+          }
+          else
+          {
+            data->ptr = &data->externalData.pointer;
+            data->type = &ffi_type_pointer;
+          }
+        }
+        else
+        {
+          sysError("External data argument","not ExternalData");
+        }
+      }
       break;
   }
-  return ptr;
 }
 
+size_t readFromStorage(void* storage, FFI_DataType* data)
+{
+  switch(data->typemap)
+  {
+    case FFI_INT_OUT:
+    case FFI_UINT_OUT:
+    case FFI_LONG_OUT:
+    case FFI_ULONG_OUT:
+    case FFI_CHAR_OUT:
+    case FFI_WCHAR_OUT:
+      memcpy(&data->outInteger.integer, storage, ffiLSTTypeSizes[data->typemap]);
+      return ffiLSTTypeSizes[data->typemap];
+      break;
+
+    case FFI_CHAR:
+      memcpy(&data->integer, storage, ffiLSTTypeSizes[data->typemap]);
+      return ffiLSTTypeSizes[data->typemap];
+      break;
+
+    case FFI_STRING:
+      memcpy(&data->charPtr, storage, ffiLSTTypeSizes[data->typemap]);
+      return ffiLSTTypeSizes[data->typemap];
+      break;
+
+    case FFI_INT:
+    case FFI_UINT:
+    case FFI_LONG:
+    case FFI_ULONG:
+      memcpy(&data->integer, storage, ffiLSTTypeSizes[data->typemap]);
+      return MemoryManager::Instance()->newInteger(data->integer);
+      break;
+
+    case FFI_COBJECT:
+      memcpy(&data->cPointer, storage, ffiLSTTypeSizes[data->typemap]);
+      return ffiLSTTypeSizes[data->typemap];
+      break;
+
+    case FFI_VOID:
+      return 0;
+      break;
+
+    case FFI_EXTERNALDATA:
+      // \todo:
+      return 0;
+      break;
+
+    case FFI_EXTERNALDATAOUT:
+      // \todo:
+      return 0;
+      break;
+  }
+}
 
 object valueIn(int retMap, FFI_DataType* data)
 {
@@ -278,6 +483,46 @@ object valueIn(int retMap, FFI_DataType* data)
 
     case FFI_VOID:
       return nilobj;
+      break;
+
+    case FFI_EXTERNALDATA:
+      {
+        ObjectHandle edclass = data->externalData._class;
+        int csize = edclass->basicAt(sizeInClass);
+        ObjectHandle ed = MemoryManager::Instance()->allocObject(csize);
+        ed->basicAtPut(1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
+        ed->_class = edclass;
+        // Now fill in the values using recursive marshalling.
+        ObjectHandle args[2];
+        for(int i = 0; i < data->externalData.numMembers; ++i)
+        {
+          args[0] = MemoryManager::Instance()->newInteger(i+1);
+          args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
+          sendMessageToObject(ed, "setMember:to:", args, 2);
+        }
+        return ed;
+      }
+      break;
+
+    case FFI_EXTERNALDATAOUT:
+      {
+        ObjectHandle edclass = data->externalData._class;
+        int csize = edclass->basicAt(sizeInClass);
+        ObjectHandle ed = MemoryManager::Instance()->allocObject(csize);
+        ed->basicAtPut(1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
+        ed->_class = edclass;
+        // Now fill in the values using recursive marshalling.
+        ObjectHandle args[2];
+        char* structStorage = static_cast<char*>(data->externalData.pointer);
+        for(int i = 0; i < data->externalData.numMembers; ++i)
+        {
+          args[0] = MemoryManager::Instance()->newInteger(i+1);
+          structStorage += readFromStorage(structStorage, &(data->externalData.members[i]));
+          args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
+          sendMessageToObject(ed, "setMember:to:", args, 2);
+        }
+        return ed;
+      }
       break;
   }
 }
@@ -339,7 +584,9 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   // was replaced.
   stack = process->basicAt(stackInProcess);
   object ro = stack->basicAt(1);
-  valueOut(data->retType, ro, static_cast<FFI_DataType*>(ret)); 
+  FFI_DataType temp;
+  temp.typemap = data->retType;
+  valueOut(ro, static_cast<FFI_DataType*>(ret)); 
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
 }
@@ -353,7 +600,7 @@ object ffiPrimitive(int number, object* arguments)
     case 0: /* dlopen */
       {
         char* p = objectRef(arguments[0]).charPtr();
-	libName << p << "." << SO_EXT;
+        libName << p << "." << SO_EXT;
         FFI_LibraryHandle handle = dlopen(libName.str().c_str(), RTLD_LAZY);
         if(NULL != handle)
           returnedObject = MemoryManager::Instance()->newCPointer(handle);
@@ -409,17 +656,21 @@ object ffiPrimitive(int number, object* arguments)
           FFI_DataType* dataValues = NULL; 
           if(cargs > 0)
           {
-            args = static_cast<ffi_type**>(calloc(cargTypes, sizeof(ffi_type)));
+            // leak:
+            args = static_cast<ffi_type**>(calloc(cargTypes, sizeof(ffi_type*)));
+            // leak:
             values = static_cast<void**>(calloc(cargs, sizeof(void*)));
+            // leak:
             dataValues = static_cast<FFI_DataType*>(calloc(cargs, sizeof(FFI_DataType)));
 
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
               object argType = objectRef(arguments[2]).basicAt(i+1);
-              int argMap = mapType(argType);
-              args[i] = static_cast<ffi_type*>(ffiLSTTypes[argMap]);
-              values[i] = valueOut(argMap, objectRef(arguments[3]).basicAt(i+1), &dataValues[i]);
+              dataValues[i].typemap = mapType(argType);
+              valueOut(objectRef(arguments[3]).basicAt(i+1), &dataValues[i]);
+              values[i] = dataValues[i].ptr;
+              args[i] = dataValues[i].type;
             }
           }
 
@@ -434,6 +685,7 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = MemoryManager::Instance()->newArray(cargTypes + 1);
 
             ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
+            // \todo: this is wrong, retData cannot be an FFI_DataType
             returnedObject->basicAtPut(1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
           }
           // Now fill in the rest of the result array with the arguments
@@ -450,7 +702,7 @@ object ffiPrimitive(int number, object* arguments)
               object argType = objectRef(arguments[2]).basicAt(i+1);
               int argMap = mapType(argType);
               // Get a new value out of the arguments array.
-              object newVal = valueIn(argMap, static_cast<FFI_DataType*>(values[i]));
+              object newVal = valueIn(argMap, &dataValues[i]);
               returnedObject->basicAtPut(i+2, newVal); 
             }
           }

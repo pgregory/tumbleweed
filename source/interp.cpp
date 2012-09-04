@@ -34,7 +34,6 @@ static int messTest(object obj)
 }
 
 /* a cache of recently executed methods is used for fast lookup */
-#if defined TW_METHOD_CACHE
 # define cacheSize 211
 static struct 
 {
@@ -43,17 +42,14 @@ static struct
   ObjectHandle cacheClass;    /* the class of the method */
   ObjectHandle cacheMethod;   /* the method itself */
 } methodCache[cacheSize];
-#endif
 
 /* flush an entry from the cache (usually when its been recompiled) */
 void flushCache(object messageToSend, object _class)
 {   
-#if defined TW_METHOD_CACHE
   int hash;
 
   hash = ((hashObject(messageToSend)) + (hashObject(_class))) % cacheSize;
   methodCache[hash].cacheMessage = nilobj;
-#endif
 }
 
 /*
@@ -299,7 +295,6 @@ doSendMessage:
 doFindMessage:
         /* look up method in cache */
         i = ((hashObject(messageToSend)) + (hashObject(methodClass))) % cacheSize;
-#if defined TW_METHOD_CACHE
         if ((methodCache[i].cacheMessage == messageToSend) &&
             (methodCache[i].lookupClass == methodClass)) {
           method = methodCache[i].cacheMethod;
@@ -307,17 +302,16 @@ doFindMessage:
 //          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
         }
         else 
-#endif
         {
-#if defined TW_METHOD_CACHE
           methodCache[i].lookupClass = methodClass;
-#endif
-          if (! findMethod(&methodClass)) {
+          if(! findMethod(&methodClass)) 
+          {
             /* not found, we invoke a smalltalk method */
             /* to recover */
             j = processStackTop() - returnPoint;
             argarray = memmgr->newArray(j+1);
-            for (; j >= 0; j--) {
+            for (; j >= 0; j--) 
+            {
               ipop(returnedObject);
               argarray->basicAtPut(j+1, returnedObject);
             }
@@ -334,14 +328,13 @@ doFindMessage:
               return false;
             }
           }
-#if defined TW_METHOD_CACHE
           methodCache[i].cacheMessage = messageToSend;
           methodCache[i].cacheMethod = method;
           methodCache[i].cacheClass = methodClass;
-#endif
         }
 
-        if (watching && (method->basicAt(watchInMethod) != nilobj)) {
+        if (watching && (method->basicAt(watchInMethod) != nilobj)) 
+        {
           /* being watched, we send to method itself */
           j = processStackTop() - returnPoint;
           argarray = memmgr->newArray(j+1);
@@ -602,4 +595,54 @@ doReturn:
   objectRef(aProcess).basicAtPut(linkPtrInProcess, memmgr->newInteger(linkPointer));
 
   return true;
+}
+
+
+ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, ObjectHandle* args, int cargs)
+{
+  MemoryManager* memmgr = MemoryManager::Instance();
+  object methodClass = getClass(receiver);
+
+  messageToSend = memmgr->newSymbol(message);
+  if (! findMethod(&methodClass)) 
+  {
+    return ObjectHandle();
+  }
+
+  int linkOffset = 2 + cargs;
+  int stackTop = 10 + cargs;
+
+  // Create a new process
+  ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
+  // Create a stack for it
+  ObjectHandle stack = MemoryManager::Instance()->newArray(50);
+  process->basicAtPut(stackInProcess, stack);
+  // Set the stack top to past the arguments, link and context data
+  process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(stackTop));
+  // Set the link pointer to past the arguments
+  process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(linkOffset));
+  // Context is nil, meaning use the stack for context information
+  stack->basicAtPut(contextInStack + cargs, nilobj);
+  // Fill in the context data.
+  stack->basicAtPut(methodInStack + cargs, method);
+  stack->basicAtPut(returnpointInStack + cargs, MemoryManager::Instance()->newInteger(1));
+  stack->basicAtPut(bytepointerInStack + cargs, MemoryManager::Instance()->newInteger(1));
+
+  // Fill in the first argument, as the receiver.
+  stack->basicAtPut(1, receiver);
+  // And add the remainder of the arguments
+  for(int i = 0; i < cargs; ++i)
+    stack->basicAtPut(2 + i, args[i]);
+
+  ObjectHandle saveProcessStack = processStack;
+  int saveLinkPointer = linkPointer;
+  while(execute(process, 15000));
+  // Re-read the stack object, in case it had to grow during execution and 
+  // was replaced.
+  stack = process->basicAt(stackInProcess);
+  object ro = stack->basicAt(1);
+  processStack = saveProcessStack;
+  linkPointer = saveLinkPointer;
+
+  return ro;
 }
