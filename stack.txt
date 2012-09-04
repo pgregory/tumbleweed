@@ -1,0 +1,57 @@
+        Stack                            execute()            Process                               execute()
+
+    +-----------+                                           +-----------+
+1   |   NIL     |   argument                psb             |   stack   |                            j : 10
+    +-----------+                                           +-----------+
+2   |   NIL     |   prevLink                                |    10     |     stackTop               linkPointer : 2
+    +-----------+                                           +-----------+
+3   |   NIL     |   context                                 |     2     |     linkPointer            contextObject : NIL (psb[linkPointer+1])
+    +-----------+                                           +-----------+
+4   |    1      |   returnPoint                                                                      returnPoint : 1 (psb[linkPointer+2])
+    +-----------+
+5   |  method   |   method                                                                           byteOffset : 1 (psb[linkPointer+4])
+    +-----------+
+6   |    1      |   bytePointer                                                                      method : psb[linkPointer+3]
+    +-----------+
+7   |           |                                                                                    contextObject : stack object
+    +-----------+
+8   |           |                                                                                    cntx : psb
+    +-----------+
+9   |           |                                                                                    arg : psb[1] (cntx + returnPoint -1)
+    +-----------+
+10  |           |  <------                  pst                                                      temps : psb[7] (cntx + linkPointer + 4)
+    +-----------+
+11  |           |                                                                                    rcv : NULL (arg[0].sysMemPtr())
+    +-----------+
+12  |           |
+    +-----------+
+13  |           |
+    +-----------+
+14  |           |
+    +-----------+
+15  |           |
+    +-----------+
+16  |           |
+    +-----------+
+17  |           |
+    +-----------+
+18  |           |
+    +-----------+
+19  |           |
+    +-----------+
+20  |           |
+    +-----------+
+21  |           |
+    +-----------+
+22  |           |
+    +-----------+
+23  |           |
+    +-----------+
+24  |           |
+    +-----------+
+25  |           |
+    +-----------+
+26  |           |
+    +-----------+
+27  |           |
+    +-----------+
