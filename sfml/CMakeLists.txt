@@ -1,8 +1,8 @@
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 find_package(SFML 2 COMPONENTS window system graphics audio REQUIRED)
 
-include_directories(${SFMLL_INCLUDE_DIR})
+include_directories(${SFML_INCLUDE_DIR})
 
 add_library(sfml MODULE sfml.cpp)
 

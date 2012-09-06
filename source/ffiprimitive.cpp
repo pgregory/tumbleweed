@@ -11,9 +11,11 @@
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#if !defined WIN32
 extern "C" {
 #include <dlfcn.h>
 }
+#endif
 #include <assert.h>
 #include <ffi.h>
 #include <limits.h>
@@ -598,7 +600,8 @@ object ffiPrimitive(int number, object* arguments)
 
   switch(number - 180) {
     case 0: /* dlopen */
-      {
+#if !defined WIN32
+	  {
         char* p = objectRef(arguments[0]).charPtr();
         libName << p << "." << SO_EXT;
         FFI_LibraryHandle handle = dlopen(libName.str().c_str(), RTLD_LAZY);
@@ -611,10 +614,14 @@ object ffiPrimitive(int number, object* arguments)
           returnedObject = nilobj;
         }
       }
+#else
+		returnedObject = nilobj;
+#endif
       break;
 
     case 1: /* dlsym */
-      {
+#if !defined WIN32
+	  {
         // \todo: Check type.
         FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
         char* p = objectRef(arguments[1]).charPtr();
@@ -632,6 +639,9 @@ object ffiPrimitive(int number, object* arguments)
           }
         }
       }
+#else
+		returnedObject = nilobj;
+#endif
       break;
 
      /* 
@@ -770,6 +780,7 @@ object ffiPrimitive(int number, object* arguments)
       break;
 
     case 4: // dlclose
+#if !defined WIN32
       {
         // \todo: Check type.
         FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
@@ -780,6 +791,9 @@ object ffiPrimitive(int number, object* arguments)
           returnedObject = MemoryManager::Instance()->newInteger(result);
         }
       }
+#else
+		returnedObject = nilobj;
+#endif
       break;
 
 

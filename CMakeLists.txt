@@ -75,6 +75,9 @@ if(TW_ENABLE_FFI)
       bootstrap/ffi.st
       )
   add_definitions(-DTW_ENABLE_FFI)
+  if(WIN32)
+    add_definitions(-DFFI_BUILDING)
+  endif(WIN32)
 endif(TW_ENABLE_FFI)
 
 set(image_srcs ${common_image_srcs} ${ffi_image_srcs}

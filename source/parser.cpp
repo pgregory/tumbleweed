@@ -377,14 +377,14 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
     int i;
 
     if ((! toSuper) && (argumentCount == 0))
-        for (i = 0; (! sent) && unSyms[i] ; i++)
+        for (i = 0; (! sent) && i < unSyms.size() ; i++)
             if (messagesym == unSyms[i]) {
                 genInstruction(SendUnary, i);
                 sent = true;
                 }
 
     if ((! toSuper) && (argumentCount == 1))
-        for (i = 0; (! sent) && binSyms[i]; i++)
+        for (i = 0; (! sent) && i < binSyms.size(); i++)
             if (messagesym == binSyms[i]) {
                 genInstruction(SendBinary, i);
                 sent = true;
