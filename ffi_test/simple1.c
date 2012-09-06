@@ -1,11 +1,17 @@
 #include "stdio.h"
 
+#if defined WIN32
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
+
 typedef struct {
   char* string;
   int   number;
 } STest;
 
-int my_print(const char* string, int* outval, STest* test)
+EXPORT int my_print(const char* string, int* outval, STest* test)
 {
   printf("%s - %s\n", string, test->string);
   *outval = test->number;

@@ -15,6 +15,8 @@
 extern "C" {
 #include <dlfcn.h>
 }
+#else
+#include <Windows.h>
 #endif
 #include <assert.h>
 #include <ffi.h>
@@ -615,7 +617,19 @@ object ffiPrimitive(int number, object* arguments)
         }
       }
 #else
-		returnedObject = nilobj;
+	  {
+        char* p = objectRef(arguments[0]).charPtr();
+        libName << p << "." << SO_EXT;
+        FFI_LibraryHandle handle = LoadLibrary(libName.str().c_str());
+        if(NULL != handle)
+          returnedObject = MemoryManager::Instance()->newCPointer(handle);
+        else 
+        {
+			// \todo: GetLastError() etc.
+			sysWarn("library not found",libName.str().c_str());
+          returnedObject = nilobj;
+        }
+      }
 #endif
       break;
 
@@ -640,7 +654,24 @@ object ffiPrimitive(int number, object* arguments)
         }
       }
 #else
-		returnedObject = nilobj;
+	  {
+        // \todo: Check type.
+        FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
+        char* p = objectRef(arguments[1]).charPtr();
+        if(NULL != lib)
+        {
+          FFI_FunctionHandle func = GetProcAddress((HINSTANCE)lib, p);
+          if(NULL != func)
+            returnedObject = MemoryManager::Instance()->newCPointer(func);
+          else
+          {
+            std::stringstream err;
+            err << "function " << p << " not found in library";
+            sysWarn(err.str().c_str(), "ffiPrimitive");
+            returnedObject = nilobj;
+          }
+        }
+      }
 #endif
       break;
 
@@ -792,7 +823,16 @@ object ffiPrimitive(int number, object* arguments)
         }
       }
 #else
-		returnedObject = nilobj;
+      {
+        // \todo: Check type.
+        FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
+        char* p = objectRef(arguments[1]).charPtr();
+        if(NULL != lib)
+        {
+          int result = FreeLibrary((HINSTANCE)lib);
+          returnedObject = MemoryManager::Instance()->newInteger(result);
+        }
+      }
 #endif
       break;
 
