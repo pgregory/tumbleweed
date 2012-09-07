@@ -429,7 +429,7 @@ size_t readFromStorage(void* storage, FFI_DataType* data)
     case FFI_LONG:
     case FFI_ULONG:
       memcpy(&data->integer, storage, ffiLSTTypeSizes[data->typemap]);
-      return MemoryManager::Instance()->newInteger(data->integer);
+      return ffiLSTTypeSizes[data->typemap];
       break;
 
     case FFI_COBJECT:
@@ -603,7 +603,7 @@ object ffiPrimitive(int number, object* arguments)
   switch(number - 180) {
     case 0: /* dlopen */
 #if !defined WIN32
-	  {
+          {
         char* p = objectRef(arguments[0]).charPtr();
         libName << p << "." << SO_EXT;
         FFI_LibraryHandle handle = dlopen(libName.str().c_str(), RTLD_LAZY);
@@ -617,7 +617,7 @@ object ffiPrimitive(int number, object* arguments)
         }
       }
 #else
-	  {
+          {
         char* p = objectRef(arguments[0]).charPtr();
         libName << p << "." << SO_EXT;
         FFI_LibraryHandle handle = LoadLibrary(libName.str().c_str());
@@ -625,8 +625,8 @@ object ffiPrimitive(int number, object* arguments)
           returnedObject = MemoryManager::Instance()->newCPointer(handle);
         else 
         {
-			// \todo: GetLastError() etc.
-			sysWarn("library not found",libName.str().c_str());
+          // \todo: GetLastError() etc.
+          sysWarn("library not found",libName.str().c_str());
           returnedObject = nilobj;
         }
       }
@@ -635,7 +635,7 @@ object ffiPrimitive(int number, object* arguments)
 
     case 1: /* dlsym */
 #if !defined WIN32
-	  {
+          {
         // \todo: Check type.
         FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
         char* p = objectRef(arguments[1]).charPtr();
@@ -654,7 +654,7 @@ object ffiPrimitive(int number, object* arguments)
         }
       }
 #else
-	  {
+      {
         // \todo: Check type.
         FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
         char* p = objectRef(arguments[1]).charPtr();
@@ -726,8 +726,10 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = MemoryManager::Instance()->newArray(cargTypes + 1);
 
             ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
-            // \todo: this is wrong, retData cannot be an FFI_DataType
-            returnedObject->basicAtPut(1, valueIn(retMap, static_cast<FFI_DataType*>(retData)));
+            FFI_DataType ret;
+            ret.typemap = retMap;
+            readFromStorage(retData, &ret);
+            returnedObject->basicAtPut(1, valueIn(retMap, &ret));
           }
           // Now fill in the rest of the result array with the arguments
           // thus getting any 'out' values back to the system in a controlled 
