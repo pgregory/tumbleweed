@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -31,6 +33,11 @@ EXPORT void windowClear(sf::RenderWindow* window)
 EXPORT void windowDraw(sf::RenderWindow* window, sf::Drawable* drawable)
 {
     window->draw(*drawable);
+}
+
+EXPORT void windowClose(sf::RenderWindow* window)
+{
+    window->close();
 }
 
 EXPORT sf::Texture* textureCreate()
@@ -113,12 +120,38 @@ EXPORT void textSetCharacterSize(sf::Text* text, int size)
     text->setCharacterSize(size);
 }
 
-EXPORT int windowPollEvent(sf::RenderWindow* window)
+typedef struct 
+{
+    int type;
+    int mouseX;
+    int mouseY;
+    int keyCode;
+} EventStruct;
+
+EXPORT void windowPollEvent(sf::RenderWindow* window, EventStruct* ev)
 {
     sf::Event event;
     bool result = window->pollEvent(event);
-    if(result && (event.type == sf::Event::KeyReleased))
-        return event.key.code;
-    else
-        return 0;
+    ev->type = 0;
+    ev->mouseX = 0;
+    ev->mouseY = 0;
+    if(result)
+    {
+        ev->type = event.type;
+        switch(event.type)
+        {
+            case sf::Event::MouseMoved:
+                ev->mouseX = event.mouseMove.x;
+                ev->mouseY = event.mouseMove.y;
+                break;
+
+            case sf::Event::KeyPressed:
+            case sf::Event::KeyReleased:
+                ev->keyCode = event.key.code;
+                break;
+
+            default:
+                break;
+        }
+    }
 }

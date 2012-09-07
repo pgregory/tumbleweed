@@ -6,6 +6,7 @@ Class SFMLTexture SFMLObject
 Class SFMLSprite SFMLObject
 Class SFMLFont SFMLObject
 Class SFMLText SFMLObject
+Class SFMLEvent ExternalData 
 
 Methods MetaSFML 'initialisation'
   sfmlFFI
@@ -52,15 +53,30 @@ Methods SFMLWindow 'display'
   args <- Array new: 2.
   args at: 1 put: handle; at: 2 put: (aDrawable handle).
   (SFML sfmlFFI) call: 'windowDraw' returning: #void taking: #(cObject cObject) as: args
+|
+  close
+  | args |
+  args <- Array new: 1.
+  args at: 1 put: handle.
+  (SFML sfmlFFI) call: 'windowClose' returning: #void taking: #(cObject) as: args
+]
+*
+Methods SFMLEvent 'all'
+  fields
+    ^ #((type int)
+        (mouseX int)
+        (mouseY int)
+        (keyCode int))
 ]
 *
 Methods SFMLWindow 'events'
   pollEvent
-  | args result |
-  args <- Array new: 1.
-  args at: 1 put: handle.
-  result <- (SFML sfmlFFI) call: 'windowPollEvent' returning: #int taking: #(cObject) as: args.
-  ^ (result at: 1)
+  | args result event |
+  event <- SFMLEvent new.
+  args <- Array new: 2.
+  args at: 1 put: handle; at: 2 put: event.
+  result <- (SFML sfmlFFI) call: 'windowPollEvent' returning: #void taking: #(cObject externalOut) as: args.
+  ^result at: 3
 ]
 *
 Methods MetaSFMLTexture 'creation'
