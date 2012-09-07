@@ -3,9 +3,10 @@
 *
 RawClass MetaFFI Class MetaObject libraries
 Class FFI Object handle name functions
-Class EDTest Object members
+Class ExternalData Object members
+Class EDTeset ExternalData
 *
-Methods MetaEDTest 'creation'
+Methods MetaExternalData 'creation'
   new
     | newObj |
     newObj <- super new.
@@ -13,7 +14,7 @@ Methods MetaEDTest 'creation'
     ^ newObj
 ]
 *
-Methods EDTest 'all'
+Methods ExternalData 'all'
   init
     members <- Array new: (self fields size)
 |
@@ -31,6 +32,12 @@ Methods EDTest 'all'
     members at: index put: anObject
 ]
 *
+Methods EDTest 'all'
+  fields
+    ^ #((string string)
+        (number int))
+]
+*
 Methods MetaFFI 'all'
   new: aString
     | newObj |
@@ -44,7 +51,7 @@ Methods MetaFFI 'all'
 |
   test
     | ffi args result etype |
-    etype <- EDTest new.
+    etype <- ExternalData new.
     etype members at: 1 put: 'Hello from FFI test'; at: 2 put: 69.
     args <- Array new: 3.
     args at: 1 put: 'Hello from Smalltalk'; at: 2 put: 0; at: 3 put: etype.
