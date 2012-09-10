@@ -463,6 +463,29 @@ doFindMessage:
             timeSliceCounter = getInteger(*primargs);
             returnedObject = nilobj;
             break;
+          case 56: /* Unroll to specific return point */
+            {
+              returnedObject = nilobj;
+              int unwindto = getInteger(*primargs);
+              returnPoint = getInteger(processStack->basicAt(linkPointer + 2));
+              linkPointer = getInteger(processStack->basicAt(linkPointer));
+              while (returnPoint > unwindto)
+              {
+                while (processStackTop() >= returnPoint) 
+                {
+                  stackTopFree();
+                }
+                returnPoint = getInteger(processStack->basicAt(linkPointer + 2));
+                linkPointer = getInteger(processStack->basicAt(linkPointer));
+              }
+              ipush(returnedObject); 
+              /* now go restart old routine */
+              if (linkPointer != 0)
+                goto readLinkageBlock;
+              else
+                return false /* all done */;
+            }
+            break;
           case 58: /* allocObject */
             j = getInteger(*primargs);
             returnedObject = memmgr->allocObject(j);

@@ -16,7 +16,8 @@ Methods Exception
         handler <- scheduler currentProcess exceptionHandlerFor: self.
         handler notNil
             ifTrue: [
-                handler handlerBlock value: self
+                (handler at: 1) handlerBlock value: self.
+                <56 (handler at: 2)>
             ]
             ifFalse: [
                 smalltalk error: 'Unhandled Exception "', message, '"'

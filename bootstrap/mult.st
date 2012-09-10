@@ -59,8 +59,8 @@ Methods Process 'all'
               m notNil 
                 ifTrue: [ 
                       h <- stack at: link+5.
-                      s <- '{', link, '}', m signature, ' ('.
                       r <- stack at: link+2.
+                      s <- '{', link, ' ', r, '}', m signature, ' ('.
                       (r to: link-1) do: 
                         [:x | s <- s, ' ', 
                             (stack at: x) class asString].
@@ -89,11 +89,12 @@ Methods Process 'all'
         stack at: link+5 put: handler
 |
     exceptionHandlerFor: anException 
-        | link handler |
+        | link handler returnpoint result |
         " first yield scheduler, forceing store of linkPointer"
         scheduler yield.
         link <- linkPointer.
         link <- stack at: link+1.
+        returnpoint <- nil.
         " then trace back chain "
         [ link notNil ] whileTrue:
             [ handler <- stack at: link+5.
@@ -101,10 +102,13 @@ Methods Process 'all'
                 ifTrue: [
                     (handler handles: anException)
                         ifTrue: [
-                            ^ handler
+                            result <- Array new: 2.
+                            result at: 1 put: handler; at: 2 put: returnpoint.
+                            ^ result
                         ]
                 ].
-              link <- stack at: link 
+              returnpoint <- stack at: link + 2.
+              link <- stack at: link
             ].
         ^ nil
 ]
