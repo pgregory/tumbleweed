@@ -28,6 +28,9 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+
+#include <sstream>
+
 #if !defined WIN32
 #include <sys/time.h>
 #else
@@ -593,14 +596,16 @@ static object floatBinary(int number, double first, double second)
 
 static int cPointerUnary(int number, void* firstarg)
 {   
-  char buffer[20];
   object returnedObject;
 
   switch(number) 
   {
     case 1:     /* cPointer value asString */
-      //sprintf(buffer,"0x%X", reinterpret_cast<unsigned int>(firstarg));
-      returnedObject = MemoryManager::Instance()->newStString(buffer);
+      {
+        std::stringstream ss;
+        ss << firstarg;
+        returnedObject = MemoryManager::Instance()->newStString(ss.str().c_str());
+      }
       break;
     default:
       sysError("unknown primitive","cPointerUnary");
