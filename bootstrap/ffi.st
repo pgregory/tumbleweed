@@ -50,13 +50,14 @@ Methods MetaFFI 'all'
     ^newObj
 |
   test
-    | ffi args result etype |
+    | ffi args result etype cb |
     etype <- ExternalData new.
     etype members at: 1 put: 'Hello from FFI test'; at: 2 put: 69.
-    args <- Array new: 3.
-    args at: 1 put: 'Hello from Smalltalk'; at: 2 put: 0; at: 3 put: etype.
+    args <- Array new: 4.
+    cb <- <183 #int #(string int) [ :str :num | ('In callback: ', str, ' ', num) print. 555 ] >.
+    args at: 1 put: 'Hello from Smalltalk'; at: 2 put: 0; at: 3 put: etype; at: 4 put: cb.
     ffi <- FFI new: 'simple1'.
-    result <- ffi call: 'my_print' returning: #int taking: #(string intOut externalOut) as: args.
+    result <- ffi call: 'my_print' returning: #int taking: #(string intOut externalOut cObject) as: args.
     (result at: 3) print.
     (result at: 4) members print
 ]

@@ -45,6 +45,7 @@ typedef struct FFI_DataType_U
     int   integer;
     void* cPointer;
     float _float;
+    double _double;
     struct 
     {
       void* pointer;
@@ -55,6 +56,11 @@ typedef struct FFI_DataType_U
       void* pointer;
       float _float;
     } outFloat;
+    struct 
+    {
+      void* pointer;
+      double _double;
+    } outDouble;
     struct
     {
       ffi_type* type;
@@ -83,6 +89,8 @@ typedef enum FFI_Symbols_E
   FFI_LONG_OUT,
   FFI_ULONG,
   FFI_ULONG_OUT,
+  FFI_FLOAT,
+  FFI_FLOAT_OUT,
   FFI_DOUBLE,
   FFI_DOUBLE_OUT,
   FFI_LONGDOUBLE,
@@ -115,6 +123,8 @@ static const char* ffiStrs[] =
   "longOut",            // FFI_LONG_OUT,
   "uLong",              // FFI_ULONG,
   "uLongOut",           // FFI_ULONG_OUT,
+  "float",              // FFI_FLOAT,
+  "floatOut",           // FFI_FLOAT_OUT,
   "double",             // FFI_DOUBLE,
   "doubleOut",          // FFI_DOUBLE_OUT,
   "longDouble",         // FFI_LONGDOUBLE,
@@ -148,6 +158,8 @@ static void* ffiLSTTypes[] =
   &ffi_type_pointer,    // FFI_LONG_OUT
   &ffi_type_uint32,     // FFI_ULONG,
   &ffi_type_pointer,    // FFI_ULONG_OUT,
+  &ffi_type_float,      // FFI_FLOAT,
+  &ffi_type_pointer,    // FFI_FLOAT_OUT,
   &ffi_type_double,     // FFI_DOUBLE,
   &ffi_type_pointer,    // FFI_DOUBLE_OUT,
   &ffi_type_longdouble, // FFI_LONGDOUBLE,
@@ -179,6 +191,8 @@ static size_t ffiLSTTypeSizes[] =
   sizeof(void*),          // FFI_LONG_OUT
   sizeof(unsigned int),   // FFI_ULONG,
   sizeof(void*),          // FFI_ULONG_OUT,
+  sizeof(float),          // FFI_FLOAT,
+  sizeof(void*),          // FFI_FLOAT_OUT,
   sizeof(double),         // FFI_DOUBLE,
   sizeof(void*),          // FFI_DOUBLE_OUT,
   sizeof(long double),    // FFI_LONGDOUBLE,
@@ -245,11 +259,17 @@ void valueOut(object value, FFI_DataType* data)
       data->ptr = &data->outInteger.pointer;
       data->type = &ffi_type_pointer;
       break;
-    case FFI_DOUBLE_OUT:
-    case FFI_LONGDOUBLE_OUT:
+    case FFI_FLOAT_OUT:
       data->outFloat.pointer = &data->outFloat._float;
       data->outFloat._float = objectRef(realValue).floatValue();
       data->ptr = &data->outFloat.pointer;
+      data->type = &ffi_type_pointer;
+      break;
+    case FFI_DOUBLE_OUT:
+    case FFI_LONGDOUBLE_OUT:
+      data->outDouble.pointer = &data->outDouble._double;
+      data->outDouble._double = objectRef(realValue).floatValue();
+      data->ptr = &data->outDouble.pointer;
       data->type = &ffi_type_pointer;
       break;
     case FFI_CHAR:
@@ -282,10 +302,16 @@ void valueOut(object value, FFI_DataType* data)
       data->ptr = &data->integer;
       data->type = &ffi_type_sint32;
       break;
-    case FFI_DOUBLE:
+    case FFI_FLOAT:
       // \todo: How to check type.
       data->_float = objectRef(realValue).floatValue();
       data->ptr = &data->_float;
+      data->type = &ffi_type_float;
+      break;
+    case FFI_DOUBLE:
+      // \todo: How to check type.
+      data->_double = objectRef(realValue).floatValue();
+      data->ptr = &data->_double;
       data->type = &ffi_type_double;
       break;
     case FFI_LONGDOUBLE:
@@ -432,6 +458,16 @@ size_t readFromStorage(void* storage, FFI_DataType* data)
       return ffiLSTTypeSizes[data->typemap];
       break;
 
+    case FFI_FLOAT:
+      memcpy(&data->_float, storage, ffiLSTTypeSizes[data->typemap]);
+      return ffiLSTTypeSizes[data->typemap];
+      break;
+
+    case FFI_DOUBLE:
+      memcpy(&data->_double, storage, ffiLSTTypeSizes[data->typemap]);
+      return ffiLSTTypeSizes[data->typemap];
+      break;
+
     case FFI_COBJECT:
       memcpy(&data->cPointer, storage, ffiLSTTypeSizes[data->typemap]);
       return ffiLSTTypeSizes[data->typemap];
@@ -479,6 +515,14 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_LONG:
     case FFI_ULONG:
       return MemoryManager::Instance()->newInteger(data->integer);
+      break;
+
+    case FFI_FLOAT:
+      return MemoryManager::Instance()->newFloat(data->_float);
+      break;
+
+    case FFI_DOUBLE:
+      return MemoryManager::Instance()->newFloat(data->_double);
       break;
 
     case FFI_COBJECT:
@@ -579,7 +623,13 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   int argLoc = getInteger(block->basicAt(argumentLocationInBlock));
   object temps = context->basicAt(temporariesInContext);
   for(arg = 0; arg < data->numArgs; ++arg)
-    objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], (FFI_DataType*)args[arg]));
+  {
+    FFI_DataType value;
+    value.typemap = data->argTypeArray[arg];
+    readFromStorage(args[arg], &value);
+    objectRef(temps).basicAtPut(argLoc+arg, valueIn(data->argTypeArray[arg], &value));
+    // \todo: Memory leak
+  }
 
   ObjectHandle saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
@@ -590,7 +640,9 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object ro = stack->basicAt(1);
   FFI_DataType temp;
   temp.typemap = data->retType;
-  valueOut(ro, static_cast<FFI_DataType*>(ret)); 
+  valueOut(ro, &temp); 
+  // \todo: Support struct returns
+  memcpy(ret, temp.ptr, ffiLSTTypeSizes[data->retType]);
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
 }
