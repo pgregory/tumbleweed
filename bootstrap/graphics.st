@@ -75,9 +75,27 @@ Methods Rectangle 'all'
         ^ Rectangle new; bottomRight: right@bottom - v;
             upperLeft: left@top - v
 |
+    left
+        ^ left
+|
+    right
+        ^ right
+|
+    top
+        ^ top
+|
+    bottom
+        ^ bottom
+|
     bottomRight: aPoint
         right <- aPoint x.
         bottom <- aPoint y.
+|
+    width
+        ^ right - left
+|
+    height
+        ^ bottom - top
 |
     contains: aPoint
         ^ aPoint between: left@top and: right@bottom

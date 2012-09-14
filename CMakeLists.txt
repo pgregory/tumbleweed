@@ -16,7 +16,6 @@ endif(TW_SMALLINTEGER_AS_OBJECT)
 #   include_directories(${Boost_INCLUDE_DIRS})
 #endif()
 
-
 set(shared_srcs 
   source/filein.cpp
   source/interp.cpp
@@ -51,8 +50,8 @@ set(common_image_srcs
   bootstrap/collect.st
   bootstrap/ffi.st
   bootstrap/file.st
-  bootstrap/graphics.st
   bootstrap/mag.st
+  bootstrap/graphics.st
   bootstrap/mult.st
   bootstrap/queen.st
   bootstrap/iup.st
@@ -64,8 +63,10 @@ set(common_image_srcs
   bootstrap/test.st
   bootstrap/time.st
   bootstrap/bench.st
+  bootstrap/morphic.st
 
   bootstrap/test_collect.st
+  bootstrap/test_morphic.st
 )
 
 if(TW_ENABLE_FFI)
