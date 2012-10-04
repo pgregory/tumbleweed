@@ -585,7 +585,7 @@ typedef struct FFI_CallbackData_U
 
 FFI_CallbackData* newCallbackData(int numArgs)
 {
-  FFI_CallbackData* data = static_cast<FFI_CallbackData*>(calloc(1, sizeof(FFI_CallbackData)));
+  FFI_CallbackData* data = new FFI_CallbackData();
   data->argTypeArray = static_cast<FFI_Symbols*>(calloc(numArgs, sizeof(FFI_Symbols)));
   data->numArgs = numArgs;
 
