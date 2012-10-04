@@ -95,6 +95,7 @@ class ObjectHandle
         ObjectHandle* prev() const;
 
     static int numTotalHandles();
+	static bool isReferenced(long handle);
     static ObjectHandle* getListHead();
     static ObjectHandle* getListTail();
 

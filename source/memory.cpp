@@ -770,6 +770,25 @@ int ObjectHandle::numTotalHandles()
     }
 }
 
+bool ObjectHandle::isReferenced(long handle)
+{
+    if(NULL == ObjectHandle::head)
+        return false;
+    else
+    {
+        ObjectHandle* head = ObjectHandle::head;
+        while(head->m_next)
+        {
+			if(head->m_handle == handle)
+				return true;
+            head = head->m_next;
+        }
+		if(head->m_handle == handle)
+			return true;
+        return false;
+    }
+}
+
 
 ObjectHandle* ObjectHandle::getListHead()
 {
