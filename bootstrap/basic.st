@@ -198,6 +198,7 @@ Methods Class 'creation'
             ifFalse: [ ^ 'no such method' ]
 |
   isMeta
+	(name asString size < 4) ifTrue: [ ^ false ].
     ^ (name asString from: 1 to: 4) = 'Meta'
 ]
 Methods Context 'all'
