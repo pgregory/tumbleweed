@@ -62,6 +62,9 @@ Methods MetaFFI 'all'
     (result at: 4) members print
 ]
 Methods MetaFFI 'misc'
+  initialize
+    libraries <- Dictionary new
+|
   libraries
     ^ libraries
 |
@@ -129,3 +132,5 @@ Methods FFI 'all'
               [ nil ]
         ]
 ]
+*
+! FFI initialize
