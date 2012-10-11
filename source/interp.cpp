@@ -130,7 +130,7 @@ bool execute(object aProcess, int maxsteps)
 {   
   object returnedObject;
   int returnPoint, timeSliceCounter;
-  object *pst, *psb, *rcv, *arg, *temps, *lits, *cntx;
+  object *pst, *psb, *rcv = NULL, *arg, *temps, *lits, *cntx;
   ObjectHandle contextObject; 
   object *primargs;
   int byteOffset;
@@ -190,13 +190,14 @@ readMethodInfo:
       low = nextByte();
     }
 
-# if 0
     if (debugging) {
-      fprintf(stderr,"method %s %d ",objectRef(objectRef(method).basicAt(messageInMethod)).charPtr(), byteOffset);
-      fprintf(stderr,"stack %d %d ",pst, *pst);
-      fprintf(stderr,"executing %d %d\n", high, low);
+      fprintf(stdout,"method %s %d ",objectRef(objectRef(method).basicAt(messageInMethod)).charPtr(), byteOffset);
+      if(NULL != rcv)
+        fprintf(stdout,"on %s ", objectRef(objectRef(getClass(argumentsAt(0))).basicAt(nameInClass)).charPtr());
+      fprintf(stdout,"stack %d %d ",pst, *pst);
+      fprintf(stdout,"executing %d %d\n", high, low);
+      fflush(stdout);
     }
-# endif
     switch(high) {
 
       case PushInstance:
@@ -318,6 +319,7 @@ doFindMessage:
 //            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
 //            printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
+            ObjectHandle originalMessage = messageToSend;
             ipush(messageToSend);
             messageToSend = memmgr->newSymbol("message:notRecognizedWithArguments:");
             ipush(argarray);

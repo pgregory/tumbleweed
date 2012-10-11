@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
     /* when we are all done looking at the arguments, do initialization */
     fprintf(stderr,"initialization\n");
-    /*debugging = true;*/
+    debugging = true;
     goDoIt("x nil initialize\n");
     fprintf(stderr,"finished\n");
 

@@ -155,6 +155,15 @@ static void readRawClassDeclaration()
         }
         classObj->basicAtPut(variablesInClass, vars);
     }
+    //else
+    {
+      size = getInteger(classObj->basicAt(sizeInClass));
+      instanceVariables[0] = MemoryManager::Instance()->newSymbol("libraries");
+      vars = MemoryManager::Instance()->newArray(1);
+      vars->basicAtPut(1, instanceVariables[0]);
+      classObj->basicAtPut(variablesInClass, vars);
+      size++;
+    }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 }
@@ -191,13 +200,6 @@ static void readClassDeclaration()
     metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
     classObj = createRawClass(className.c_str(), metaClassName, superName.c_str());
     classObj->_class = metaObj;
-
-    size = getInteger(metaObj->basicAt(sizeInClass));
-    instanceVariables[0] = MemoryManager::Instance()->newSymbol("theInstance");
-    vars = MemoryManager::Instance()->newArray(1);
-    vars->basicAtPut(1, instanceVariables[0]);
-    metaObj->basicAtPut(variablesInClass, vars);
-    metaObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size+1));
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
@@ -336,7 +338,10 @@ static void runInitialization(FILE* fd, bool printit)
   std::stringstream strCode;
   // \todo: Find out why we need the extra 'x'!
   strCode << "x " << &textBuffer[2];
+  bool old = debugging;
+  debugging=true;
   runCode(strCode.str().c_str());
+  debugging = old;
 }
 
 
