@@ -122,7 +122,8 @@ if(NOT WIN32)
   list(APPEND LIBS "dl" ${TW_EDITLINE_LIBRARY})
 endif(NOT WIN32)
 
-add_executable(initial ${shared_srcs} ${init_srcs})
+add_executable(initial ${shared_srcs} ${init_srcs} ${image_srcs})
+source_group(Bootstrap FILES ${image_srcs})
 set_target_properties(initial PROPERTIES COMPILE_DEFINITIONS TW_IS_INITIAL=1)
 add_custom_command(
   OUTPUT systemImage
