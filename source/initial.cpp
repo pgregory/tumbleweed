@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 
     /* when we are all done looking at the arguments, do initialization */
     fprintf(stderr,"initialization\n");
-    debugging = true;
+    //debugging = true;
     goDoIt("x nil initialize\n");
     fprintf(stderr,"finished\n");
 
@@ -127,6 +127,8 @@ void makeInitialImage()
   nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 
   classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+  metaClassClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+  metaObjectClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
   /* finally at least make true and false to be distinct */
   ObjectHandle trueobj = MemoryManager::Instance()->newSymbol("true");
