@@ -100,10 +100,6 @@ static ObjectHandle createRawClass(const char* _class, const char* metaclass, co
         classObj->basicAtPut(superClassInClass, superObj);
         size = getInteger(superObj->basicAt(sizeInClass));
     }
-
-    // Set the size up to now.
-    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-
     return classObj;
 }
 
@@ -154,15 +150,6 @@ static void readRawClassDeclaration()
             vars->basicAtPut(i+1, instanceVariables[i]);
         }
         classObj->basicAtPut(variablesInClass, vars);
-    }
-    //else
-    {
-      size = getInteger(classObj->basicAt(sizeInClass));
-      instanceVariables[0] = MemoryManager::Instance()->newSymbol("libraries");
-      vars = MemoryManager::Instance()->newArray(1);
-      vars->basicAtPut(1, instanceVariables[0]);
-      classObj->basicAtPut(variablesInClass, vars);
-      size++;
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
@@ -338,10 +325,7 @@ static void runInitialization(FILE* fd, bool printit)
   std::stringstream strCode;
   // \todo: Find out why we need the extra 'x'!
   strCode << "x " << &textBuffer[2];
-  bool old = debugging;
-  debugging=true;
   runCode(strCode.str().c_str());
-  debugging = old;
 }
 
 

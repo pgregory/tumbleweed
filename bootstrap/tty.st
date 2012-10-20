@@ -120,12 +120,14 @@ Methods UndefinedObject 'initial image'
         stdin <- File new; name: 'stdin'; mode: 'r'; open.
         stdout <- File new; name: 'stdout'; mode: 'w'; open.
         stderr <- File new; name: 'stderr'; mode: 'w'; open.
-        editor <- 'vi'.
+        editor <- 'vim'.
         " create a dictionary of classes "
         classes <- Dictionary new.
         symbols binaryDo: [:x :y | 
-            (y isKindOf: Class)
-                ifTrue: [ classes at: x put: y ] ].
+            (y isKindOf: Class) ifTrue: [ 
+                    classes at: x put: y
+            ] 
+        ].
         scheduler <- Scheduler new.
         " create the initial system process "
         " note the delayed recursive call "
