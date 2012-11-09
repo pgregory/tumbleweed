@@ -140,6 +140,13 @@ Methods UndefinedObject 'initial image'
     initialize
         " initialize the initial object image "
         self createGlobals.
+        classes binaryDo: [:x :y |
+            (y isKindOf: Class) ifTrue: [
+                (y respondsTo: #doInit) ifTrue: [
+                    y doInit
+                ]
+            ]
+        ].
         File new;
             name: 'systemImage';
             open: 'wb';

@@ -107,14 +107,6 @@ void makeInitialImage()
   integerClass->_class = classClass;
   metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
   classClass->_class = metaClassClass;
-  objectClass = MemoryManager::Instance()->newClass("Object");
-  metaObjectClass = MemoryManager::Instance()->newClass("MetaObject");
-  objectClass->_class = metaObjectClass;
-  metaObjectClass->_class = classClass;
-
-  metaClassClass->basicAtPut(superClassInClass, metaObjectClass);
-  metaObjectClass->basicAtPut(superClassInClass, classClass);
-  metaObjectClass->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(classSize));
 
   /* now fix up classes for symbol table */
   /* and make a couple common classes, just to hold their places */
@@ -128,7 +120,6 @@ void makeInitialImage()
 
   classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
   metaClassClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
-  metaObjectClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
   /* finally at least make true and false to be distinct */
   ObjectHandle trueobj = MemoryManager::Instance()->newSymbol("true");

@@ -319,15 +319,6 @@ void runCode(const char * text)
     linkPointer = saveLinkPointer;
 }
 
-//! Read and process any initialization code lines, prefixed with '!'.
-static void runInitialization(FILE* fd, bool printit)
-{   
-  std::stringstream strCode;
-  // \todo: Find out why we need the extra 'x'!
-  strCode << "x " << &textBuffer[2];
-  runCode(strCode.str().c_str());
-}
-
 
 /*
     fileIn reads in a module definition
@@ -347,8 +338,6 @@ void fileIn(FILE* fd, bool printit)
             readClassDeclaration();
         else if ((token == nameconst) && streq(tokenString,"Methods"))
             readMethods(fd, printit);
-        else if((token == binary) && streq(tokenString, "!"))
-            runInitialization(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);
         MemoryManager::Instance()->garbageCollect();

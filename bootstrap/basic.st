@@ -4,6 +4,7 @@
 *   object creation
 *   block creation, execution and return
 *
+RawClass MetaObject Class Class Dependencies
 Class Object
 Class Block Object context argCount argLoc bytePointer
 Class Boolean Object
@@ -18,6 +19,19 @@ Class Switch Object const notdone
 Class Symbol Object
 Class UndefinedObject Object
 Class CPointer Object
+RawClass MetaFoo Class Class Bars
+Class Foo
+*
+Methods MetaObject 'all'
+    dependencies
+        ^ Dependencies
+|
+    dependencies: anObject
+        Dependencies <- anObject
+|
+    doInit
+        Dependencies <- Dictionary new
+]
 *
 Methods Block 'initialization'
     checkArgumentCount: count

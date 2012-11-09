@@ -22,8 +22,11 @@ Methods MetaTestCase 'creation'
         selector: aSymbol
         ^ self new setSelector: aSymbol
 |
-        initialize
+        doInit
           failedCheckSignal <- FailedCheckSignal new
+|
+        failedCheckSignal
+          ^ failedCheckSignal
 |
         suite
             | sel suite |
@@ -43,9 +46,6 @@ Methods TestCase 'all'
 | 
         selector
             ^ selector
-|
-        failedCheckSignal
-          ^ failedCheckSignal
 ]
 
 Methods TestCase 'fixture'
@@ -215,10 +215,3 @@ Methods TestConversions 'tests'
         self should: [43 = 43 asFloat truncated] description: '43 = 43 asFloat truncated'.
         self should: [$A == ($A asString at: 1)] description: '$A == ($A asString at: 1)'
 ]
-
-
-*
-* Initialize TestCase to make sure the failedCheckSignal is built.
-*
-! TestCase initialize
-

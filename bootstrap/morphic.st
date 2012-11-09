@@ -9,7 +9,7 @@ Class Frame Morph
 Class World Frame
 *
 Methods MetaNode 'creation'
-  initialize
+  doInit
     errorException <- NodeException new
 |
   new
@@ -100,7 +100,3 @@ Methods Morph 'display'
   shape setSizeX: (bounds width) Y: (bounds height).
   aSurface draw: shape
 ]
-*
-* Initialize Node to make sure the errorException is built.
-*
-! Node initialize
