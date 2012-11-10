@@ -54,6 +54,7 @@ ObjectHandle* ObjectHandle::tail = NULL;
 
 MemoryManager* MemoryManager::m_pInstance = NULL;
 
+
 //
 // ncopy - copy exactly n bytes from place to place 
 // 

@@ -19,8 +19,7 @@ Class Switch Object const notdone
 Class Symbol Object
 Class UndefinedObject Object
 Class CPointer Object
-RawClass MetaFoo Class Class Bars
-Class Foo
+Class ObjectMemory Object
 *
 Methods MetaObject 'all'
     dependencies

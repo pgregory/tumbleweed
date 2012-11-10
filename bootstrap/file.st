@@ -95,10 +95,7 @@ Methods File 'all'
           number from files array temporarily "
         (number notNil)
             ifTrue: [ files at: number put: nil. 
-                  "Close and clear all open FFI libraries"
-                  FFI prepareForSnapshot.
                   <127 number>.
-                  FFI returnFromSnapshot.
                   files at: number put: self]
             ifFalse: [smalltalk error: 'saveImage: file not open']
 ]

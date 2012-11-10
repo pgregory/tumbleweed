@@ -104,15 +104,22 @@ static object zeroaryPrims(int number)
     case 7:
       {
 #if !defined WIN32
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        long time_in_mill = 
-          (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
-        returnedObject = MemoryManager::Instance()->newInteger(time_in_mill);
+        struct timeval time;
+
+        long mtime, seconds, useconds;    
+
+        gettimeofday(&time, NULL);
+
+        seconds  = time.tv_sec;
+        useconds = time.tv_usec;
+
+        mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+
+        returnedObject = MemoryManager::Instance()->newInteger(seconds%86400);
 #else
-		SYSTEMTIME st_now;
-		GetSystemTime(&st_now);
-		long ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
+        SYSTEMTIME st_now;
+        GetSystemTime(&st_now);
+        long ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
         returnedObject = MemoryManager::Instance()->newInteger(ms_now);
 #endif
       }
