@@ -263,6 +263,9 @@ Methods Dictionary 'all'
             ifTrue: [ link at: aKey ifAbsent: exceptionBlock ]
             ifFalse: exceptionBlock
 |
+    at: aKey ifAbsentPut: aBlock
+        ^ self at: aKey ifAbsent: [self at: aKey put: aBlock value]
+|
     at: aKey put: aValue            | hashPosition link |
 
         hashPosition <- self hash: aKey.
@@ -274,7 +277,8 @@ Methods Dictionary 'all'
             (link notNil)
                 ifTrue: [ link at: aKey put: aValue ]
                 ifFalse: [ hashTable at: hashPosition + 3
-                    put: (Link new; key: aKey; value: aValue)]]
+                    put: (Link new; key: aKey; value: aValue)]].
+        ^ aValue
 |
     binaryDo: aBlock
         (1 to: hashTable size by: 3) do:

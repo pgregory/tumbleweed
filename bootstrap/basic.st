@@ -33,6 +33,71 @@ Methods MetaObject 'all'
         Dependencies <- Dictionary new
 ]
 *
+Methods Object 'aspect'
+    dependents
+    | dependencies |
+        dependencies <- Object dependencies at: self ifAbsent: [^ List new].
+        ^ dependencies 
+|
+    addDependent: anObject
+        (Object dependencies at: self ifAbsentPut: [List new])
+            add: anObject
+|
+    removeDependent: anObject
+        | dependencies |
+        dependencies <- Object dependencies at: self ifAbsent: [^anObject].
+        dependencies removeKey: anObject ifAbsent: [].
+        dependencies size < 1 ifTrue: [
+            Object dependencies removeKey: self ifAbsent: []
+        ].
+        ^anObject
+|
+    changed
+        self changed: self
+|
+    changed: aParameter
+        | dependencies |
+        dependencies <- Object dependencies at: self ifAbsent: [nil].
+        dependencies notNil ifTrue: [
+            dependencies do: [ :dep | dep update: aParameter ]
+        ]
+|
+    update: aParameter
+        nil
+|
+    broadcast: aSymbol
+        | dependencies |
+        dependencies <- Object dependencies at: self ifAbsent: [nil].
+        dependencies notNil ifTrue: [
+            dependencies do: [:dep | dep perform: aSymbol]
+        ]
+|
+    broadcast: aSymbol with: anObject
+        | dependencies |
+        dependencies <- Object dependencies at: self ifAbsent: [nil].
+        dependencies notNil ifTrue: [
+            dependencies do: [:dep | dep perform: aSymbol with: anObject]
+        ]
+|
+    perform: selector
+        | args |
+        (selector isMemberOf: Symbol) ifTrue: [
+            (self respondsTo: selector) ifTrue: [
+                args <- Array new: 1; at: 1 put: self.
+                smalltalk perform: selector withArguments: args
+            ]
+        ] 
+|
+    perform: selector with: arg
+        | args |
+        (selector isMemberOf: Symbol) ifTrue: [
+            (self respondsTo: selector) ifTrue: [
+                args <- Array new: 2; at: 1 put: self; at: 2 put: arg.
+                smalltalk perform: selector withArguments: args
+            ]
+        ] 
+]
+*
 Methods Block 'initialization'
     checkArgumentCount: count
         ^ (argCount = count)
