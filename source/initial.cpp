@@ -14,7 +14,6 @@
 #include "interp.h"
 
 void makeInitialImage();
-void goDoIt(const char * text);
 
 #if defined TW_ENABLE_FFI
 extern void initFFISymbols();   /* FFI symbols */
@@ -37,48 +36,19 @@ int main(int argc, char** argv)
     for (i = 1; i < argc; i++) {
         std::stringstream methbuf;
         //fprintf(stderr,"%s:\n", argv[i]);
-        methbuf << "x <120 1 '" << argv[i] << "' 'r'>. <123 1>. <121 1>";
-        goDoIt(methbuf.str().c_str());
+        methbuf << "<120 1 '" << argv[i] << "' 'r'>. <123 1>. <121 1>";
+        runCode(methbuf.str().c_str());
 
     }
 
     /* when we are all done looking at the arguments, do initialization */
     fprintf(stderr,"initialization\n");
     //debugging = true;
-    goDoIt("x nil initialize\n");
+    runCode("nil initialize\n");
     fprintf(stderr,"finished\n");
 
     /* exit and return - belt and suspenders, but it keeps lint happy */
     exit(0); return 0;
-}
-
-void goDoIt(const char * text)
-{   
-    ObjectHandle stack, method;
-
-    method = MemoryManager::Instance()->newMethod();
-    setInstanceVariables(nilobj);
-    parse(method, text, false);
-
-    firstProcess = MemoryManager::Instance()->allocObject(processSize);
-    stack = MemoryManager::Instance()->allocObject(50);
-
-    /* make a process */
-    firstProcess->basicAtPut(stackInProcess, stack);
-    firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
-    firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
-
-    /* put argument on stack */
-    stack->basicAtPut(argumentInStack, nilobj);   /* argument */
-    /* now make a linkage area in stack */
-    stack->basicAtPut(prevlinkInStack, nilobj);   /* previous link */
-    stack->basicAtPut(contextInStack, nilobj);   /* context object (nil = stack) */
-    stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));    /* return point */
-    stack->basicAtPut(methodInStack, method);   /* method */
-    stack->basicAtPut(bytepointerInStack, MemoryManager::Instance()->newInteger(1));    /* byte offset */
-
-    /* now go execute it */
-    while (execute(firstProcess, 15000)) fprintf(stderr,"..");
 }
 
 /*

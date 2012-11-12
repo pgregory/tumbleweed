@@ -779,7 +779,62 @@ void messagePattern()
         compilError(selector,"illegal message selector", tokenString);
 }
 
-bool parse(object method, const char* text, bool savetext)
+bool parseCode(object method, const char* text, bool savetext)
+{   
+    int i;
+    ObjectHandle bytecodes, theLiterals;
+    byte *bp;
+
+    lexinit(text);
+    parseok = true;
+    blockstat = NotInBlock;
+    codeTop = 0;
+    temporaryTop = argumentTop =0;
+    maxTemporary = 0;
+
+    literalArray.clear();
+
+    temporaries();
+    if (parseok)
+        body();
+    if (parseok) {
+        genInstruction(DoSpecial, PopTop);
+        genInstruction(DoSpecial, SelfReturn);
+        }
+
+    if (! parseok) {
+        objectRef(method).basicAtPut(bytecodesInMethod, nilobj);
+        }
+    else {
+        bytecodes = MemoryManager::Instance()->newByteArray(codeTop);
+        bp = objectRef(bytecodes).bytePtr();
+        for (i = 0; i < codeTop; i++) {
+            bp[i] = codeArray[i];
+            }
+        objectRef(method).basicAtPut(messageInMethod, MemoryManager::Instance()->newSymbol(selector));
+        objectRef(method).basicAtPut(bytecodesInMethod, bytecodes);
+        if (!literalArray.empty()) {
+            theLiterals = MemoryManager::Instance()->newArray(literalArray.size());
+            for (i = 1; i <= literalArray.size(); i++) {
+                objectRef(theLiterals).basicAtPut(i, literalArray[i-1]);
+                }
+            objectRef(method).basicAtPut(literalsInMethod, theLiterals);
+            }
+        else {
+            objectRef(method).basicAtPut(literalsInMethod, nilobj);
+            }
+        objectRef(method).basicAtPut(stackSizeInMethod, MemoryManager::Instance()->newInteger(6));
+        objectRef(method).basicAtPut(temporarySizeInMethod,
+            MemoryManager::Instance()->newInteger(1 + maxTemporary));
+        if (savetext) {
+            objectRef(method).basicAtPut(textInMethod, MemoryManager::Instance()->newStString(text));
+            }
+        return(true);
+        }
+    return(false);
+}
+
+bool parseMessageHandler(object method, const char* text, bool savetext)
 {   
     int i;
     ObjectHandle bytecodes, theLiterals;

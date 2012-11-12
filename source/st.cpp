@@ -20,7 +20,6 @@ int initial = 0;    /* not making initial image */
 extern void initFFISymbols();   /* FFI symbols */
 #endif
 
-void runCode(const char * text);
 int main(int argc, char** argv)
 {
     FILE *fp;
@@ -47,7 +46,7 @@ int main(int argc, char** argv)
     initFFISymbols();
 #endif
 
-    runCode("x ObjectMemory changed: #returnFromSnapshot");
+    runCode("ObjectMemory changed: #returnFromSnapshot");
     firstProcess = globalSymbol("systemProcess");
     if (firstProcess == nilobj) 
     {

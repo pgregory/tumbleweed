@@ -671,3 +671,42 @@ ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, Obj
 
   return ro;
 }
+
+
+void runCode(const char * text)
+{   
+    ObjectHandle stack, method, firstProcess;
+
+    method = MemoryManager::Instance()->newMethod();
+    setInstanceVariables(nilobj);
+    bool result = parseCode(method, text, false);
+
+    firstProcess = MemoryManager::Instance()->allocObject(processSize);
+    stack = MemoryManager::Instance()->allocObject(50);
+
+    /* make a process */
+    firstProcess->basicAtPut(stackInProcess, stack);
+    firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
+    firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+
+    /* put argument on stack */
+    stack->basicAtPut(argumentInStack, nilobj);   /* argument */
+    /* now make a linkage area in stack */
+    stack->basicAtPut(prevlinkInStack, nilobj);   /* previous link */
+    stack->basicAtPut(contextInStack, nilobj);   /* context object (nil = stack) */
+    stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));    /* return point */
+    stack->basicAtPut(methodInStack, method);   /* method */
+    stack->basicAtPut(bytepointerInStack, MemoryManager::Instance()->newInteger(1));    /* byte offset */
+
+    /* now go execute it */
+    ObjectHandle saveProcessStack = processStack;
+    int saveLinkPointer = linkPointer;
+    while (execute(firstProcess, 15000)) fprintf(stderr,"..");
+    // Re-read the stack object, in case it had to grow during execution and 
+    // was replaced.
+    //stack = firstProcess->basicAt(stackInProcess);
+    //object ro = stack->basicAt(1);
+    processStack = saveProcessStack;
+    linkPointer = saveLinkPointer;
+}
+
