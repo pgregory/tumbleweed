@@ -18,6 +18,7 @@
 # include "memory.h"
 # include "names.h"
 # include "interp.h"
+# include "parser.h"
 
 bool watching = 0;
 extern object primitive( int, object* );
@@ -676,10 +677,11 @@ ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, Obj
 void runCode(const char * text)
 {   
     ObjectHandle stack, method, firstProcess;
+    Parser pp;
 
     method = MemoryManager::Instance()->newMethod();
-    setInstanceVariables(nilobj);
-    bool result = parseCode(method, text, false);
+    pp.setInstanceVariables(nilobj);
+    bool result = pp.parseCode(method, text, false);
 
     firstProcess = MemoryManager::Instance()->allocObject(processSize);
     stack = MemoryManager::Instance()->allocObject(50);

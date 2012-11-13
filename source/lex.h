@@ -6,6 +6,9 @@
     values returned by the lexical analyzer
 */
 
+#ifndef LEX_H_INCLUDED
+#define LEX_H_INCLUDED
+
 # ifndef NOENUMS
 
 typedef enum tokensyms { nothing, nameconst, namecolon, 
@@ -37,3 +40,5 @@ extern char tokenString[];  /* text of current token */
 extern int tokenInteger;    /* integer (or character) value of token */
 extern double tokenFloat;   /* floating point value of token */
 extern void lexinit(const char* str);  /* initialization routine */
+
+#endif

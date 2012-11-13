@@ -42,6 +42,7 @@
 #include "memory.h"
 #include "names.h"
 #include "interp.h"
+#include "parser.h"
 
 extern ObjectHandle processStack;
 extern int linkPointer;
@@ -334,14 +335,17 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
       break;
 
     case 9:         /* compile method */
-      setInstanceVariables(firstarg);
-      if (parseMessageHandler(thirdarg, objectRef(secondarg).charPtr(), false)) {
-        flushCache(objectRef(thirdarg).basicAt(messageInMethod), firstarg);
-        objectRef(thirdarg).basicAtPut(methodClassInMethod, firstarg);
-        returnedObject = booleanSyms[booleanTrue];
+      {
+        Parser pp;
+        pp.setInstanceVariables(firstarg);
+        if (pp.parseMessageHandler(thirdarg, objectRef(secondarg).charPtr(), false)) {
+          flushCache(objectRef(thirdarg).basicAt(messageInMethod), firstarg);
+          objectRef(thirdarg).basicAtPut(methodClassInMethod, firstarg);
+          returnedObject = booleanSyms[booleanTrue];
+        }
+        else
+          returnedObject = booleanSyms[booleanFalse];
       }
-      else
-        returnedObject = booleanSyms[booleanFalse];
       break;
 
     default:        /* unknown primitive */

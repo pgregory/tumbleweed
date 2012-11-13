@@ -1,0 +1,72 @@
+#include "memory.h"
+#include "names.h"
+#include "interp.h"
+#include "lex.h"
+
+
+        /* all of the following limits could be increased (up to
+            256) without any trouble.  They are kept low 
+            to keep memory utilization down */
+
+# define codeLimit 1024     /* maximum number of bytecodes permitted */
+# define literalLimit 128   /* maximum number of literals permitted */
+# define temporaryLimit 32  /* maximum number of temporaries permitted */
+# define argumentLimit 32   /* maximum number of arguments permitted */
+# define instanceLimit 32   /* maximum number of instance vars permitted */
+# define methodLimit 64     /* maximum number of methods permitted */
+
+extern char peek();
+
+class Parser
+{
+public:
+  Parser()  {}
+  ~Parser() {}
+
+  bool Parser::parseMessageHandler(object method, const char* text, bool savetext);
+  bool Parser::parseCode(object method, const char* text, bool savetext);
+
+  void setInstanceVariables(object aClass);
+
+private:
+  enum blockstatus {NotInBlock, InBlock, OptimizedBlock} blockstat;
+
+  void genMessage(bool toSuper, int argumentCount, object messagesym);
+  void genInstruction(int high, int low);
+  void genCode(int value);
+  int genLiteral(object aLiteral);
+  void Parser::genInteger(int val);
+  void expression();
+  bool unaryContinuation(bool superReceiver);
+  bool binaryContinuation(bool superReceiver);
+  int optimizeBlock(int instruction, bool dopop);
+  bool keyContinuation(bool superReceiver);
+  void continuation(bool superReceiver);
+  void parsePrimitive();
+  int parseArray();
+  void block();
+  void body();
+  void statement();
+  void assignment(char* name);
+  void temporaries();
+  void messagePattern();
+  bool nameTerm(char *name);
+  bool term();
+
+  void compilWarn(const char* selector, const char* str1, const char* str2);
+  void compilError(const char* selector, const char* str1, const char* str2);
+
+  bool parseok;            /* parse still ok? */
+  int codeTop;            /* top position filled in code array */
+  byte codeArray[codeLimit];  /* bytecode array */
+  std::vector<ObjectHandle> literalArray;
+  int temporaryTop;
+  char *temporaryName[temporaryLimit];
+  int argumentTop;
+  char *argumentName[argumentLimit];
+  int instanceTop;
+  char *instanceName[instanceLimit];
+
+  int maxTemporary;      /* highest temporary see so far */
+  char selector[80];     /* message selector */
+};

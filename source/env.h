@@ -48,5 +48,3 @@ prototypes aren't available */
 #endif
 
 void sysWarn(const char* s1, const char* s2);
-void compilWarn(const char* selector, const char* str1, const char* str2);
-void compilError(const char* selector, const char* str1, const char* str2);

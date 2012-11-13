@@ -214,9 +214,6 @@ extern void sysError(const char*, const char*);
 extern void dspMethod(char*, char*);
 extern void initMemoryManager();
 extern bool debugging;
-void setInstanceVariables(object aClass);
-bool parseMessageHandler(object method, const char* text, bool savetext);
-bool parseCode(object method, const char* text, bool savetext);
 void givepause();
 
 

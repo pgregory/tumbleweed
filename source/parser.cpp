@@ -27,48 +27,25 @@
 #include <string.h>
 #include <ctype.h>
 #include "env.h"
-#include "memory.h"
-#include "names.h"
-#include "interp.h"
-#include "lex.h"
+#include "parser.h"
 
-        /* all of the following limits could be increased (up to
-            256) without any trouble.  They are kept low 
-            to keep memory utilization down */
+void Parser::compilWarn(const char* selector, const char* str1, const char* str2)
+{
+  fprintf(stderr,"compiler warning: Method %s : %s %s\n", 
+      selector, str1, str2);
+}
 
-# define codeLimit 1024     /* maximum number of bytecodes permitted */
-# define literalLimit 128   /* maximum number of literals permitted */
-# define temporaryLimit 32  /* maximum number of temporaries permitted */
-# define argumentLimit 32   /* maximum number of arguments permitted */
-# define instanceLimit 32   /* maximum number of instance vars permitted */
-# define methodLimit 64     /* maximum number of methods permitted */
 
-bool parseok;            /* parse still ok? */
-extern char peek();
-int codeTop;            /* top position filled in code array */
-byte codeArray[codeLimit];  /* bytecode array */
-std::vector<ObjectHandle> literalArray;
-int temporaryTop;
-char *temporaryName[temporaryLimit];
-int argumentTop;
-char *argumentName[argumentLimit];
-int instanceTop;
-char *instanceName[instanceLimit];
+void Parser::compilError(const char* selector, const char* str1, const char* str2)
+{
+  fprintf(stderr,"compiler error: Method %s : %s %s\n", 
+      selector, str1, str2);
+  //_snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
+  parseok = false;
+}
 
-int maxTemporary;      /* highest temporary see so far */
-char selector[80];     /* message selector */
 
-enum blockstatus {NotInBlock, InBlock, OptimizedBlock} blockstat;
-
-void genMessage(bool toSuper, int argumentCount, object messagesym);
-void expression();
-void parsePrimitive();
-void block();
-void body();
-void statement();
-void assignment(char* name);
-
-void setInstanceVariables(object aClass)
+void Parser::setInstanceVariables(object aClass)
 {   
     int i, limit;
     ObjectHandle vars;
@@ -88,7 +65,7 @@ void setInstanceVariables(object aClass)
     }
 }
 
-void genCode(int value)
+void Parser::genCode(int value)
 {
     if (codeTop >= codeLimit)
         compilError(selector,"too many bytecode instructions in method","");
@@ -96,7 +73,7 @@ void genCode(int value)
         codeArray[codeTop++] = value;
 }
 
-void genInstruction(int high, int low)
+void Parser::genInstruction(int high, int low)
 {
     if (low >= 16) 
     {
@@ -107,13 +84,13 @@ void genInstruction(int high, int low)
         genCode(high * 16 + low);
 }
 
-int genLiteral(object aLiteral)
+int Parser::genLiteral(object aLiteral)
 {
     literalArray.push_back(aLiteral);
     return(literalArray.size()-1);
 }
 
-void genInteger(int val)    /* generate an integer push */
+void Parser::genInteger(int val)    /* generate an integer push */
 {
     if (val == -1)
         genInstruction(PushConstant, minusOne);
@@ -127,7 +104,7 @@ void genInteger(int val)    /* generate an integer push */
 const char *glbsyms[] = {"currentInterpreter", "nil", "true", "false",
 0 };
 
-bool nameTerm(char *name)
+bool Parser::nameTerm(char *name)
 {   
     int i;
     bool done = false;
@@ -190,7 +167,7 @@ bool nameTerm(char *name)
     return(isSuper);
 }
 
-int parseArray()
+int Parser::parseArray()
 {   
     int i, size, base;
     ObjectHandle newLit, obj;
@@ -279,7 +256,7 @@ int parseArray()
     return(genLiteral(newLit));
 }
 
-bool term()
+bool Parser::term()
 {   
     bool superTerm = false;  /* true if term is pseudo var super */
 
@@ -355,7 +332,7 @@ bool term()
     return(superTerm);
 }
 
-void parsePrimitive()
+void Parser::parsePrimitive()
 {   int primitiveNumber, argumentCount;
 
     if (nextToken() != intconst)
@@ -372,7 +349,7 @@ void parsePrimitive()
     nextToken();
 }
 
-void genMessage(bool toSuper, int argumentCount, object messagesym)
+void Parser::genMessage(bool toSuper, int argumentCount, object messagesym)
 {   bool sent = false;
     int i;
 
@@ -401,7 +378,7 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
         }
 }
 
-bool unaryContinuation(bool superReceiver)
+bool Parser::unaryContinuation(bool superReceiver)
 {   
     int i;
     bool sent;
@@ -436,7 +413,7 @@ bool unaryContinuation(bool superReceiver)
     return(superReceiver);
 }
 
-bool binaryContinuation(bool superReceiver)
+bool Parser::binaryContinuation(bool superReceiver)
 {   
     bool superTerm;
     ObjectHandle messagesym;
@@ -453,7 +430,7 @@ bool binaryContinuation(bool superReceiver)
     return(superReceiver);
 }
 
-int optimizeBlock(int instruction, bool dopop)
+int Parser::optimizeBlock(int instruction, bool dopop)
 {   
     int location;
     enum blockstatus savebstat;
@@ -483,7 +460,7 @@ int optimizeBlock(int instruction, bool dopop)
     return(location);
 }
 
-bool keyContinuation(bool superReceiver)
+bool Parser::keyContinuation(bool superReceiver)
 {   
     int i, j, argumentCount;
     bool sent, superTerm;
@@ -545,7 +522,7 @@ bool keyContinuation(bool superReceiver)
     return(superReceiver);
 }
 
-void continuation(bool superReceiver)
+void Parser::continuation(bool superReceiver)
 {
     superReceiver = keyContinuation(superReceiver);
 
@@ -557,7 +534,7 @@ void continuation(bool superReceiver)
         }
 }
 
-void expression()
+void Parser::expression()
 {   
     bool superTerm;
     char assignname[60];
@@ -581,7 +558,7 @@ void expression()
         }
 }
 
-void assignment(char* name)
+void Parser::assignment(char* name)
 {   
     int i;
     bool done;
@@ -612,7 +589,7 @@ void assignment(char* name)
         }
 }
 
-void statement()
+void Parser::statement()
 {
 
     if ((token == binary) && streq(tokenString, "^")) {
@@ -631,7 +608,7 @@ void statement()
         }
 }
 
-void body()
+void Parser::body()
 {
     /* empty blocks are same as nil */
     if ((blockstat == InBlock) || (blockstat == OptimizedBlock))
@@ -662,7 +639,7 @@ void body()
         }
 }
 
-void block()
+void Parser::block()
 {   
     int saveTemporary, argumentCount, fixLocation;
     ObjectHandle tempsym; 
@@ -719,7 +696,7 @@ void block()
     blockstat = savebstat;
 }
 
-void temporaries()
+void Parser::temporaries()
 {   
     ObjectHandle tempsym;
 
@@ -744,7 +721,7 @@ void temporaries()
         }
 }
 
-void messagePattern()
+void Parser::messagePattern()
 {   
     ObjectHandle argsym;
 
@@ -779,7 +756,7 @@ void messagePattern()
         compilError(selector,"illegal message selector", tokenString);
 }
 
-bool parseCode(object method, const char* text, bool savetext)
+bool Parser::parseCode(object method, const char* text, bool savetext)
 {   
     int i;
     ObjectHandle bytecodes, theLiterals;
@@ -834,7 +811,7 @@ bool parseCode(object method, const char* text, bool savetext)
     return(false);
 }
 
-bool parseMessageHandler(object method, const char* text, bool savetext)
+bool Parser::parseMessageHandler(object method, const char* text, bool savetext)
 {   
     int i;
     ObjectHandle bytecodes, theLiterals;

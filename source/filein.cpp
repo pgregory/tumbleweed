@@ -16,6 +16,7 @@
 #include "interp.h"
 #include "env.h"
 #include "memory.h"
+#include "parser.h"
 #include "names.h"
 
 # define MethodTableSize 39
@@ -221,13 +222,14 @@ static void readMethods(FILE* fd, bool printit)
 # define LINEBUFFERSIZE 16384
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
     ObjectHandle protocol;
+    Parser pp;
 
     lineBuffer[0] = '\0';
     protocol = nilobj;
     if (nextToken() != nameconst)
         sysError("missing name","following Method keyword");
     classObj = findClass(tokenString);
-    setInstanceVariables(classObj);
+    pp.setInstanceVariables(classObj);
     if (printit)
         cp = objectRef(classObj->basicAt(nameInClass)).charPtr();
 
@@ -262,7 +264,7 @@ static void readMethods(FILE* fd, bool printit)
 
         /* now we have a method */
         theMethod = MemoryManager::Instance()->newMethod();
-        if (parseMessageHandler(theMethod, textBuffer, savetext)) {
+        if (pp.parseMessageHandler(theMethod, textBuffer, savetext)) {
             selector = theMethod->basicAt(messageInMethod);
             theMethod->basicAtPut(methodClassInMethod, classObj);
             theMethod->basicAtPut(protocolInMethod, protocol);

@@ -6,6 +6,9 @@
     names and sizes of internally object used internally in the system
 */
 
+#ifndef NAMES_H_INCLUDED
+#define NAMES_H_INCLUDED
+
 # define classSize 5
 # define nameInClass 1
 # define sizeInClass 2
@@ -100,3 +103,5 @@ extern object globalKey ( const char* );
 extern object nameTableLookup ( object, const char* );
 # define globalSymbol(s) nameTableLookup(symbols, s)
 object hashEachElement(object dict, register int hash, int(*fun)(object));
+
+#endif
