@@ -195,7 +195,7 @@ readMethodInfo:
       fprintf(stdout,"method %s %d ",objectRef(objectRef(method).basicAt(messageInMethod)).charPtr(), byteOffset);
       if(NULL != rcv)
         fprintf(stdout,"on %s ", objectRef(objectRef(getClass(argumentsAt(0))).basicAt(nameInClass)).charPtr());
-      fprintf(stdout,"stack %d %d ",pst, *pst);
+      fprintf(stdout,"stack %p %ld ",pst, *pst);
       fprintf(stdout,"executing %d %d\n", high, low);
       fflush(stdout);
     }
@@ -677,11 +677,11 @@ ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, Obj
 void runCode(const char * text)
 {   
     ObjectHandle stack, method, firstProcess;
-    Parser pp;
 
     method = MemoryManager::Instance()->newMethod();
+    Parser pp = Parser(Lexer(text));
     pp.setInstanceVariables(nilobj);
-    bool result = pp.parseCode(method, text, false);
+    bool result = pp.parseCode(method, false);
 
     firstProcess = MemoryManager::Instance()->allocObject(processSize);
     stack = MemoryManager::Instance()->allocObject(50);

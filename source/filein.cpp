@@ -32,6 +32,7 @@ bool savetext = true;
 */
 # define TextBufferSize 16384
 static char textBuffer[TextBufferSize];
+static Lexer ll;
 
 /*
     findClass gets a class object,
@@ -115,19 +116,19 @@ static void readRawClassDeclaration()
     // todo: fixed length variables array!
     ObjectHandle instanceVariables[15];
 
-    if (nextToken() != nameconst)
+    if (ll.nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = tokenString;
+    className = ll.strToken();
     size = 0;
-    if (nextToken() == nameconst) 
+    if (ll.nextToken() == nameconst) 
     { /* read metaclass name */
-        metaName = tokenString;
-        nextToken();
+        metaName = ll.strToken();
+        ll.nextToken();
     }
-    if (token == nameconst) 
+    if (ll.currentToken() == nameconst) 
     { /* read superclass name */
-        superName = tokenString;
-        nextToken();
+        superName = ll.strToken();
+        ll.nextToken();
     }
 
     classObj = createRawClass(className.c_str(), metaName.c_str(), superName.c_str());
@@ -136,14 +137,14 @@ static void readRawClassDeclaration()
     // we add instance variables.
     size = getInteger(classObj->basicAt(sizeInClass));
 
-    if (token == nameconst) 
+    if (ll.currentToken() == nameconst) 
     {     /* read instance var names */
         instanceTop = 0;
-        while (token == nameconst) 
+        while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(tokenString);
+            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
             size++;
-            nextToken();
+            ll.nextToken();
         }
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
@@ -170,13 +171,13 @@ static void readClassDeclaration()
     char metaClassName[100];
     char metaSuperClassName[100];
 
-    if (nextToken() != nameconst)
+    if (ll.nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = tokenString;
-    if (nextToken() == nameconst) 
+    className = ll.strToken();
+    if (ll.nextToken() == nameconst) 
     { /* read superclass name */
-        superName = tokenString;
-        nextToken();
+        superName = ll.strToken();
+        ll.nextToken();
     }
     // todo: sprintf eradication!
     sprintf(metaClassName, "Meta%s", className.c_str());
@@ -193,14 +194,14 @@ static void readClassDeclaration()
     // we add instance variables.
     size = getInteger(classObj->basicAt(sizeInClass));
 
-    if (token == nameconst) 
+    if (ll.currentToken() == nameconst) 
     {     /* read instance var names */
         instanceTop = 0;
-        while (token == nameconst) 
+        while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(tokenString);
+            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
             size++;
-            nextToken();
+            ll.nextToken();
         }
         vars = MemoryManager::Instance()->newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
@@ -226,9 +227,9 @@ static void readMethods(FILE* fd, bool printit)
 
     lineBuffer[0] = '\0';
     protocol = nilobj;
-    if (nextToken() != nameconst)
+    if (ll.nextToken() != nameconst)
         sysError("missing name","following Method keyword");
-    classObj = findClass(tokenString);
+    classObj = findClass(ll.strToken().c_str());
     pp.setInstanceVariables(classObj);
     if (printit)
         cp = objectRef(classObj->basicAt(nameInClass)).charPtr();
@@ -241,9 +242,9 @@ static void readMethods(FILE* fd, bool printit)
         classObj->basicAtPut(methodsInClass, methTable);
     }
 
-    if(nextToken() == strconst) 
+    if(ll.nextToken() == strconst) 
     {
-        protocol = MemoryManager::Instance()->newStString(tokenString);
+        protocol = MemoryManager::Instance()->newStString(ll.strToken().c_str());
     }
 
     /* now go read the methods */
@@ -264,7 +265,8 @@ static void readMethods(FILE* fd, bool printit)
 
         /* now we have a method */
         theMethod = MemoryManager::Instance()->newMethod();
-        if (pp.parseMessageHandler(theMethod, textBuffer, savetext)) {
+        pp.setLexer(Lexer(textBuffer));
+        if (pp.parseMessageHandler(theMethod, savetext)) {
             selector = theMethod->basicAt(messageInMethod);
             theMethod->basicAtPut(methodClassInMethod, classObj);
             theMethod->basicAtPut(protocolInMethod, protocol);
@@ -292,16 +294,16 @@ void fileIn(FILE* fd, bool printit)
 {
     while(fgets(textBuffer, TextBufferSize, fd) != NULL) 
     {
-        lexinit(textBuffer);
-        if (token == inputend)
+        ll.reset(textBuffer);
+        if (ll.currentToken() == inputend)
             ; /* do nothing, get next line */
-        else if ((token == binary) && streq(tokenString, "*"))
+        else if ((ll.currentToken() == binary) && ll.strToken().compare("*") == 0)
             ; /* do nothing, its a comment */
-        else if ((token == nameconst) && streq(tokenString, "RawClass"))
+        else if ((ll.currentToken() == nameconst) && ll.strToken().compare("RawClass") == 0)
             readRawClassDeclaration();
-        else if ((token == nameconst) && streq(tokenString, "Class"))
+        else if ((ll.currentToken() == nameconst) && ll.strToken().compare("Class") == 0)
             readClassDeclaration();
-        else if ((token == nameconst) && streq(tokenString,"Methods"))
+        else if ((ll.currentToken() == nameconst) && ll.strToken().compare("Methods") == 0)
             readMethods(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);

@@ -336,9 +336,9 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
 
     case 9:         /* compile method */
       {
-        Parser pp;
+        Parser pp = Parser(Lexer(objectRef(secondarg).charPtr()));
         pp.setInstanceVariables(firstarg);
-        if (pp.parseMessageHandler(thirdarg, objectRef(secondarg).charPtr(), false)) {
+        if (pp.parseMessageHandler(thirdarg, false)) {
           flushCache(objectRef(thirdarg).basicAt(messageInMethod), firstarg);
           objectRef(thirdarg).basicAtPut(methodClassInMethod, firstarg);
           returnedObject = booleanSyms[booleanTrue];
