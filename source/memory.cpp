@@ -30,9 +30,17 @@
 #include "memory.h"
 #include "interp.h"
 #include "names.h"
+#include "stddef.h"
 
 
 bool debugging = false;
+ObjectStruct _nilobj =
+{
+  NULL,
+  0,
+  0,
+  NULL
+};
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
@@ -99,14 +107,15 @@ MemoryManager::~MemoryManager()
 
 object MemoryManager::allocObject(size_t memorySize)
 {
+#if 1
     int i;
-    size_t position;
+    long position;
     bool done;
     TObjectFreeListIterator tpos;
 
     /* first try the free lists, this is fastest */
     if((tpos = objectFreeList.find(memorySize)) != objectFreeList.end() &&
-            tpos->second != nilobj)
+            tpos->second != 0)
     {
         position = tpos->second;
         objectFreeList.erase(tpos);
@@ -116,7 +125,7 @@ object MemoryManager::allocObject(size_t memorySize)
     /* if not there, next try making a size zero object and
         making it bigger */
     else if ((tpos = objectFreeList.find(0)) != objectFreeList.end() &&
-            tpos->second != nilobj) 
+            tpos->second != 0) 
     {
         position = tpos->second;
         objectFreeList.erase(tpos);
@@ -132,7 +141,7 @@ object MemoryManager::allocObject(size_t memorySize)
         /* first try making a bigger object smaller */
         TObjectFreeListIterator tbigger = objectFreeList.upper_bound(memorySize);
         if(tbigger != objectFreeList.end() &&
-                tbigger->second != nilobj)
+                tbigger->second != 0)
         {
             position = tbigger->second;
             objectFreeList.erase(tbigger);
@@ -148,7 +157,7 @@ object MemoryManager::allocObject(size_t memorySize)
             TObjectFreeListIterator tsmaller = objectFreeList.lower_bound(memorySize);
             if(tsmaller != objectFreeList.begin() &&
                     (--tsmaller != objectFreeList.begin()) &&
-                     tsmaller->second != nilobj)
+                     tsmaller->second != 0)
             {
                 position = tsmaller->second;
                 objectFreeList.erase(tsmaller);
@@ -186,7 +195,18 @@ object MemoryManager::allocObject(size_t memorySize)
     objectTable[position].referenceCount = 0;
     objectTable[position]._class = nilobj;
     objectTable[position].size = memorySize;
-    return(position << 1);
+    return(&objectTable[position]);
+#else
+    object ob = (object)calloc(1, sizeof(ObjectStruct));
+    if(memorySize)
+      objectRef(ob).memory = mBlockAlloc(memorySize);
+    else
+      objectRef(ob).memory = NULL;
+    objectRef(ob).size = memorySize;
+    objectRef(ob)._class = nilobj;
+    objectRef(ob).referenceCount = 0;
+    return ob;
+#endif
 }
 
 object MemoryManager::allocByte(size_t size)
@@ -218,26 +238,36 @@ object MemoryManager::allocStr(register const char* str)
     return(newSym);
 }
 
+
+long MemoryManager::objectToIndex(object o)
+{
+  ptrdiff_t offset = o - &objectTable[0];
+  return offset;
+}
+
 bool MemoryManager::destroyObject(object z)
 {
+#if 1
     register struct ObjectStruct *p;
     register int i;
     int size;
     bool deleted = false;
+    long index = objectToIndex(z);
 
-    p = &objectTable[z];
+    p = &objectTable[index];
     if (p->referenceCount < 0) 
     {
-        fprintf(stderr,"object %d\n", static_cast<int>(z));
+        fprintf(stderr,"object %d - %d\n", static_cast<int>(index), index);
+        fprintf(stderr,"table head %p - %p - %td - %zd\n", &objectTable[0], z, z - &objectTable[0], sizeof(objectTable[0]));
         sysError("negative reference count","");
     }
     size = p->size;
     if (size < 0) size = ((- size) + 1) /2;
 
-    if(objectFreeListInv.find(z) == objectFreeListInv.end())
+    if(objectFreeListInv.find(index) == objectFreeListInv.end())
     {
-        objectFreeList.insert(std::pair<size_t, object>(size, z));
-        objectFreeListInv.insert(std::pair<object, size_t>(z, size));
+        objectFreeList.insert(std::pair<size_t, long>(size, index));
+        objectFreeListInv.insert(std::pair<long, size_t>(index, size));
         deleted = true;
     }
 
@@ -249,21 +279,18 @@ bool MemoryManager::destroyObject(object z)
     p->size = size;
 
     return deleted;
+#else
+    free(objectRef(z).memory);
+    free(z);
+
+    return true;
+#endif
 }
 
 void MemoryManager::setFreeLists() 
 {
     objectFreeList.clear();
     objectFreeListInv.clear();
-
-    /* add free objects */
-    for(int z=objectTable.size()-1; z>0; z--)
-    {
-        // If really unused, destroyObject will take care
-        // of cleaning up and adding to the free list.
-        if (objectTable[z].referenceCount == 0)
-            destroyObject(z);
-    }
 }
 
 void MemoryManager::visit(register object x)
@@ -271,7 +298,8 @@ void MemoryManager::visit(register object x)
     int i, s;
     object *p;
 
-    if (x && (!(x&1))) 
+    //if (x && (!(x&1))) 
+    if (x) 
     {
         if (--(objectFromID(x).referenceCount) == -1) 
         {
@@ -324,7 +352,7 @@ int MemoryManager::garbageCollect()
     {
         if (objectTable[j].referenceCount == 0) 
         {
-            if(destroyObject(j))
+            if(destroyObject(&objectTable[j]))
                 f++;
         } 
         else
@@ -572,6 +600,7 @@ static int fr(FILE* fp, char* p, int s)
 
 void MemoryManager::imageRead(FILE* fp)
 {   
+#if 0
   long i, size;
 
   fr(fp, (char *) &symbols, sizeof(object));
@@ -607,6 +636,7 @@ void MemoryManager::imageRead(FILE* fp)
     objectTable[i].referenceCount = 666;
   }
   setFreeLists();
+#endif
 }
 
 /*
@@ -652,6 +682,7 @@ void MemoryManager::disableGC(bool disable)
 
 size_t MemoryManager::growObjectStore(size_t amount)
 {
+#if 0
     // Empty object to use when resizing.
     ObjectStruct empty = {nilobj, 0, 0, NULL};
 
@@ -668,6 +699,8 @@ size_t MemoryManager::growObjectStore(size_t amount)
        objectFreeListInv.insert(std::pair<object, size_t>(i, 0));
     } 
     return objectTable.size();
+#endif
+    return 0;
 }
 
 void MemoryManager::setGrowAmount(size_t amount)
@@ -768,7 +801,7 @@ int ObjectHandle::numTotalHandles()
     }
 }
 
-bool ObjectHandle::isReferenced(long handle)
+bool ObjectHandle::isReferenced(object handle)
 {
     if(NULL == ObjectHandle::head)
         return false;

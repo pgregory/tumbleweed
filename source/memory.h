@@ -7,6 +7,7 @@
 #define MEMORY_H_INCLUDED
 
 #include "env.h"
+#include "stdint.h"
 
 #if defined TW_UNIT_TESTS
 #include "gtest/gtest_prod.h"
@@ -14,6 +15,9 @@
 
 class MemoryManager;
 struct ObjectStruct;
+
+typedef ObjectStruct* object;
+
 /*! \brief Auto referencing object handle class.
  *
  * Use this class to hold a reference to a newly created object so
@@ -42,7 +46,7 @@ class ObjectHandle
          * \param from The ObjectHandle to duplicate.
          */
         ObjectHandle(const ObjectHandle& from);
-        ObjectHandle(long object);
+        ObjectHandle(object from);
         //! Constructor
         /*! Takes an object ID and manager to reference against, 
          *  automatically records the reference 
@@ -52,7 +56,7 @@ class ObjectHandle
          * \param manager Pointer to the manager to reference with.
          *
          */
-        ObjectHandle(long object, MemoryManager* manager);
+        ObjectHandle(object from, MemoryManager* manager);
         //! Destructor
         /*! Releases any reference, allowing the object to be collected,
          *  unless it has been assigned to a slot in the object storage
@@ -63,7 +67,7 @@ class ObjectHandle
         //! Cast to object struct
         operator ObjectStruct&() const;
 
-        operator long() const;
+        operator object() const;
 
         ObjectStruct* operator->() const;
 
@@ -71,7 +75,7 @@ class ObjectHandle
          *
          * \return The object handle
          */
-        long handle() const
+        object handle() const
         {
             return m_handle;
         }
@@ -87,7 +91,7 @@ class ObjectHandle
          *  \param o An object reference.
          *  \return A reference to this object.
          */
-        ObjectHandle& operator=(long o);
+        ObjectHandle& operator=(object o);
 
         ObjectHandle& operator=(const ObjectHandle& from);
 
@@ -95,12 +99,12 @@ class ObjectHandle
         ObjectHandle* prev() const;
 
     static int numTotalHandles();
-	static bool isReferenced(long handle);
+	static bool isReferenced(object handle);
     static ObjectHandle* getListHead();
     static ObjectHandle* getListTail();
 
     private:
-        long    m_handle;
+        object    m_handle;
         ObjectHandle* m_next;
         ObjectHandle* m_prev;
 
@@ -112,11 +116,11 @@ class ObjectHandle
 };
 
 
-typedef long object;
 
 inline int hashObject(object o)
 {
-    return o;
+    uintptr_t intval = (uintptr_t)o;
+    return 55;
 }
 
 
@@ -199,8 +203,9 @@ struct ObjectStruct
 
 };
 
-# define nilobj (object) 0
+# define nilobj (object)0
 # define mBlockAlloc(size) (object *) calloc((unsigned) size, sizeof(object))
+extern ObjectStruct _nilobj;
 
 /*
     the dictionary symbols is the source of all symbols in the system
@@ -223,9 +228,8 @@ void givepause();
 
 typedef std::vector<ObjectStruct>     TObjectTable;
 typedef TObjectTable::iterator  TObjectTableIterator;
-typedef std::multimap<size_t, object>    TObjectFreeList;
-typedef std::map<object, size_t>    TObjectFreeListInv;
-typedef std::map<object, long>    TObjectRefs;
+typedef std::multimap<size_t, long>    TObjectFreeList;
+typedef std::map<long, size_t>    TObjectFreeListInv;
 typedef TObjectFreeList::iterator   TObjectFreeListIterator;
 typedef TObjectFreeListInv::iterator   TObjectFreeListInvIterator;
 typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
@@ -258,6 +262,8 @@ class MemoryManager
         static MemoryManager* Instance();
 
         static void Initialise(size_t initialSize = m_defaultInitialSize, size_t growCount = m_defaultGrowCount);
+
+        long objectToIndex(object o);
 
         //! Transfer all unreferenced objects into the free list for reuse.
         void setFreeLists(); 
@@ -549,7 +555,6 @@ class MemoryManager
         TObjectFreeList objectFreeList;
         TObjectFreeListInv objectFreeListInv;
         TObjectTable    objectTable;
-        TObjectRefs     objectReferences;
         bool            noGC;
         size_t          growAmount;
 
@@ -572,7 +577,10 @@ inline MemoryManager* MemoryManager::Instance()
 
 inline ObjectStruct& MemoryManager::objectFromID(object id)
 {
-    return objectTable[(id >> 1)];
+    if(id)
+      return *id;
+    else
+      return _nilobj;
 }
 
 
@@ -635,18 +643,18 @@ inline ObjectHandle::ObjectHandle(const ObjectHandle& from) :
     appendToList();
 }
 
-inline ObjectHandle::ObjectHandle(long object) : 
+inline ObjectHandle::ObjectHandle(object from) : 
     m_prev(NULL),
     m_next(NULL),
-    m_handle(object) 
+    m_handle(from) 
 {
     appendToList();
 }
 
-inline ObjectHandle::ObjectHandle(long object, MemoryManager* manager) : 
+inline ObjectHandle::ObjectHandle(object from, MemoryManager* manager) : 
     m_prev(NULL),
     m_next(NULL),
-    m_handle(object)
+    m_handle(from)
 {
     appendToList();
 }
@@ -656,7 +664,7 @@ inline ObjectHandle::~ObjectHandle()
     removeFromList();
 }
 
-inline ObjectHandle& ObjectHandle::operator=(long o)
+inline ObjectHandle& ObjectHandle::operator=(object o)
 {
     m_handle = o;
     return *this;
@@ -678,14 +686,14 @@ inline ObjectHandle::operator ObjectStruct&() const
     return MemoryManager::Instance()->objectFromID(m_handle);
 }
 
-inline ObjectHandle::operator long() const
+inline ObjectHandle::operator object() const
 {
     return m_handle;
 }
 
 inline int ObjectHandle::hash() const
 {
-    return m_handle;
+    return hashObject(m_handle);
 }
 
 inline void ObjectHandle::appendToList()

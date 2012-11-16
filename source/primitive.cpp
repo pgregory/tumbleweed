@@ -136,7 +136,7 @@ static object zeroaryPrims(int number)
   return(returnedObject);
 }
 
-static int unaryPrims(int number, object firstarg)
+static object unaryPrims(int number, object firstarg)
 {   
   int i, j, saveLinkPointer;
   object returnedObject;
@@ -162,11 +162,11 @@ static int unaryPrims(int number, object firstarg)
       if(objectRef(firstarg)._class == globalSymbol("Integer"))
         returnedObject = MemoryManager::Instance()->newInteger(getInteger(firstarg));
       else
-        returnedObject = MemoryManager::Instance()->newInteger(firstarg);
+        returnedObject = MemoryManager::Instance()->newInteger(hashObject(firstarg));
       break;
 
     case 4:     /* debugging print */
-      fprintf(stderr,"primitive 14 %d\n", static_cast<int>(firstarg));
+      //fprintf(stderr,"primitive 14 %d\n", static_cast<int>(firstarg));
       break;
 
 
@@ -233,7 +233,7 @@ static int unaryPrims(int number, object firstarg)
   return(returnedObject);
 }
 
-static int binaryPrims(int number, object firstarg, object secondarg)
+static object binaryPrims(int number, object firstarg, object secondarg)
 {   
   char buffer[2000];
   int i;
@@ -255,7 +255,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 3:     /* debugging stuff */
-      fprintf(stderr,"primitive 23 %d %d\n", static_cast<int>(firstarg), static_cast<int>(secondarg));
+      //fprintf(stderr,"primitive 23 %d %d\n", static_cast<int>(firstarg), static_cast<int>(secondarg));
       break;
 
     case 4:     /* string cat */
@@ -303,7 +303,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
   return(returnedObject);
 }
 
-static int trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
+static object trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
 {   
   // todo: Fixed length buffer
   char *bp, *tp, buffer[4096];
@@ -314,7 +314,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   switch(number) 
   {
     case 1:         /* basicAt:Put: */
-      fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), static_cast<int>(getInteger(secondarg)), static_cast<int>(thirdarg));
+      //fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), static_cast<int>(getInteger(secondarg)), static_cast<int>(thirdarg));
       objectRef(firstarg).basicAtPut(getInteger(secondarg), thirdarg);
       break;
 
@@ -355,34 +355,34 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
   return(returnedObject);
 }
 
-static int intUnary(int number, object firstarg)
+static object intUnary(int number, object firstarg)
 {   
   object returnedObject;
 
   switch(number) 
   {
     case 1:     /* float equiv of integer */
-      returnedObject = MemoryManager::Instance()->newFloat((double) firstarg);
+      returnedObject = MemoryManager::Instance()->newFloat((double)getInteger(firstarg));
       break;
 
     case 2:     /* print - for debugging purposes */
-      fprintf(stderr,"debugging print %d\n", static_cast<int>(firstarg));
+      //fprintf(stderr,"debugging print %d\n", static_cast<int>(firstarg));
       break;
 
     case 3: /* set time slice - done in interpreter */
       break;
 
     case 5:     /* set random number */
-      srand((unsigned) firstarg);
+      srand((unsigned) getInteger(firstarg));
       returnedObject = nilobj;
       break;
 
     case 8:
-      returnedObject = MemoryManager::Instance()->allocObject(firstarg);
+      returnedObject = MemoryManager::Instance()->allocObject(getInteger(firstarg));
       break;
 
     case 9:
-      returnedObject = MemoryManager::Instance()->allocByte(firstarg);
+      returnedObject = MemoryManager::Instance()->allocByte(getInteger(firstarg));
       break;
 
     default:
@@ -475,7 +475,7 @@ overflow:
   return(returnedObject);
 }
 
-static int strUnary(int number, char* firstargument)
+static object strUnary(int number, char* firstargument)
 {   
   object returnedObject;
 
@@ -515,7 +515,7 @@ static int strUnary(int number, char* firstargument)
   return(returnedObject);
 }
 
-static int floatUnary(int number, double firstarg)
+static object floatUnary(int number, double firstarg)
 {   
   char buffer[20];
   double temp;
@@ -605,7 +605,7 @@ static object floatBinary(int number, double first, double second)
 }
 
 
-static int cPointerUnary(int number, void* firstarg)
+static object cPointerUnary(int number, void* firstarg)
 {   
   object returnedObject;
 
@@ -626,7 +626,7 @@ static int cPointerUnary(int number, void* firstarg)
   return(returnedObject);
 }
 
-object exceptionPrimitive(int number, object* arguments)
+static object exceptionPrimitive(int number, object* arguments)
 {
   object returnedObject;
 
@@ -672,7 +672,7 @@ object primitive(register int primitiveNumber, object* arguments)
       break;
 
     case 5:         /* integer unary operations */
-      returnedObject = intUnary(primitiveNumber-50, getInteger(arguments[0]));
+      returnedObject = intUnary(primitiveNumber-50, arguments[0]);
       break;
 
     case 6: case 7:     /* integer binary operations */
