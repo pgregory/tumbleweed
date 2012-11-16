@@ -136,6 +136,9 @@ add_custom_command(
 #)
 
 add_executable(tw ${shared_srcs} ${headers} ${tw_srcs} systemImage)
+if(NOT MSVC)
+  set_target_properties(tw PROPERTIES LINK_FLAGS "-Wl,-Map=tw.map")
+endif(NOT MSVC)
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
