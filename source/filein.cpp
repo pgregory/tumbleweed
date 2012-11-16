@@ -31,7 +31,7 @@ bool savetext = true;
     buffer.  In addition, all methods must also fit into this buffer.
 */
 # define TextBufferSize 16384
-static char textBuffer[TextBufferSize];
+static char* textBuffer = NULL;
 static Lexer ll;
 
 /*
@@ -292,6 +292,7 @@ extern int linkPointer;
 */
 void fileIn(FILE* fd, bool printit)
 {
+    textBuffer = new char[TextBufferSize];
     while(fgets(textBuffer, TextBufferSize, fd) != NULL) 
     {
         ll.reset(textBuffer);
@@ -309,4 +310,5 @@ void fileIn(FILE* fd, bool printit)
             sysError("unrecognized line", textBuffer);
         MemoryManager::Instance()->garbageCollect();
     }
+    delete[](textBuffer);
 }
