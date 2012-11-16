@@ -48,15 +48,11 @@ set(init_srcs
 set(common_image_srcs
   bootstrap/basic.st
   bootstrap/collect.st
-  bootstrap/ffi.st
   bootstrap/file.st
   bootstrap/mag.st
   bootstrap/graphics.st
   bootstrap/mult.st
   bootstrap/queen.st
-  bootstrap/iup.st
-  bootstrap/browser.st
-  bootstrap/workspace.st
   bootstrap/module.st
   bootstrap/httprequest.st
   bootstrap/exception.st
@@ -74,6 +70,9 @@ if(TW_ENABLE_FFI)
   set(shared_srcs ${shared_srcs} source/ffiprimitive.cpp)
   set(ffi_image_srcs
       bootstrap/ffi.st
+      bootstrap/iup.st
+      bootstrap/browser.st
+      bootstrap/workspace.st
       )
   add_definitions(-DTW_ENABLE_FFI)
   if(WIN32)
