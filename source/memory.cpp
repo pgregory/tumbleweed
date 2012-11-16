@@ -96,7 +96,6 @@ MemoryManager::~MemoryManager()
 {
 }
 
-static long numAllocated;
 
 object MemoryManager::allocObject(size_t memorySize)
 {
@@ -183,7 +182,6 @@ object MemoryManager::allocObject(size_t memorySize)
         }
     }
 
-    numAllocated++;
     /* set class and type */
     objectTable[position].referenceCount = 0;
     objectTable[position]._class = nilobj;
@@ -342,7 +340,6 @@ int MemoryManager::garbageCollect()
         fprintf(stderr," %d objects - %d freed.\n",c,f);
     }
 
-    numAllocated = 0;
     return f;
 }
 
