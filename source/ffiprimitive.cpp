@@ -14,6 +14,7 @@
 #if !defined WIN32
 extern "C" {
 #include <dlfcn.h>
+#include <memory.h>
 }
 #else
 #include <Windows.h>
