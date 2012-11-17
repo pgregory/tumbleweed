@@ -30,7 +30,6 @@
 #include "memory.h"
 #include "interp.h"
 #include "names.h"
-#include "stddef.h"
 
 
 bool debugging = false;
@@ -82,22 +81,8 @@ void MemoryManager::Initialise(size_t initialSize, size_t growCount)
 }
 
 
-MemoryManager::MemoryManager(size_t initialSize, size_t growCount) : noGC(false), growAmount(growCount)
+MemoryManager::MemoryManager(size_t initialSize, size_t growCount) : noGC(false)
 {
-    objectTable.resize(initialSize);
-
-    /* set all the reference counts to zero */
-    for(TObjectTableIterator i = objectTable.begin(), iend = objectTable.end(); i != iend; ++i)
-    {
-        i->referenceCount = 0; 
-        i->size = 0; 
-    }
-
-    /* make up the initial free lists */
-    setFreeLists();
-
-    /* object at location 0 is the nil object, so give it nonzero ref */
-    objectTable[0].referenceCount = 1; objectTable[0].size = 0;
 }
 
 MemoryManager::~MemoryManager()
@@ -107,96 +92,6 @@ MemoryManager::~MemoryManager()
 
 object MemoryManager::allocObject(size_t memorySize)
 {
-#if 1
-    int i;
-    long position;
-    bool done;
-    TObjectFreeListIterator tpos;
-
-    /* first try the free lists, this is fastest */
-    if((tpos = objectFreeList.find(memorySize)) != objectFreeList.end() &&
-            tpos->second != 0)
-    {
-        position = tpos->second;
-        objectFreeList.erase(tpos);
-        objectFreeListInv.erase(position);
-    }
-
-    /* if not there, next try making a size zero object and
-        making it bigger */
-    else if ((tpos = objectFreeList.find(0)) != objectFreeList.end() &&
-            tpos->second != 0) 
-    {
-        position = tpos->second;
-        objectFreeList.erase(tpos);
-        objectFreeListInv.erase(position);
-        objectTable[position].size = memorySize;
-        objectTable[position].memory = mBlockAlloc(memorySize);
-    }
-
-    else 
-    {      /* not found, must work a bit harder */
-        done = false;
-
-        /* first try making a bigger object smaller */
-        TObjectFreeListIterator tbigger = objectFreeList.upper_bound(memorySize);
-        if(tbigger != objectFreeList.end() &&
-                tbigger->second != 0)
-        {
-            position = tbigger->second;
-            objectFreeList.erase(tbigger);
-            objectFreeListInv.erase(position);
-            /* just trim it a bit */
-            objectTable[position].size = memorySize;
-            done = true;
-        }
-
-        /* next try making a smaller object bigger */
-        if (! done)
-        {
-            TObjectFreeListIterator tsmaller = objectFreeList.lower_bound(memorySize);
-            if(tsmaller != objectFreeList.begin() &&
-                    (--tsmaller != objectFreeList.begin()) &&
-                     tsmaller->second != 0)
-            {
-                position = tsmaller->second;
-                objectFreeList.erase(tsmaller);
-                objectFreeListInv.erase(position);
-                objectTable[position].size = memorySize;
-
-                free(objectTable[position].memory);
-
-                objectTable[position].memory = mBlockAlloc(memorySize);
-                done = true;
-            }
-        }
-
-        /* if we STILL don't have it then there is nothing */
-        /* more we can do */
-        if (! done)
-        {
-            if(debugging)
-                fprintf(stderr, "Failed to find an available object, trying GC\n");
-            if(garbageCollect() > 0)
-            {
-                return allocObject(memorySize);
-            }
-            else
-            {
-                if(debugging)
-                    fprintf(stderr, "No suitable objects available after GC, growing store.\n");
-                growObjectStore(growAmount);
-                return allocObject(memorySize);
-            }
-        }
-    }
-
-    /* set class and type */
-    objectTable[position].referenceCount = 0;
-    objectTable[position]._class = nilobj;
-    objectTable[position].size = memorySize;
-    return(&objectTable[position]);
-#else
     object ob = (object)calloc(1, sizeof(ObjectStruct));
     if(memorySize)
       objectRef(ob).memory = mBlockAlloc(memorySize);
@@ -206,7 +101,6 @@ object MemoryManager::allocObject(size_t memorySize)
     objectRef(ob)._class = nilobj;
     objectRef(ob).referenceCount = 0;
     return ob;
-#endif
 }
 
 object MemoryManager::allocByte(size_t size)
@@ -238,137 +132,17 @@ object MemoryManager::allocStr(register const char* str)
     return(newSym);
 }
 
-
-long MemoryManager::objectToIndex(object o)
-{
-  ptrdiff_t offset = o - &objectTable[0];
-  return offset;
-}
-
 bool MemoryManager::destroyObject(object z)
 {
-#if 1
-    register struct ObjectStruct *p;
-    register int i;
-    int size;
-    bool deleted = false;
-    long index = objectToIndex(z);
-
-    p = &objectTable[index];
-    if (p->referenceCount < 0) 
-    {
-        fprintf(stderr,"object %d - %d\n", static_cast<int>(index), index);
-        fprintf(stderr,"table head %p - %p - %td - %zd\n", &objectTable[0], z, z - &objectTable[0], sizeof(objectTable[0]));
-        sysError("negative reference count","");
-    }
-    size = p->size;
-    if (size < 0) size = ((- size) + 1) /2;
-
-    if(objectFreeListInv.find(index) == objectFreeListInv.end())
-    {
-        objectFreeList.insert(std::pair<size_t, long>(size, index));
-        objectFreeListInv.insert(std::pair<long, size_t>(index, size));
-        deleted = true;
-    }
-
-    if (size > 0) 
-    {
-        for (i = size; i > 0; )
-            p->memory[--i] = nilobj;
-    }
-    p->size = size;
-
-    return deleted;
-#else
     free(objectRef(z).memory);
     free(z);
 
     return true;
-#endif
 }
-
-void MemoryManager::setFreeLists() 
-{
-    objectFreeList.clear();
-    objectFreeListInv.clear();
-}
-
-void MemoryManager::visit(register object x)
-{
-    int i, s;
-    object *p;
-
-    //if (x && (!(x&1))) 
-    if (x) 
-    {
-        if (--(objectFromID(x).referenceCount) == -1) 
-        {
-            /* then it's the first time we've visited it, so: */
-            visit(objectFromID(x)._class);
-            s = objectRef(x).size;
-            if (s>0) 
-            {
-                p = objectFromID(x).memory;
-                for (i=s; i; --i) 
-                    visit(*p++);
-            }
-        }
-    }
-}
-
 
 int MemoryManager::garbageCollect()
 {
-    register int j;
-    int c=1,f=0;
-
-    if(noGC)
-        return 0;
-
-    if (debugging) 
-        fprintf(stderr,"\ngarbage collecting ... \n");
-
-    for(TObjectTableIterator x = objectTable.begin(), xend = objectTable.end(); x != xend; ++x)
-        x->referenceCount = 0;
-    objectTable[0].referenceCount = 1;
-    /* visit symbols and firstProcess to toggle their referenceCount */
-
-    visit(symbols);
-
-    /* Visit any explicitly held references from the use of ObjectHandle */
-    ObjectHandle* explicitRef = ObjectHandle::getListHead();
-    while(explicitRef)
-    {
-        visit(*explicitRef);
-        explicitRef = explicitRef->next();
-    }
-
-    /* add new garbage to objectFreeList 
-    * toggle referenceCount 
-    * count the objects
-    */
-
-    for (j=objectTable.size()-1; j>0; j--) 
-    {
-        if (objectTable[j].referenceCount == 0) 
-        {
-            if(destroyObject(&objectTable[j]))
-                f++;
-        } 
-        else
-        {
-            if (0!=(objectTable[j].referenceCount = -objectTable[j].referenceCount))
-                c++;
-        }
-    }
-
-    if (debugging)
-    {
-        fprintf(stderr," %d references.\n",ObjectHandle::numTotalHandles());
-        fprintf(stderr," %d objects - %d freed.\n",c,f);
-    }
-
-    return f;
+    return 0;
 }
 
 
@@ -379,23 +153,17 @@ size_t MemoryManager::objectCount()
 
 size_t MemoryManager::storageSize() const
 {
-    return objectTable.size();
+    return 0;
 }
 
 size_t MemoryManager::freeSlotsCount()
 {   
-    return objectFreeListInv.size();
+    return 0;
 }
 
 std::string MemoryManager::statsString()
 {
-    std::stringstream str;
-    str << "Memory Statistics:" << std::endl;
-    str << "\tActive Objects     " << objectCount() << std::endl;
-    str << "\tObjectstore size   " << objectTable.size() << std::endl;
-    str << "\tFree objects       " << objectFreeListInv.size() << std::endl;
-
-    return str.str();
+    return "";
 }
 
 
@@ -650,8 +418,49 @@ static void fw(FILE* fp, char* p, int s)
   }
 }
 
+
+bool testFlagZero(object o)
+{
+  return objectRef(o).referenceCount == 0;
+}
+
+bool testFlagNonZero(object o)
+{
+  return objectRef(o).referenceCount != 0;
+}
+
+void setFlag(object o)
+{
+  objectRef(o).referenceCount = 1;
+}
+
+void saveObject(object o)
+{
+  objectRef(o).referenceCount = 0;
+}
+
+void visit(object o, void(*func)(object), bool(*test)(object))
+{
+  int i, s;
+  object *p;
+
+  if(o && test(o))
+  {
+    visit(objectRef(o)._class, func, test);
+    s = objectRef(o).size;
+    if (s>0) 
+    {
+        p = objectRef(o).memory;
+        for (i=s; i; --i) 
+            visit(*p++, func, test);
+    }
+    func(o);
+  }
+}
+
 void MemoryManager::imageWrite(FILE* fp)
 {   
+#if 0
   long i, size;
 
   garbageCollect();
@@ -672,6 +481,9 @@ void MemoryManager::imageWrite(FILE* fp)
             sizeof(object) * size);
     }
   }
+#endif
+  visit(symbols, &setFlag, &testFlagZero);
+  visit(symbols, &saveObject, &testFlagNonZero);
 }
 
 void MemoryManager::disableGC(bool disable)
@@ -680,32 +492,8 @@ void MemoryManager::disableGC(bool disable)
 }
 
 
-size_t MemoryManager::growObjectStore(size_t amount)
-{
-#if 0
-    // Empty object to use when resizing.
-    ObjectStruct empty = {nilobj, 0, 0, NULL};
-
-    size_t currentSize = objectTable.size();
-    objectTable.resize(objectTable.size()+amount, empty);
-
-    if(debugging)
-        fprintf(stderr, "Growing object store to %d\n", static_cast<int>(objectTable.size()));
-
-    // Add all new objects to the free list.
-    for(size_t i = currentSize; i < objectTable.size(); ++i)
-    {
-       objectFreeList.insert(std::pair<size_t, object>(0, i));
-       objectFreeListInv.insert(std::pair<object, size_t>(i, 0));
-    } 
-    return objectTable.size();
-#endif
-    return 0;
-}
-
 void MemoryManager::setGrowAmount(size_t amount)
 {
-    growAmount = amount;
 }
 
 
@@ -782,42 +570,6 @@ void* ObjectStruct::cPointerValue()
     int s = sizeof(void*);
     ncopy((char *) &l, charPtr(), (int) sizeof(void*));
     return l;
-}
-
-int ObjectHandle::numTotalHandles()
-{
-    if(NULL == ObjectHandle::head)
-        return 0;
-    else
-    {
-        int total = 1;
-        ObjectHandle* head = ObjectHandle::head;
-        while(head->m_next)
-        {
-            ++total;
-            head = head->m_next;
-        }
-        return total;
-    }
-}
-
-bool ObjectHandle::isReferenced(object handle)
-{
-    if(NULL == ObjectHandle::head)
-        return false;
-    else
-    {
-        ObjectHandle* head = ObjectHandle::head;
-        while(head->m_next)
-        {
-			if(head->m_handle == handle)
-				return true;
-            head = head->m_next;
-        }
-		if(head->m_handle == handle)
-			return true;
-        return false;
-    }
 }
 
 

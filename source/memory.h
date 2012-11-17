@@ -98,8 +98,6 @@ class ObjectHandle
         ObjectHandle* next() const;
         ObjectHandle* prev() const;
 
-    static int numTotalHandles();
-	static bool isReferenced(object handle);
     static ObjectHandle* getListHead();
     static ObjectHandle* getListTail();
 
@@ -226,14 +224,6 @@ void givepause();
 #include <vector>
 #include <string>
 
-typedef std::vector<ObjectStruct>     TObjectTable;
-typedef TObjectTable::iterator  TObjectTableIterator;
-typedef std::multimap<size_t, long>    TObjectFreeList;
-typedef std::map<long, size_t>    TObjectFreeListInv;
-typedef TObjectFreeList::iterator   TObjectFreeListIterator;
-typedef TObjectFreeListInv::iterator   TObjectFreeListInvIterator;
-typedef TObjectFreeList::reverse_iterator   TObjectFreeListRevIterator;
-
 /*! \brief The memory manager
  *
  * The class that manages all objects in the system.
@@ -276,15 +266,6 @@ class MemoryManager
          *  \return The number of objects freed.
          */
         int garbageCollect();
-
-        //! Mark function for the garbage collection.
-        /*! When performing the mark part of mark/sweep, this function is called
-         *  for each object. It recursively calls visit on all object ID's in the 
-         *  data area for any object that has standard object data.
-         *
-         *  \param x The object to start marking from.
-         */
-        void visit(register object x);
 
         /*! Get the count of live, referenced objects.
          *
@@ -552,15 +533,8 @@ class MemoryManager
         void setGrowAmount(size_t amount);
 
     private:
-        TObjectFreeList objectFreeList;
-        TObjectFreeListInv objectFreeListInv;
-        TObjectTable    objectTable;
         bool            noGC;
-        size_t          growAmount;
-
         static MemoryManager* m_pInstance;
-
-        size_t growObjectStore(size_t amount);
 
 #if defined TW_UNIT_TESTS
         FRIEND_TEST(MemoryManagerTest, AllocateFromFree);
