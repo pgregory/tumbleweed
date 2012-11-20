@@ -19,13 +19,14 @@ void makeInitialImage();
 extern void initFFISymbols();   /* FFI symbols */
 #endif
 
-ObjectHandle firstProcess;
+object firstProcess;
 int initial = 1;    /* making initial image */
 
 int main(int argc, char** argv) 
 {   
     int i;
 
+    initialiseInterpreter();
     makeInitialImage();
 
     initCommonSymbols();
@@ -57,25 +58,39 @@ int main(int argc, char** argv)
 */
 void makeInitialImage()
 {   
-  ObjectHandle hashTable;
-  ObjectHandle integerClass;
-  ObjectHandle symbolObj, symbolClass, classClass, metaClassClass;
-  ObjectHandle objectClass, metaObjectClass;
+  object hashTable;
+  object integerClass;
+  object symbolObj, symbolClass, classClass, metaClassClass;
+  object objectClass, metaObjectClass;
+  SObjectHandle *lock_hashTable = 0;
+  SObjectHandle *lock_integerClass = 0;
+  SObjectHandle *lock_symbolObj = 0, *lock_symbolClass = 0, *lock_classClass = 0, *lock_metaClassClass = 0;
 
   /* first create the table, without class links */
   symbols = MemoryManager::Instance()->allocObject(dictionarySize);
   hashTable = MemoryManager::Instance()->allocObject(3 * 53);
+  lock_hashTable = new_SObjectHandle_from_object(hashTable);
   objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
 
   /* next create #Symbol, Symbol and Class */
   symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
+  lock_symbolObj = new_SObjectHandle_from_object(symbolObj);
+  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
   symbolClass = MemoryManager::Instance()->newClass("Symbol");
+  lock_symbolClass = new_SObjectHandle_from_object(symbolClass);
+  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
   integerClass = MemoryManager::Instance()->newClass("Integer");
+  lock_integerClass = new_SObjectHandle_from_object(integerClass);
+  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
   symbolObj->_class = symbolClass;
   classClass = MemoryManager::Instance()->newClass("Class");
+  lock_classClass = new_SObjectHandle_from_object(classClass);
+  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
   symbolClass->_class = classClass;
   integerClass->_class = classClass;
   metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
+  lock_metaClassClass = new_SObjectHandle_from_object(metaClassClass);
+  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
   classClass->_class = metaClassClass;
 
   /* now fix up classes for symbol table */
@@ -92,8 +107,15 @@ void makeInitialImage()
   metaClassClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
 
   /* finally at least make true and false to be distinct */
-  ObjectHandle trueobj = MemoryManager::Instance()->newSymbol("true");
+  object trueobj = MemoryManager::Instance()->newSymbol("true");
   nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-  ObjectHandle falseobj = MemoryManager::Instance()->newSymbol("false");
+  object falseobj = MemoryManager::Instance()->newSymbol("false");
   nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
+
+  free_SObjectHandle(lock_hashTable);
+  free_SObjectHandle(lock_integerClass);
+  free_SObjectHandle(lock_symbolObj);
+  free_SObjectHandle(lock_symbolClass);
+  free_SObjectHandle(lock_classClass);
+  free_SObjectHandle(lock_metaClassClass);
 }

@@ -44,9 +44,6 @@ ObjectStruct _nilobj =
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
 
-ObjectHandle* ObjectHandle::head = NULL;
-ObjectHandle* ObjectHandle::tail = NULL;
-
 /*
     in theory the objectTable should only be accessible to the memory
     manager.  Indeed, given the right macro definitions, this can be
@@ -601,6 +598,7 @@ void MemoryManager::imageRead(FILE* fp)
   lv.super.o = symbols;
   lv.super.test = &testFlagZero;
   lv.super.preFunc = &relinkObject;
+  lv.super.postFunc = 0;
   lv.super.count = count;
   lv.map = map;
   visit((Visitor*)&lv);
@@ -698,12 +696,80 @@ void* ObjectStruct::cPointerValue()
 }
 
 
-ObjectHandle* ObjectHandle::getListHead()
+
+SObjectHandle* head = 0;
+SObjectHandle* tail = 0;
+
+
+void appendToList(SObjectHandle* h)
 {
-    return ObjectHandle::head;
+    // Register the handle with the global list.
+    if(0 == tail)
+        head = tail = h;
+    else
+    {
+        tail->m_next = h;
+        h->m_prev = tail;
+        tail = h;
+    }
 }
 
-ObjectHandle* ObjectHandle::getListTail()
+void removeFromList(SObjectHandle* h)
 {
-    return ObjectHandle::tail;
+    // Unlink from the list pointers
+    if(0 != h->m_prev)
+        h->m_prev->m_next = h->m_next;
+
+    if(0 != h->m_next)
+        h->m_next->m_prev = h->m_prev;
+
+    if(head == h)
+        head = h->m_next;
+    if(tail == h)
+        tail = h->m_prev;
 }
+
+SObjectHandle* new_SObjectHandle()
+{
+    SObjectHandle* h = (SObjectHandle*)calloc(1, sizeof(SObjectHandle));
+    h->m_handle = 0;
+    h->m_next = h->m_prev = 0;
+
+    appendToList(h);
+
+    return h;
+}
+
+
+SObjectHandle* copy_SObjectHandle(const SObjectHandle* from)
+{
+    SObjectHandle* h = new_SObjectHandle();
+    h->m_handle = from->m_handle;
+
+    return h;
+}
+
+SObjectHandle* new_SObjectHandle_from_object(object from)
+{
+    SObjectHandle* h = new_SObjectHandle();
+    h->m_handle = from;
+
+    return h;
+}
+
+
+void free_SObjectHandle(SObjectHandle* h)
+{
+  if(h)
+  {
+    removeFromList(h);
+    free(h);
+  }
+}
+
+int hash_SObjectHandle(SObjectHandle* h)
+{
+    return hashObject(h->m_handle);
+}
+
+

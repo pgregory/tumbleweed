@@ -51,7 +51,7 @@ void givepause()
 
 object sysPrimitive(int number, object* arguments)
 {   
-  ObjectHandle returnedObject = nilobj;
+  object returnedObject = nilobj;
 
   /* someday there will be more here */
   switch(number - 150) {

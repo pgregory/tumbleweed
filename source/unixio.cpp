@@ -26,7 +26,7 @@ object ioPrimitive(int number, object* arguments)
 {   
   int i, j;
   char *p, buffer[1024];
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   returnedObject = nilobj;
 

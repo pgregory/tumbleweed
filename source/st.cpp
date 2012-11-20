@@ -13,7 +13,7 @@
 #include "names.h"
 #include "interp.h"
 
-ObjectHandle firstProcess;
+object firstProcess;
 int initial = 0;    /* not making initial image */
 
 #if defined TW_ENABLE_FFI
@@ -37,6 +37,8 @@ int main(int argc, char** argv)
         sysError("cannot open image", p);
         exit(1);
     }
+
+    initialiseInterpreter();
 
     MemoryManager::Instance()->imageRead(fp);
     MemoryManager::Instance()->garbageCollect();

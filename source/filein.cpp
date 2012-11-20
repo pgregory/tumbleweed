@@ -40,41 +40,55 @@ static Lexer ll;
     in addition, it makes sure it has a size, by setting
     the size to zero if it is nil.
 */
-static ObjectHandle findClass(const char* name)
+static object findClass(const char* name)
 {   
-    ObjectHandle newobj;
+    object newobj;
+    SObjectHandle* lock;
 
     newobj = globalSymbol(name);
     if (newobj == nilobj)
         newobj = MemoryManager::Instance()->newClass(name);
     if (newobj->basicAt(sizeInClass) == nilobj) 
     {
+        lock = new_SObjectHandle_from_object(newobj);
         newobj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
+        free_SObjectHandle(lock);
     }
     return newobj;
 }
 
-static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
+static object findClassWithMeta(const char* name, object metaObj)
 {   
-    ObjectHandle newObj, nameObj, methTable;
+    object newObj, nameObj, methTable;
+    SObjectHandle *lock_newObj, *lock_nameObj, *lock_methTable, *lock_metaObj;
     int size;
 
     newObj = globalSymbol(name);
     if (newObj == nilobj)
     {
+        lock_metaObj = new_SObjectHandle_from_object(metaObj);
+
         size = getInteger(metaObj->basicAt(sizeInClass));
         newObj = MemoryManager::Instance()->allocObject(size);
+        lock_newObj = new_SObjectHandle_from_object(newObj);
         newObj->_class = metaObj;
 
         /* now make name */
         nameObj = MemoryManager::Instance()->newSymbol(name);
+        lock_nameObj = new_SObjectHandle_from_object(nameObj);
         newObj->basicAtPut(nameInClass, nameObj);
         methTable = MemoryManager::Instance()->newDictionary(39);
+        lock_methTable = new_SObjectHandle_from_object(methTable);
         newObj->basicAtPut(methodsInClass, methTable);
         newObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
 
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
+
+        free_SObjectHandle(lock_methTable);
+        free_SObjectHandle(lock_nameObj);
+        free_SObjectHandle(lock_newObj);
+        free_SObjectHandle(lock_metaObj);
     }
     return newObj;
 }
@@ -83,16 +97,14 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
  * Create raw class
  */
 
-static ObjectHandle createRawClass(const char* _class, const char* metaclass, const char* superclass)
+static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
-    ObjectHandle classObj, superObj, metaObj;
+    object classObj, superObj, metaObj;
     int size;
 
     metaObj = findClass(metaclass);
     classObj = findClassWithMeta(_class, metaObj);
     classObj->_class = metaObj;
-
-    //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
 
     size = 0;
     superObj = nilobj;
@@ -110,11 +122,13 @@ static ObjectHandle createRawClass(const char* _class, const char* metaclass, co
 */
 static void readRawClassDeclaration()
 {   
-    ObjectHandle classObj, vars;
+    object classObj, vars;
+    SObjectHandle *lock_classObj, *lock_vars;
     std::string className, metaName, superName;
     int i, size, instanceTop;
     // todo: fixed length variables array!
-    ObjectHandle instanceVariables[15];
+    object instanceVariables[15];
+    SObjectHandle* lock_instanceVariables[15];
 
     if (ll.nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
@@ -132,6 +146,7 @@ static void readRawClassDeclaration()
     }
 
     classObj = createRawClass(className.c_str(), metaName.c_str(), superName.c_str());
+    lock_classObj = new_SObjectHandle_from_object(classObj);
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
@@ -142,11 +157,13 @@ static void readRawClassDeclaration()
         instanceTop = 0;
         while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            instanceVariables[instanceTop] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
             size++;
             ll.nextToken();
         }
         vars = MemoryManager::Instance()->newArray(instanceTop);
+        lock_vars = new_SObjectHandle_from_object(vars);
         for (i = 0; i < instanceTop; i++) 
         {
             vars->basicAtPut(i+1, instanceVariables[i]);
@@ -155,6 +172,11 @@ static void readRawClassDeclaration()
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+
+    free_SObjectHandle(lock_vars);
+    while(--instanceTop >= 0)
+        free_SObjectHandle(lock_instanceVariables[instanceTop]);
+    free_SObjectHandle(lock_classObj);
 }
 
 /*
@@ -162,11 +184,13 @@ static void readRawClassDeclaration()
 */
 static void readClassDeclaration()
 {   
-    ObjectHandle classObj, metaObj, vars;
+    object classObj, metaObj, vars;
+    SObjectHandle *lock_classObj, *lock_metaObj, *lock_vars = 0;
     std::string className, superName;
-    int i, size, instanceTop;
+    int i, size, instanceTop = 0;
     // todo: fixed length variables array!
-    ObjectHandle instanceVariables[15];
+    object instanceVariables[15];
+    SObjectHandle* lock_instanceVariables[15];
     // todo: horrible fixed length arrays!
     char metaClassName[100];
     char metaSuperClassName[100];
@@ -187,7 +211,9 @@ static void readClassDeclaration()
         sprintf(metaSuperClassName, "Class");
 
     metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
+    lock_metaObj = new_SObjectHandle_from_object(metaObj);
     classObj = createRawClass(className.c_str(), metaClassName, superName.c_str());
+    lock_classObj = new_SObjectHandle_from_object(classObj);
     classObj->_class = metaObj;
 
     // Get the current class size, we'll build on this as 
@@ -199,11 +225,13 @@ static void readClassDeclaration()
         instanceTop = 0;
         while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            instanceVariables[instanceTop] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
             size++;
             ll.nextToken();
         }
         vars = MemoryManager::Instance()->newArray(instanceTop);
+        lock_vars = new_SObjectHandle_from_object(vars);
         for (i = 0; i < instanceTop; i++) 
         {
             vars->basicAtPut(i+1, instanceVariables[i]);
@@ -212,6 +240,12 @@ static void readClassDeclaration()
     }
     classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
     classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+
+    free_SObjectHandle(lock_vars);
+    while(--instanceTop >= 0)
+        free_SObjectHandle(lock_instanceVariables[instanceTop]);
+    free_SObjectHandle(lock_classObj);
+    free_SObjectHandle(lock_metaObj);
 }
 
 /*
@@ -219,10 +253,12 @@ static void readClassDeclaration()
 */
 static void readMethods(FILE* fd, bool printit)
 {   
-    ObjectHandle classObj, methTable, theMethod, selector;
+    object classObj, methTable, theMethod, selector;
+    SObjectHandle *lock_classObj = 0, *lock_methTable = 0, *lock_theMethod = 0, *lock_selector = 0;
 # define LINEBUFFERSIZE 16384
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
-    ObjectHandle protocol;
+    object protocol = 0;
+    SObjectHandle *lock_protocol = 0;
     Parser pp;
 
     lineBuffer[0] = '\0';
@@ -230,6 +266,8 @@ static void readMethods(FILE* fd, bool printit)
     if (ll.nextToken() != nameconst)
         sysError("missing name","following Method keyword");
     classObj = findClass(ll.strToken().c_str());
+    lock_classObj = new_SObjectHandle_from_object(classObj);
+
     pp.setInstanceVariables(classObj);
     if (printit)
         cp = objectRef(classObj->basicAt(nameInClass)).charPtr();
@@ -241,14 +279,17 @@ static void readMethods(FILE* fd, bool printit)
         methTable = MemoryManager::Instance()->newDictionary(MethodTableSize);
         classObj->basicAtPut(methodsInClass, methTable);
     }
+    lock_methTable = new_SObjectHandle_from_object(methTable);
 
     if(ll.nextToken() == strconst) 
     {
         protocol = MemoryManager::Instance()->newStString(ll.strToken().c_str());
+        lock_protocol = new_SObjectHandle_from_object(protocol);
     }
 
     /* now go read the methods */
-    do {
+    do 
+    {
         if (lineBuffer[0] == '|')   /* get any left over text */
             strcpy(textBuffer,&lineBuffer[1]);
         else
@@ -265,14 +306,16 @@ static void readMethods(FILE* fd, bool printit)
 
         /* now we have a method */
         theMethod = MemoryManager::Instance()->newMethod();
+        lock_theMethod = new_SObjectHandle_from_object(theMethod);
         pp.setLexer(Lexer(textBuffer));
         if (pp.parseMessageHandler(theMethod, savetext)) {
             selector = theMethod->basicAt(messageInMethod);
+            lock_selector = new_SObjectHandle_from_object(selector);
             theMethod->basicAtPut(methodClassInMethod, classObj);
             theMethod->basicAtPut(protocolInMethod, protocol);
             if (printit)
                 dspMethod(cp, selector->charPtr());
-            nameTableInsert(methTable, selector.hash(), selector, theMethod);
+            nameTableInsert(methTable, hashObject(selector), selector, theMethod);
         }
         else {
             /* get rid of unwanted method */
@@ -281,10 +324,11 @@ static void readMethods(FILE* fd, bool printit)
 
     } while (lineBuffer[0] != ']');
 
+    free_SObjectHandle(lock_protocol);
+    free_SObjectHandle(lock_theMethod);
+    free_SObjectHandle(lock_methTable);
+    free_SObjectHandle(lock_classObj);
 }
-
-extern ObjectHandle processStack;
-extern int linkPointer;
 
 
 /*

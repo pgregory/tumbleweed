@@ -27,7 +27,7 @@ extern object primitive( int, object* );
    the following variables are local to this module
    */
 
-static ObjectHandle method, messageToSend;
+static object method, messageToSend;
 
 static int messTest(object obj)
 {
@@ -38,10 +38,10 @@ static int messTest(object obj)
 # define cacheSize 211
 static struct 
 {
-  ObjectHandle cacheMessage;  /* the message being requested */
-  ObjectHandle lookupClass;   /* the class of the receiver */
-  ObjectHandle cacheClass;    /* the class of the method */
-  ObjectHandle cacheMethod;   /* the method itself */
+  SObjectHandle* cacheMessage;  /* the message being requested */
+  SObjectHandle* lookupClass;   /* the class of the receiver */
+  SObjectHandle* cacheClass;    /* the class of the method */
+  SObjectHandle* cacheMethod;   /* the method itself */
 } methodCache[cacheSize];
 
 /* flush an entry from the cache (usually when its been recompiled) */
@@ -50,7 +50,7 @@ void flushCache(object messageToSend, object _class)
   int hash;
 
   hash = ((hashObject(messageToSend)) + (hashObject(_class))) % cacheSize;
-  methodCache[hash].cacheMessage = nilobj;
+  methodCache[hash].cacheMessage->m_handle = nilobj;
 }
 
 /*
@@ -110,13 +110,13 @@ static bool findMethod(object* methodClassLocation)
 
 
 /* the following are manipulated by primitives */
-ObjectHandle  processStack;
+object  processStack;
 int     linkPointer;
 
 static object growProcessStack(int top, int toadd)
 {   
   int size, i;
-  ObjectHandle newStack;
+  object newStack;
 
   if (toadd < 100) toadd = 100;
   size = processStack->size + toadd;
@@ -132,16 +132,17 @@ bool execute(object aProcess, int maxsteps)
   object returnedObject;
   int returnPoint, timeSliceCounter;
   object *pst, *psb, *rcv = NULL, *arg, *temps, *lits, *cntx;
-  ObjectHandle contextObject; 
+  object contextObject; 
+  object argarray;
+  SObjectHandle* lock_argarray;
   object *primargs;
   int byteOffset;
-  ObjectHandle argarray;
   object methodClass; 
   int i, j;
   register int low;
   int high;
   byte *bp;
-  ObjectHandle intClass = globalSymbol("Integer");
+  object intClass = globalSymbol("Integer");
 
   MemoryManager* memmgr = MemoryManager::Instance();
 
@@ -234,20 +235,19 @@ readMethodInfo:
               {
                 /* not yet, do it now - first get real return point */
                 returnPoint = getInteger(processStackAt(linkPointer+2));
-                ObjectHandle args(memmgr->copyFrom(processStack, returnPoint, 
-                      linkPointer - returnPoint));
-                ObjectHandle temp(memmgr->copyFrom(processStack, linkPointer + 6,
-                      methodTempSize(method)));
-                contextObject = memmgr->newContext(linkPointer, method,
-                    args,
-                    temp);
+                object args(memmgr->copyFrom(processStack, returnPoint, linkPointer - returnPoint));
+                SObjectHandle* lock_args = new_SObjectHandle_from_object(args);
+                object temp(memmgr->copyFrom(processStack, linkPointer + 6, methodTempSize(method)));
+                SObjectHandle* lock_temp = new_SObjectHandle_from_object(temp);
+                contextObject = memmgr->newContext(linkPointer, method, args, temp);
                 processStack->basicAtPut(linkPointer+1, contextObject);
                 ipush(contextObject);
                 /* save byte pointer then restore things properly */
-                ObjectHandle temp2(memmgr->newInteger(byteOffset));
+                object temp2 = memmgr->newInteger(byteOffset);
                 processStack->basicAtPut(linkPointer+4, temp2);
+                free_SObjectHandle(lock_args);
+                free_SObjectHandle(lock_temp);
                 goto readLinkageBlock;
-
               }
               ipush(contextObject);
             }
@@ -297,21 +297,22 @@ doSendMessage:
 doFindMessage:
         /* look up method in cache */
         i = ((hashObject(messageToSend)) + (hashObject(methodClass))) % cacheSize;
-        if ((methodCache[i].cacheMessage == messageToSend) &&
-            (methodCache[i].lookupClass == methodClass)) {
-          method = methodCache[i].cacheMethod;
-          methodClass = methodCache[i].cacheClass;
+        if ((methodCache[i].cacheMessage->m_handle == messageToSend) &&
+            (methodCache[i].lookupClass->m_handle == methodClass)) {
+          method = methodCache[i].cacheMethod->m_handle;
+          methodClass = methodCache[i].cacheClass->m_handle;
 //          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
         }
         else 
         {
-          methodCache[i].lookupClass = methodClass;
+          methodCache[i].lookupClass->m_handle = methodClass;
           if(! findMethod(&methodClass)) 
           {
             /* not found, we invoke a smalltalk method */
             /* to recover */
             j = processStackTop() - returnPoint;
             argarray = memmgr->newArray(j+1);
+            lock_argarray = new_SObjectHandle_from_object(argarray);
             for (; j >= 0; j--) 
             {
               ipop(returnedObject);
@@ -320,7 +321,6 @@ doFindMessage:
 //            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
 //            printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
-            ObjectHandle originalMessage = messageToSend;
             ipush(messageToSend);
             messageToSend = memmgr->newSymbol("message:notRecognizedWithArguments:");
             ipush(argarray);
@@ -330,10 +330,11 @@ doFindMessage:
               /* just quit */
               return false;
             }
+            free_SObjectHandle(lock_argarray);
           }
-          methodCache[i].cacheMessage = messageToSend;
-          methodCache[i].cacheMethod = method;
-          methodCache[i].cacheClass = methodClass;
+          methodCache[i].cacheMessage->m_handle = messageToSend;
+          methodCache[i].cacheMethod->m_handle = method;
+          methodCache[i].cacheClass->m_handle = methodClass;
         }
 
         if (watching && (method->basicAt(watchInMethod) != nilobj)) 
@@ -341,6 +342,7 @@ doFindMessage:
           /* being watched, we send to method itself */
           j = processStackTop() - returnPoint;
           argarray = memmgr->newArray(j+1);
+          lock_argarray = new_SObjectHandle_from_object(argarray);
           for (; j >= 0; j--) {
             ipop(returnedObject);
             argarray->basicAtPut(j+1, returnedObject);
@@ -355,6 +357,7 @@ doFindMessage:
             /* just quit */
             return false;
           }
+          free_SObjectHandle(lock_argarray);
         }
 
         /* save the current byte pointer */
@@ -624,7 +627,7 @@ doReturn:
 }
 
 
-ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, ObjectHandle* args, int cargs)
+object sendMessageToObject(object receiver, const char* message, object* args, int cargs)
 {
   MemoryManager* memmgr = MemoryManager::Instance();
   object methodClass = getClass(receiver);
@@ -632,16 +635,18 @@ ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, Obj
   messageToSend = memmgr->newSymbol(message);
   if (! findMethod(&methodClass)) 
   {
-    return ObjectHandle();
+    return nilobj;
   }
 
   int linkOffset = 2 + cargs;
   int stackTop = 10 + cargs;
 
   // Create a new process
-  ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
+  object process = MemoryManager::Instance()->allocObject(processSize);
+  SObjectHandle* lock_process = new_SObjectHandle_from_object(process);
   // Create a stack for it
-  ObjectHandle stack = MemoryManager::Instance()->newArray(50);
+  object stack = MemoryManager::Instance()->newArray(50);
+  SObjectHandle* lock_stack = new_SObjectHandle_from_object(stack);
   process->basicAtPut(stackInProcess, stack);
   // Set the stack top to past the arguments, link and context data
   process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(stackTop));
@@ -660,7 +665,7 @@ ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, Obj
   for(int i = 0; i < cargs; ++i)
     stack->basicAtPut(2 + i, args[i]);
 
-  ObjectHandle saveProcessStack = processStack;
+  object saveProcessStack = processStack;
   int saveLinkPointer = linkPointer;
   while(execute(process, 15000));
   // Re-read the stack object, in case it had to grow during execution and 
@@ -670,21 +675,28 @@ ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, Obj
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
 
+  free_SObjectHandle(lock_stack);
+  free_SObjectHandle(lock_process);
+
   return ro;
 }
 
 
 void runCode(const char * text)
 {   
-    ObjectHandle stack, method, firstProcess;
+    object stack, method, firstProcess;
+    SObjectHandle *lock_stack, *lock_method, *lock_firstProcess;
 
     method = MemoryManager::Instance()->newMethod();
+    lock_method = new_SObjectHandle_from_object(method);
     Parser pp = Parser(Lexer(text));
     pp.setInstanceVariables(nilobj);
     bool result = pp.parseCode(method, false);
 
     firstProcess = MemoryManager::Instance()->allocObject(processSize);
+    lock_firstProcess = new_SObjectHandle_from_object(firstProcess);
     stack = MemoryManager::Instance()->allocObject(50);
+    lock_stack = new_SObjectHandle_from_object(stack);
 
     /* make a process */
     firstProcess->basicAtPut(stackInProcess, stack);
@@ -701,7 +713,8 @@ void runCode(const char * text)
     stack->basicAtPut(bytepointerInStack, MemoryManager::Instance()->newInteger(1));    /* byte offset */
 
     /* now go execute it */
-    ObjectHandle saveProcessStack = processStack;
+    object saveProcessStack = processStack;
+    SObjectHandle* lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
     int saveLinkPointer = linkPointer;
     while (execute(firstProcess, 15000)) fprintf(stderr,"..");
     // Re-read the stack object, in case it had to grow during execution and 
@@ -710,5 +723,36 @@ void runCode(const char * text)
     //object ro = stack->basicAt(1);
     processStack = saveProcessStack;
     linkPointer = saveLinkPointer;
+
+    free_SObjectHandle(lock_saveProcessStack);
+    free_SObjectHandle(lock_stack);
+    free_SObjectHandle(lock_firstProcess);
+    free_SObjectHandle(lock_method);
 }
 
+void initialiseInterpreter()
+{
+  int i;
+  // Initialise cache entries
+  for(i = 0; i < cacheSize; ++i)
+  {
+    methodCache[i].cacheMessage = new_SObjectHandle();
+    methodCache[i].lookupClass = new_SObjectHandle();
+    methodCache[i].cacheClass = new_SObjectHandle();
+    methodCache[i].cacheMethod = new_SObjectHandle();
+  }
+}
+
+
+void shutdownInterpreter()
+{
+  int i;
+  // Initialise cache entries
+  for(i = 0; i < cacheSize; ++i)
+  {
+    free_SObjectHandle(methodCache[i].cacheMessage);
+    free_SObjectHandle(methodCache[i].lookupClass);
+    free_SObjectHandle(methodCache[i].cacheClass);
+    free_SObjectHandle(methodCache[i].cacheMethod);
+  }
+}

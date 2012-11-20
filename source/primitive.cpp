@@ -44,7 +44,7 @@
 #include "interp.h"
 #include "parser.h"
 
-extern ObjectHandle processStack;
+extern object processStack;
 extern int linkPointer;
 
 extern double frexp(), ldexp();
@@ -140,7 +140,8 @@ static object unaryPrims(int number, object firstarg)
 {   
   int i, j, saveLinkPointer;
   object returnedObject;
-  ObjectHandle saveProcessStack;
+  object saveProcessStack;
+  SObjectHandle* lock_saveProcessStack = 0;
 
   returnedObject = firstarg;
   switch(number) {
@@ -192,6 +193,8 @@ static object unaryPrims(int number, object firstarg)
     case 9:         /* process execute */
       /* first save the values we are about to clobber */
       saveProcessStack = processStack;
+      // \todo: not sure if this lock is necessary.
+      lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
       saveLinkPointer = linkPointer;
 # ifdef SIGNAL
       /* trap control-C */
@@ -217,6 +220,7 @@ static object unaryPrims(int number, object firstarg)
           returnedObject = booleanSyms[booleanFalse];
       /* then restore previous environment */
       processStack = saveProcessStack;
+      free_SObjectHandle(lock_saveProcessStack);
       linkPointer = saveLinkPointer;
 # ifdef SIGNAL
       signal(SIGINT, brkignore);
@@ -520,7 +524,7 @@ static object floatUnary(int number, double firstarg)
   char buffer[20];
   double temp;
   int i, j;
-  ObjectHandle returnedObject;
+  object returnedObject;
 
   switch(number) 
   {

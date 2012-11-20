@@ -18,102 +18,24 @@ struct ObjectStruct;
 
 typedef ObjectStruct* object;
 
-/*! \brief Auto referencing object handle class.
- *
- * Use this class to hold a reference to a newly created object so
- * that it won't be collected by the garbage collector before it is
- * assigned to a place in the object storage. 
- * The handle automatically records the reference on creation, and 
- * releases it when destroyed, so it just needs to be properly 
- * scoped
- */
-class ObjectHandle
+
+typedef struct _SObjectHandle
 {
-    public:
-        //! Default constructor
-        /*! By default, the handle refers to the nilobj. */
-        ObjectHandle();
-        //! Constructor
-        /*! Takes an object ID, automatically records the reference 
-         *
-         * \param object The object to reference, it will be managed by the
-         *        default singleton memory manager
-         *
-         */
-        //! Copy constructor
-        /*! Ensures that the copy correctly references the object.
-         *
-         * \param from The ObjectHandle to duplicate.
-         */
-        ObjectHandle(const ObjectHandle& from);
-        ObjectHandle(object from);
-        //! Constructor
-        /*! Takes an object ID and manager to reference against, 
-         *  automatically records the reference 
-         *
-         * \param object The object to reference, it will be managed by the
-         *        default singleton memory manager
-         * \param manager Pointer to the manager to reference with.
-         *
-         */
-        ObjectHandle(object from, MemoryManager* manager);
-        //! Destructor
-        /*! Releases any reference, allowing the object to be collected,
-         *  unless it has been assigned to a slot in the object storage
-         *  reachable from the Symbols list.
-         */
-        ~ObjectHandle();
+    object m_handle;
+    struct _SObjectHandle* m_next;
+    struct _SObjectHandle* m_prev;
+} SObjectHandle;
 
-        //! Cast to object struct
-        operator ObjectStruct&() const;
+extern SObjectHandle* head;
+extern SObjectHandle* tail;
 
-        operator object() const;
-
-        ObjectStruct* operator->() const;
-
-        /*! Accessor for the object ID referenced
-         *
-         * \return The object handle
-         */
-        object handle() const
-        {
-            return m_handle;
-        }
-
-        int hash() const;
-
-        //! Assignement operator
-        /*!
-         *  Assign a new handle to be referenced.
-         *  If an existing handle is referenced, it will be 
-         *  released first.
-         *
-         *  \param o An object reference.
-         *  \return A reference to this object.
-         */
-        ObjectHandle& operator=(object o);
-
-        ObjectHandle& operator=(const ObjectHandle& from);
-
-        ObjectHandle* next() const;
-        ObjectHandle* prev() const;
-
-    static ObjectHandle* getListHead();
-    static ObjectHandle* getListTail();
-
-    private:
-        object    m_handle;
-        ObjectHandle* m_next;
-        ObjectHandle* m_prev;
-
-    static  ObjectHandle* head;
-    static  ObjectHandle* tail;      
-
-    void removeFromList();
-    void appendToList();
-};
-
-
+void appendToList(SObjectHandle* h);
+void removeFromList(SObjectHandle* h);
+SObjectHandle* new_SObjectHandle();
+SObjectHandle* copy_SObjectHandle(const SObjectHandle* from);
+SObjectHandle* new_SObjectHandle_from_object(object from);
+void free_SObjectHandle(SObjectHandle* h);
+int hash_SObjectHandle(SObjectHandle* h);
 
 inline int hashObject(object o)
 {
@@ -599,116 +521,6 @@ extern object g_intClass;
 #define getClass(x) (((x)&1)? ((classSyms[kInteger] == 0)? (globalSymbol("Integer")) : classSyms[kInteger].handle()) : (objectRef((x))._class))
 
 #endif
-
-
-inline ObjectHandle::ObjectHandle() : 
-    m_prev(NULL),
-    m_next(NULL),
-    m_handle(0)
-{
-    appendToList();
-}
-
-inline ObjectHandle::ObjectHandle(const ObjectHandle& from) :
-    m_prev(NULL),
-    m_next(NULL)
-{
-    m_handle = from.m_handle;
-    appendToList();
-}
-
-inline ObjectHandle::ObjectHandle(object from) : 
-    m_prev(NULL),
-    m_next(NULL),
-    m_handle(from) 
-{
-    appendToList();
-}
-
-inline ObjectHandle::ObjectHandle(object from, MemoryManager* manager) : 
-    m_prev(NULL),
-    m_next(NULL),
-    m_handle(from)
-{
-    appendToList();
-}
-
-inline ObjectHandle::~ObjectHandle() 
-{
-    removeFromList();
-}
-
-inline ObjectHandle& ObjectHandle::operator=(object o)
-{
-    m_handle = o;
-    return *this;
-}
-
-inline ObjectHandle& ObjectHandle::operator=(const ObjectHandle& from)
-{
-    m_handle = from.m_handle;
-    return *this;
-}
-
-inline ObjectStruct* ObjectHandle::operator->() const
-{
-    return &MemoryManager::Instance()->objectFromID(m_handle);
-}
-
-inline ObjectHandle::operator ObjectStruct&() const
-{
-    return MemoryManager::Instance()->objectFromID(m_handle);
-}
-
-inline ObjectHandle::operator object() const
-{
-    return m_handle;
-}
-
-inline int ObjectHandle::hash() const
-{
-    return hashObject(m_handle);
-}
-
-inline void ObjectHandle::appendToList()
-{
-    // Register the handle with the global list.
-    if(NULL == ObjectHandle::tail)
-        ObjectHandle::head = ObjectHandle::tail = this;
-    else
-    {
-        ObjectHandle::tail->m_next = this;
-        m_prev = ObjectHandle::tail;
-        ObjectHandle::tail = this;
-    }
-}
-
-inline void ObjectHandle::removeFromList()
-{
-    // Unlink from the list pointers
-    if(NULL != m_prev)
-        m_prev->m_next = m_next;
-
-    if(NULL != m_next)
-        m_next->m_prev = m_prev;
-
-    if(ObjectHandle::head == this)
-        ObjectHandle::head = m_next;
-    if(ObjectHandle::tail == this)
-        ObjectHandle::tail = m_prev;
-}
-
-inline ObjectHandle* ObjectHandle::next() const
-{
-    return m_next;
-}
-
-inline ObjectHandle* ObjectHandle::prev() const
-{
-    return m_prev;
-}
-
-
 
 
 #endif

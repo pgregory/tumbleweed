@@ -33,7 +33,7 @@
 
 void nameTableInsert(object dict, int hash, object key, object value)
 {   
-    ObjectHandle table, link, nwLink, nextLink, tablentry;
+    object table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
     table = objectRef(dict).basicAt(tableInDictionary);
@@ -147,10 +147,10 @@ object nameTableLookup(object dict, const char* str)
     return hashEachElement(dict, strHash(str), strTest);
 }
 
-std::vector<ObjectHandle> booleanSyms;
-std::vector<ObjectHandle> unSyms;
-std::vector<ObjectHandle> binSyms;
-std::vector<ObjectHandle> classSyms;
+std::vector<object> booleanSyms;
+std::vector<object> unSyms;
+std::vector<object> binSyms;
+std::vector<object> classSyms;
 
 const char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
 "basicSize", "print", "printString", 0};
@@ -197,8 +197,5 @@ void initCommonSymbols()
         binSyms.push_back(MemoryManager::Instance()->newSymbol(binStrs[i]));
     classSyms.resize(k__lastClass);
     for (i = 0; classStrs[i].index != k__lastClass; ++i)
-    {
-        ObjectHandle h = globalSymbol(classStrs[i].name);
         classSyms[classStrs[i].index] = globalSymbol(classStrs[i].name);
-    }
 }

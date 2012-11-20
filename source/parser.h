@@ -75,7 +75,7 @@ class Parser
         bool parseok;            /* parse still ok? */
         int codeTop;            /* top position filled in code array */
         byte codeArray[codeLimit];  /* bytecode array */
-        std::vector<ObjectHandle> literalArray;
+        std::vector<object> literalArray;
         int temporaryTop;
         char *temporaryName[temporaryLimit];
         int argumentTop;

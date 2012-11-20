@@ -49,7 +49,7 @@ void Parser::compilError(const char* selector, const char* str1, const char* str
 void Parser::setInstanceVariables(object aClass)
 {   
     int i, limit;
-    ObjectHandle vars;
+    object vars;
 
     if (aClass == nilobj)
         instanceTop = 0;
@@ -189,7 +189,7 @@ bool Parser::nameTerm(const char *name)
 int Parser::parseArray()
 {   
     int i, size, base;
-    ObjectHandle newLit, obj;
+    object newLit, obj;
 
     base = literalArray.size();
     m_lexer.nextToken();
@@ -457,17 +457,20 @@ bool Parser::unaryContinuation(bool superReceiver)
 bool Parser::binaryContinuation(bool superReceiver)
 {   
     bool superTerm;
-    ObjectHandle messagesym;
+    object messagesym;
+    SObjectHandle* lock_messageSym = 0;
 
     superReceiver = unaryContinuation(superReceiver);
     while (parseok && (m_lexer.currentToken() == binary)) 
     {
         messagesym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
+        lock_messageSym = new_SObjectHandle_from_object(messagesym);
         m_lexer.nextToken();
         superTerm = term();
         unaryContinuation(superTerm);
         genMessage(superReceiver, 1, messagesym);
         superReceiver = false;
+        free_SObjectHandle(lock_messageSym);
     }
     return(superReceiver);
 }
@@ -508,7 +511,7 @@ bool Parser::keyContinuation(bool superReceiver)
 {   
     int i, j, argumentCount;
     bool sent, superTerm;
-    ObjectHandle messagesym;
+    object messagesym;
     char pattern[80];
 
     superReceiver = binaryContinuation(superReceiver);
@@ -719,8 +722,9 @@ void Parser::body()
 void Parser::block()
 {   
     int saveTemporary, argumentCount, fixLocation;
-    ObjectHandle tempsym; 
-    ObjectHandle newBlk;
+    object tempsym; 
+    object newBlk;
+    SObjectHandle* lock_newBlk = 0;
     enum blockstatus savebstat;
 
     saveTemporary = temporaryTop;
@@ -751,6 +755,7 @@ void Parser::block()
         m_lexer.nextToken();
     }
     newBlk = MemoryManager::Instance()->newBlock();
+    lock_newBlk = new_SObjectHandle_from_object(newBlk);
     newBlk->basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
     newBlk->basicAtPut(argumentLocationInBlock, 
             MemoryManager::Instance()->newInteger(saveTemporary + 1));
@@ -773,11 +778,13 @@ void Parser::block()
     codeArray[fixLocation] = codeTop+1;
     temporaryTop = saveTemporary;
     blockstat = savebstat;
+
+    free_SObjectHandle(lock_newBlk);
 }
 
 void Parser::temporaries()
 {   
-    ObjectHandle tempsym;
+    object tempsym;
 
     temporaryTop = 0;
     if ((m_lexer.currentToken() == binary) && m_lexer.strToken().compare("|") == 0) 
@@ -805,7 +812,7 @@ void Parser::temporaries()
 
 void Parser::messagePattern()
 {   
-    ObjectHandle argsym;
+    object argsym;
 
     argumentTop = 0;
     strcpy(selector, m_lexer.strToken().c_str());
@@ -879,7 +886,7 @@ bool Parser::parseMessageHandler(object method, bool savetext)
 bool Parser::recordMethodBytecode(object method, bool savetext)
 {
     int i;
-    ObjectHandle bytecodes, theLiterals;
+    object bytecodes, theLiterals;
     byte *bp;
 
     if (parseok) 

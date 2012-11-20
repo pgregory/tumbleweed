@@ -28,9 +28,9 @@ extern "C" {
 #include "names.h"
 #include "interp.h"
 
-extern ObjectHandle sendMessageToObject(ObjectHandle receiver, const char* message, ObjectHandle* args, int cargs);
+extern object sendMessageToObject(object receiver, const char* message, object* args, int cargs);
 
-extern ObjectHandle processStack;
+extern object processStack;
 extern int linkPointer;
 
 typedef void* FFI_LibraryHandle;
@@ -351,9 +351,11 @@ void valueOut(object value, FFI_DataType* data)
       {
         // Check the argument, see if it's a type of ExternalData  
         // Initially, check just for responding to 'fields'
-        ObjectHandle args[1];
+        object args[1];
         args[0] = MemoryManager::Instance()->newSymbol("fields");
-        ObjectHandle result = sendMessageToObject(value, "respondsTo:", args, 1);
+        SObjectHandle* lock_arg = new_SObjectHandle_from_object(args[0]);
+        object result = sendMessageToObject(value, "respondsTo:", args, 1);
+        free_SObjectHandle(lock_arg);
         if(result == booleanSyms[booleanTrue])
         {
           result = sendMessageToObject(value, "fields", NULL, 0);
@@ -369,9 +371,9 @@ void valueOut(object value, FFI_DataType* data)
           for(int i = 0; i < ctypes; ++i)
           {
             // Read the types from the returned array.
-            ObjectHandle type = result->basicAt(i+1);
-            ObjectHandle name = type->basicAt(1);
-            ObjectHandle basetype = type->basicAt(2);
+            object type = result->basicAt(i+1);
+            object name = type->basicAt(1);
+            object basetype = type->basicAt(2);
             int argmap = mapType(basetype);
             ed_type_elements[i] = static_cast<ffi_type*>(ffiLSTTypes[argmap]);
             size += ffiLSTTypeSizes[argmap];
@@ -382,12 +384,12 @@ void valueOut(object value, FFI_DataType* data)
           for(int i = 0; i < ctypes; ++i)
           {
             // Read the types from the returned array.
-            ObjectHandle type = result->basicAt(i+1);
-            ObjectHandle name = type->basicAt(1);
-            ObjectHandle basetype = type->basicAt(2);
-            ObjectHandle args[1];
+            object type = result->basicAt(i+1);
+            object name = type->basicAt(1);
+            object basetype = type->basicAt(2);
+            object args[1];
             args[0] = MemoryManager::Instance()->newInteger(i+1);
-            ObjectHandle memberval = sendMessageToObject(value, "member:", args, 1); 
+            object memberval = sendMessageToObject(value, "member:", args, 1); 
             int argmap = mapType(basetype);
             members[i].typemap = argmap;
             valueOut(memberval, &members[i]);
@@ -536,40 +538,54 @@ object valueIn(int retMap, FFI_DataType* data)
 
     case FFI_EXTERNALDATA:
       {
-        ObjectHandle edclass = data->externalData._class;
+        object edclass = data->externalData._class;
         int csize = edclass->basicAt(sizeInClass);
-        ObjectHandle ed = MemoryManager::Instance()->allocObject(csize);
+        object ed = MemoryManager::Instance()->allocObject(csize);
+        SObjectHandle* lock_ed = new_SObjectHandle_from_object(ed);
         ed->basicAtPut(1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
         ed->_class = edclass;
         // Now fill in the values using recursive marshalling.
-        ObjectHandle args[2];
+        object args[2];
+        SObjectHandle* lock_args[2];
         for(int i = 0; i < data->externalData.numMembers; ++i)
         {
           args[0] = MemoryManager::Instance()->newInteger(i+1);
+          lock_args[0] = new_SObjectHandle_from_object(args[0]);
           args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
+          lock_args[1] = new_SObjectHandle_from_object(args[1]);
           sendMessageToObject(ed, "setMember:to:", args, 2);
+          free_SObjectHandle(lock_args[0]);
+          free_SObjectHandle(lock_args[1]);
         }
+        free_SObjectHandle(lock_ed);
         return ed;
       }
       break;
 
     case FFI_EXTERNALDATAOUT:
       {
-        ObjectHandle edclass = data->externalData._class;
+        object edclass = data->externalData._class;
         int csize = edclass->basicAt(sizeInClass);
-        ObjectHandle ed = MemoryManager::Instance()->allocObject(csize);
+        object ed = MemoryManager::Instance()->allocObject(csize);
+        SObjectHandle* lock_ed = new_SObjectHandle_from_object(ed);
         ed->basicAtPut(1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
         ed->_class = edclass;
         // Now fill in the values using recursive marshalling.
-        ObjectHandle args[2];
+        object args[2];
+        SObjectHandle* lock_args[2];
         char* structStorage = static_cast<char*>(data->externalData.pointer);
         for(int i = 0; i < data->externalData.numMembers; ++i)
         {
           args[0] = MemoryManager::Instance()->newInteger(i+1);
+          lock_args[0] = new_SObjectHandle_from_object(args[0]);
           structStorage += readFromStorage(structStorage, &(data->externalData.members[i]));
           args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
+          lock_args[1] = new_SObjectHandle_from_object(args[1]);
           sendMessageToObject(ed, "setMember:to:", args, 2);
+          free_SObjectHandle(lock_args[0]);
+          free_SObjectHandle(lock_args[1]);
         }
+        free_SObjectHandle(lock_ed);
         return ed;
       }
       break;
@@ -578,7 +594,7 @@ object valueIn(int retMap, FFI_DataType* data)
 
 typedef struct FFI_CallbackData_U
 {
-  ObjectHandle  block;
+  SObjectHandle*  block;
   int     numArgs;
   FFI_Symbols *argTypeArray;
   FFI_Symbols retType;
@@ -587,6 +603,7 @@ typedef struct FFI_CallbackData_U
 FFI_CallbackData* newCallbackData(int numArgs)
 {
   FFI_CallbackData* data = new FFI_CallbackData();
+  data->block = new_SObjectHandle();
   data->argTypeArray = static_cast<FFI_Symbols*>(calloc(numArgs, sizeof(FFI_Symbols)));
   data->numArgs = numArgs;
 
@@ -595,6 +612,7 @@ FFI_CallbackData* newCallbackData(int numArgs)
 
 void deleteCallbackData(FFI_CallbackData *data)
 {
+  free_SObjectHandle(data->block);
   free(data->argTypeArray);
   free(data);
 }
@@ -606,13 +624,15 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
   FFI_CallbackData* data = (FFI_CallbackData*)ud;
 
-  ObjectHandle block = data->block;
-  ObjectHandle context = block->basicAt(contextInBlock);
-  ObjectHandle bytePointer = block->basicAt(bytecountPositionInBlock);
+  object block = data->block->m_handle;
+  object context = block->basicAt(contextInBlock);
+  object bytePointer = block->basicAt(bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
-  ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
-  ObjectHandle stack = MemoryManager::Instance()->newArray(50);
+  object process = MemoryManager::Instance()->allocObject(processSize);
+  SObjectHandle* lock_process = new_SObjectHandle_from_object(process);
+  object stack = MemoryManager::Instance()->newArray(50);
+  SObjectHandle* lock_stack = new_SObjectHandle_from_object(stack);
   process->basicAtPut(stackInProcess, stack);
   process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
   process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
@@ -632,7 +652,8 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
     // \todo: Memory leak
   }
 
-  ObjectHandle saveProcessStack = processStack;
+  object saveProcessStack = processStack;
+  SObjectHandle* lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
   int saveLinkPointer = linkPointer;
   while(execute(process, 15000));
   // Re-read the stack object, in case it had to grow during execution and 
@@ -646,11 +667,15 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   memcpy(ret, temp.ptr, ffiLSTTypeSizes[data->retType]);
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
+
+  free_SObjectHandle(lock_saveProcessStack);
+  free_SObjectHandle(lock_process);
+  free_SObjectHandle(lock_stack);
 }
 
 object ffiPrimitive(int number, object* arguments)
 {   
-  ObjectHandle returnedObject = nilobj;
+  object returnedObject = nilobj;
   std::stringstream libName;
 
   switch(number - 180) {
