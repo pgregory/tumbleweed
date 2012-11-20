@@ -343,10 +343,139 @@ object MemoryManager::copyFrom(object obj, int start, int size)
 
 static struct 
 {
-    int di;
-    object cl;
-    short ds;
+    object ref;
+    object _classRef;
+    short size;
 } dummyObject;
+
+
+
+typedef struct _visitor
+{
+    bool(*test)(struct _visitor* env);
+    void(*preFunc)(struct _visitor* env);
+    void(*postFunc)(struct _visitor* env);
+
+    long count;
+    object o;
+} Visitor;
+
+typedef struct _fileVisitor
+{
+    Visitor super;
+
+    FILE* fp;
+} FileVisitor;
+
+bool testFlagZero(Visitor* _this)
+{
+    return objectRef(_this->o).referenceCount == 0;
+}
+
+bool testFlagNonZero(Visitor* _this)
+{
+    return objectRef(_this->o).referenceCount != 0;
+}
+
+void clearFlag(Visitor* _this)
+{
+    objectRef(_this->o).referenceCount = 0;
+}
+
+void setFlag(Visitor* _this)
+{
+    objectRef(_this->o).referenceCount = 1;
+    _this->count++;
+}
+
+void visit(Visitor* cb)
+{
+    int i, s;
+    object *p;
+
+    if(cb->o && cb->test(cb))
+    {
+        // Cache object name, as we're going to replace it for
+        // nested calls.
+        object current = cb->o;
+
+        if(cb->preFunc)
+            cb->preFunc(cb);
+        cb->o = objectRef(current)._class;
+        visit(cb);
+        s = objectRef(current).size;
+        if (s>0) 
+        {
+            p = objectRef(current).memory;
+            for (i=s; i; --i) 
+            {
+                cb->o = *p++;
+                visit(cb);
+            }
+        }
+        cb->o = current;
+        if(cb->postFunc)
+            cb->postFunc(cb);
+    }
+}
+
+
+/*
+   imageWrite - write out an object image
+   */
+
+static void fw(FILE* fp, char* p, int s)
+{
+    if (fwrite(p, s, 1, fp) != 1) 
+    {
+        sysError("imageWrite size error","");
+    }
+}
+
+void saveObject(Visitor* _this)
+{
+  long i, j, size;
+
+  FileVisitor* fcb = (FileVisitor*)_this;
+
+  dummyObject.ref = _this->o;
+  dummyObject._classRef = objectRef(_this->o)._class;
+  dummyObject.size = size = objectRef(_this->o).size;
+  fw(fcb->fp, (char *) &dummyObject, sizeof(dummyObject));
+  if (size < 0) 
+    size = ((- size) + 1) / 2;
+  if (size != 0)
+    fw(fcb->fp, (char *) objectRef(_this->o).memory, sizeof(object) * size);
+}
+
+
+void MemoryManager::imageWrite(FILE* fp)
+{
+  fw(fp, (char *) &symbols, sizeof(object));
+
+
+  Visitor v;
+  v.preFunc = &setFlag;
+  v.postFunc = 0;
+  v.test = &testFlagZero;
+  v.o = symbols;
+  v.count = 0;
+  visit(&v);
+
+  fw(fp, (char *) &v.count, sizeof(v.count));
+  printf("Number of objects to save: %ld\n", v.count);
+
+  FileVisitor fv;
+  fv.super.o = symbols;
+  fv.super.count = v.count;
+  fv.fp = fp;
+  fv.super.test = &testFlagNonZero;
+  fv.super.preFunc = &clearFlag;
+  fv.super.postFunc = &saveObject;
+  visit((Visitor*)&fv);
+}
+
+
 
 /*
    imageRead - read in an object image
@@ -366,124 +495,120 @@ static int fr(FILE* fp, char* p, int s)
   return r;
 }
 
+typedef struct _mapEntry
+{
+  object oldRef;
+  object newRef;
+} mapEntry;
+
+typedef struct _linkVisitor
+{
+    Visitor super;
+
+    mapEntry* map;
+} LinkVisitor;
+
+bool fixupLink(mapEntry* map, long count, object* ref)
+{
+  long i;
+
+  if(*ref == 0)
+    return true;
+
+  for(i = 0; i < count; ++i)
+  {
+    if(*ref == map[i].oldRef)
+    {
+      //printf("Fixing up %p with %p\n", *ref, map[i].newRef);
+      *ref = map[i].newRef;
+      return true;
+    }
+  }
+  return false;
+}
+
+void relinkObject(Visitor* _this)
+{
+  long i, j;
+
+  LinkVisitor* lv = (LinkVisitor*)_this;
+
+  if(_this->o)
+  {
+    // Fixup the class reference first
+    if(!fixupLink(lv->map, _this->count, &(objectRef(_this->o)._class)))
+      printf("No fixup found for class %p!\n", objectRef(_this->o)._class);
+    // Then fixup all the object references if it's an object list object.
+    if(objectRef(_this->o).size > 0)
+    {
+      for(i = 0; i < objectRef(_this->o).size; ++i)
+      {
+        if(!fixupLink(lv->map, _this->count, &(objectRef(_this->o).memory[i])))
+          printf("No fixup found for member %p!\n", objectRef(_this->o).memory[i]);
+      }
+    }
+  }
+  objectRef(_this->o).referenceCount = 1;
+}
+
 void MemoryManager::imageRead(FILE* fp)
 {   
-#if 0
-  long i, size;
+  long i, count, size;
+  object oldRef, newRef;
+  mapEntry* map;
 
   fr(fp, (char *) &symbols, sizeof(object));
+  fr(fp, (char *) &count, sizeof(long));
   i = 0;
+
+  // Allocate a remapping table.
+  map = (mapEntry*)calloc(count, sizeof(mapEntry));
 
   while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) 
   {
-    i = dummyObject.di;
+    oldRef = dummyObject.ref;
+    size = dummyObject.size;
 
-    if ((i < 0) || (i >= objectTable.size()))
+    map[i].oldRef = oldRef;
+    // Allocate a new object, the size of the snapshot'd one.
+    // make sure to check if it was a byte or object object.
+    if (size < 0) 
     {
-        // Grow enough, plus a bit.
-        growObjectStore(i - objectTable.size() + 500);
-    }
-    objectTable[i]._class = dummyObject.cl;
-    if ((objectTable[i]._class < 0) || 
-        ((objectTable[i]._class) >= objectTable.size())) 
-    {
-        // Grow enough, plus a bit.
-        growObjectStore(objectTable[i]._class - objectTable.size() + 500);
-    }
-    objectTable[i].size = size = dummyObject.ds;
-    if (size < 0) size = ((- size) + 1) / 2;
-    if (size != 0) 
-    {
-      objectTable[i].memory = mBlockAlloc((int) size);
-      fr(fp, (char *) objectTable[i].memory,
-          sizeof(object) * (int) size);
+      newRef = allocByte(-size);
+      // adjust temporary size, so we read in the right amount.
+      size = ((- size) + 1) / 2;
     }
     else
-      objectTable[i].memory = (object *) 0;
+      newRef = allocObject(size);
 
-    objectTable[i].referenceCount = 666;
+    map[i].newRef = newRef;
+    ++i;
+
+    objectRef(newRef)._class = dummyObject._classRef;
+    if (size != 0) 
+      fr(fp, (char *) objectRef(newRef).memory, sizeof(object) * (int) size);
+    else
+      objectRef(newRef).memory = (object *) 0;
   }
-  setFreeLists();
-#endif
-}
+  // Now that everything is read in, and the mapping table created, 
+  // scan the objects, and fixup the addresses.
 
-/*
-   imageWrite - write out an object image
-   */
-
-static void fw(FILE* fp, char* p, int s)
-{
-  if (fwrite(p, s, 1, fp) != 1) {
-    sysError("imageWrite size error","");
-  }
-}
+  if(!fixupLink(map, count, &symbols))
+    printf("Failed to fixup symbols!\n");
 
 
-bool testFlagZero(object o)
-{
-  return objectRef(o).referenceCount == 0;
-}
+  LinkVisitor lv;
+  lv.super.o = symbols;
+  lv.super.test = &testFlagZero;
+  lv.super.preFunc = &relinkObject;
+  lv.super.count = count;
+  lv.map = map;
+  visit((Visitor*)&lv);
 
-bool testFlagNonZero(object o)
-{
-  return objectRef(o).referenceCount != 0;
-}
+  // Fixup the class of the single nil object
+  _nilobj._class = globalSymbol("UndefinedObject");
 
-void setFlag(object o)
-{
-  objectRef(o).referenceCount = 1;
-}
-
-void saveObject(object o)
-{
-  objectRef(o).referenceCount = 0;
-}
-
-void visit(object o, void(*func)(object), bool(*test)(object))
-{
-  int i, s;
-  object *p;
-
-  if(o && test(o))
-  {
-    visit(objectRef(o)._class, func, test);
-    s = objectRef(o).size;
-    if (s>0) 
-    {
-        p = objectRef(o).memory;
-        for (i=s; i; --i) 
-            visit(*p++, func, test);
-    }
-    func(o);
-  }
-}
-
-void MemoryManager::imageWrite(FILE* fp)
-{   
-#if 0
-  long i, size;
-
-  garbageCollect();
-
-  fw(fp, (char *) &symbols, sizeof(object));
-
-  for (i = 0; i < objectTable.size(); i++) 
-  {
-    if (objectTable[i].referenceCount > 0) 
-    {
-      dummyObject.di = i;
-      dummyObject.cl = objectTable[i]._class;
-      dummyObject.ds = size = objectTable[i].size;
-      fw(fp, (char *) &dummyObject, sizeof(dummyObject));
-      if (size < 0) size = ((- size) + 1) / 2;
-      if (size != 0)
-        fw(fp, (char *) objectTable[i].memory,
-            sizeof(object) * size);
-    }
-  }
-#endif
-  visit(symbols, &setFlag, &testFlagZero);
-  visit(symbols, &saveObject, &testFlagNonZero);
+  free(map);
 }
 
 void MemoryManager::disableGC(bool disable)
