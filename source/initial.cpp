@@ -70,27 +70,27 @@ void makeInitialImage()
   symbols = MemoryManager::Instance()->allocObject(dictionarySize);
   hashTable = MemoryManager::Instance()->allocObject(3 * 53);
   lock_hashTable = new_SObjectHandle_from_object(hashTable);
-  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
+  symbols->basicAtPut(tableInDictionary, hashTable);
 
   /* next create #Symbol, Symbol and Class */
   symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
   lock_symbolObj = new_SObjectHandle_from_object(symbolObj);
-  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
+  symbols->basicAtPut(tableInDictionary, hashTable);
   symbolClass = MemoryManager::Instance()->newClass("Symbol");
   lock_symbolClass = new_SObjectHandle_from_object(symbolClass);
-  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
+  symbols->basicAtPut(tableInDictionary, hashTable);
   integerClass = MemoryManager::Instance()->newClass("Integer");
   lock_integerClass = new_SObjectHandle_from_object(integerClass);
-  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
+  symbols->basicAtPut(tableInDictionary, hashTable);
   symbolObj->_class = symbolClass;
   classClass = MemoryManager::Instance()->newClass("Class");
   lock_classClass = new_SObjectHandle_from_object(classClass);
-  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
+  symbols->basicAtPut(tableInDictionary, hashTable);
   symbolClass->_class = classClass;
   integerClass->_class = classClass;
   metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
   lock_metaClassClass = new_SObjectHandle_from_object(metaClassClass);
-  objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
+  symbols->basicAtPut(tableInDictionary, hashTable);
   classClass->_class = metaClassClass;
 
   /* now fix up classes for symbol table */
@@ -98,8 +98,8 @@ void makeInitialImage()
   MemoryManager::Instance()->newClass("Link");
   MemoryManager::Instance()->newClass("ByteArray");
   hashTable->_class = MemoryManager::Instance()->newClass("Array");
-  objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
-  objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
+  symbols->_class = MemoryManager::Instance()->newClass("Dictionary");
+  nilobj->_class = MemoryManager::Instance()->newClass("UndefinedObject");
   MemoryManager::Instance()->newClass("String");
   nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
 

@@ -36,7 +36,7 @@ object ioPrimitive(int number, object* arguments)
   {
     case 0:     /* file open */
       i = getInteger(arguments[0]);
-      p = objectRef(arguments[1]).charPtr();
+      p = arguments[1]->charPtr();
       if(NULL == p)
         returnedObject = nilobj;
       else 
@@ -48,7 +48,7 @@ object ioPrimitive(int number, object* arguments)
         else if (streq(p, "stderr"))
           fp[i] = stderr;
         else {
-          fp[i] = fopen(p, objectRef(arguments[2]).charPtr());
+          fp[i] = fopen(p, arguments[2]->charPtr());
         }
         if (fp[i] == NULL)
           returnedObject = nilobj;
@@ -99,7 +99,7 @@ object ioPrimitive(int number, object* arguments)
     case 8:     /* print no return */
     case 9:     /* print string */
       if (! fp[i]) break; 
-      fputs(objectRef(arguments[1]).charPtr(), fp[i]);
+      fputs(arguments[1]->charPtr(), fp[i]);
       if (number == 8)
         fflush(fp[i]);
       else

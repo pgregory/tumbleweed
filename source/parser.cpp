@@ -55,13 +55,13 @@ void Parser::setInstanceVariables(object aClass)
         instanceTop = 0;
     else 
     {
-        setInstanceVariables(objectRef(aClass).basicAt(superClassInClass));
-        vars = objectRef(aClass).basicAt(variablesInClass);
+        setInstanceVariables(aClass->basicAt(superClassInClass));
+        vars = aClass->basicAt(variablesInClass);
         if (vars != nilobj) 
         {
-            limit = objectRef(vars).size;
+            limit = vars->size;
             for (i = 1; i <= limit; i++)
-                instanceName[++instanceTop] = objectRef(objectRef(vars).basicAt(i)).charPtr();
+                instanceName[++instanceTop] = vars->basicAt(i)->charPtr();
         }
     }
 }
@@ -745,7 +745,7 @@ void Parser::block()
             else 
             {
                 tempsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
-                temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
+                temporaryName[temporaryTop] = tempsym->charPtr();
             }
             m_lexer.nextToken();
         }
@@ -799,7 +799,7 @@ void Parser::temporaries()
             else 
             {
                 tempsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
-                temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
+                temporaryName[temporaryTop] = tempsym->charPtr();
             }
             m_lexer.nextToken();
         }
@@ -824,7 +824,7 @@ void Parser::messagePattern()
         if (m_lexer.currentToken() != nameconst) 
             compilError(selector,"binary message pattern not followed by name",selector);
         argsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
-        argumentName[++argumentTop] = objectRef(argsym).charPtr();
+        argumentName[++argumentTop] = argsym->charPtr();
         m_lexer.nextToken();
     }
     else if (m_lexer.currentToken() == namecolon) 
@@ -840,7 +840,7 @@ void Parser::messagePattern()
             if (++argumentTop > argumentLimit)
                 compilError(selector,"too many arguments in method","");
             argsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
-            argumentName[argumentTop] = objectRef(argsym).charPtr();
+            argumentName[argumentTop] = argsym->charPtr();
             m_lexer.nextToken();
         }
     }
@@ -897,37 +897,37 @@ bool Parser::recordMethodBytecode(object method, bool savetext)
 
     if (! parseok) 
     {
-        objectRef(method).basicAtPut(bytecodesInMethod, nilobj);
+        method->basicAtPut(bytecodesInMethod, nilobj);
     }
     else 
     {
         bytecodes = MemoryManager::Instance()->newByteArray(codeTop);
-        bp = objectRef(bytecodes).bytePtr();
+        bp = bytecodes->bytePtr();
         for (i = 0; i < codeTop; i++) 
         {
             bp[i] = codeArray[i];
         }
-        objectRef(method).basicAtPut(messageInMethod, MemoryManager::Instance()->newSymbol(selector));
-        objectRef(method).basicAtPut(bytecodesInMethod, bytecodes);
+        method->basicAtPut(messageInMethod, MemoryManager::Instance()->newSymbol(selector));
+        method->basicAtPut(bytecodesInMethod, bytecodes);
         if (!literalArray.empty()) 
         {
             theLiterals = MemoryManager::Instance()->newArray(literalArray.size());
             for (i = 1; i <= literalArray.size(); i++) 
             {
-                objectRef(theLiterals).basicAtPut(i, literalArray[i-1]);
+                theLiterals->basicAtPut(i, literalArray[i-1]);
             }
-            objectRef(method).basicAtPut(literalsInMethod, theLiterals);
+            method->basicAtPut(literalsInMethod, theLiterals);
         }
         else 
         {
-            objectRef(method).basicAtPut(literalsInMethod, nilobj);
+            method->basicAtPut(literalsInMethod, nilobj);
         }
-        objectRef(method).basicAtPut(stackSizeInMethod, MemoryManager::Instance()->newInteger(6));
-        objectRef(method).basicAtPut(temporarySizeInMethod,
+        method->basicAtPut(stackSizeInMethod, MemoryManager::Instance()->newInteger(6));
+        method->basicAtPut(temporarySizeInMethod,
                 MemoryManager::Instance()->newInteger(1 + maxTemporary));
         if (savetext) 
         {
-            objectRef(method).basicAtPut(textInMethod, MemoryManager::Instance()->newStString(m_lexer.source()));
+            method->basicAtPut(textInMethod, MemoryManager::Instance()->newStString(m_lexer.source()));
         }
         return(true);
     }

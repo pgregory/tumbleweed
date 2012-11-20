@@ -212,15 +212,6 @@ class MemoryManager
          */
         std::string statsString();
 
-        /*! Dereference an object ID.
-         *
-         * Given an object ID, return the ObjectStruct that it represents.
-         *
-         * \param id The object ID to dereference.
-         * \return A reference to the ObjectStruct
-         */
-        ObjectStruct& objectFromID(object id);
-
         /*! Copy data from an object into a new array.
          *
          * Copy the object ID's from the given object's data area
@@ -470,12 +461,6 @@ inline MemoryManager* MemoryManager::Instance()
     return m_pInstance;
 }
 
-inline ObjectStruct& MemoryManager::objectFromID(object id)
-{
-  return *id;
-}
-
-
 inline object* ObjectStruct::sysMemPtr()
 {
     return memory;
@@ -504,11 +489,10 @@ inline void ObjectStruct::basicAtPut(int i, object v)
 
 //#define TW_SMALLINTEGER_AS_OBJECT
 // TODO: Need to deal with SmallIntegers here
-#define objectRef(x) (MemoryManager::Instance()->objectFromID((x)))
 #if defined TW_SMALLINTEGER_AS_OBJECT
 
-#define getInteger(x) (objectRef((x)).intValue())
-#define getClass(x) (objectRef((x))._class)
+#define getInteger(x) ((x)->intValue())
+#define getClass(x) ((x)->_class)
 
 #else
 

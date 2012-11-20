@@ -36,7 +36,7 @@ void nameTableInsert(object dict, int hash, object key, object value)
     object table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
-    table = objectRef(dict).basicAt(tableInDictionary);
+    table = dict->basicAt(tableInDictionary);
 
     if (table->size < 3)
         sysError("attempt to insert into","too small name table");
@@ -81,22 +81,22 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     register object *hp;
     int tablesize;
 
-    table = objectRef(dict).basicAt(tableInDictionary);
+    table = dict->basicAt(tableInDictionary);
 
     /* now see if table is valid */
-    if ((tablesize = objectRef(table).size) < 3)
+    if ((tablesize = table->size) < 3)
         sysError("system error","lookup on null table");
     else 
     {
         hash = 1+ (3 * (hash % (tablesize / 3)));
-        hp = objectRef(table).sysMemPtr() + (hash-1);
+        hp = table->sysMemPtr() + (hash-1);
         key = *hp++; /* table at: hash */
         value = *hp++; /* table at: hash + 1 */
         if ((key != nilobj) && (*fun)(key)) 
             return value;
         for (link = *hp; link != nilobj; link = *hp) 
         {
-            hp = objectRef(link).sysMemPtr();
+            hp = link->sysMemPtr();
             key = *hp++; /* link at: 1 */
             value = *hp++; /* link at: 2 */
             if ((key != nilobj) && (*fun)(key))
@@ -126,7 +126,7 @@ static const char   *charBuffer;
 
 static int strTest(object key) /* test for string equality ---- strTest */
 {
-    if (objectRef(key).charPtr() && streq(objectRef(key).charPtr(), charBuffer)) {
+    if (key->charPtr() && streq(key->charPtr(), charBuffer)) {
         objBuffer = key;
         return 1;
         }

@@ -103,12 +103,12 @@ object MemoryManager::allocObject(size_t memorySize)
 {
     object ob = (object)calloc(1, sizeof(ObjectStruct));
     if(memorySize)
-      objectRef(ob).memory = mBlockAlloc(memorySize);
+      ob->memory = mBlockAlloc(memorySize);
     else
-      objectRef(ob).memory = NULL;
-    objectRef(ob).size = memorySize;
-    objectRef(ob)._class = nilobj;
-    objectRef(ob).referenceCount = 0;
+      ob->memory = NULL;
+    ob->size = memorySize;
+    ob->_class = nilobj;
+    ob->referenceCount = 0;
     return ob;
 }
 
@@ -118,7 +118,7 @@ object MemoryManager::allocByte(size_t size)
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    objectRef(newObj).size = -size;
+    newObj->size = -size;
     return newObj;
 }
 
@@ -130,20 +130,20 @@ object MemoryManager::allocStr(register const char* str)
     if(NULL != str)
     {
         newSym = allocByte(1 + strlen(str));
-        t = objectRef(newSym).charPtr();
+        t = newSym->charPtr();
         strcpy(t, str);
     }
     else
     {
         newSym = allocByte(1);
-        objectRef(newSym).charPtr()[0] = '\0';
+        newSym->charPtr()[0] = '\0';
     }
     return(newSym);
 }
 
 bool MemoryManager::destroyObject(object z)
 {
-    free(objectRef(z).memory);
+    free(z->memory);
     free(z);
 
     return true;
@@ -181,7 +181,7 @@ object MemoryManager::newArray(int size)
     object newObj;
 
     newObj = allocObject(size);
-    objectRef(newObj)._class = CLASSOBJECT(Array);
+    newObj->_class = CLASSOBJECT(Array);
     return newObj;
 }
 
@@ -190,7 +190,7 @@ object MemoryManager::newBlock()
     object newObj;
 
     newObj = allocObject(blockSize);
-    objectRef(newObj)._class = CLASSOBJECT(Block);
+    newObj->_class = CLASSOBJECT(Block);
     return newObj;
 }
 
@@ -199,7 +199,7 @@ object MemoryManager::newByteArray(int size)
     object newobj;
 
     newobj = allocByte(size);
-    objectRef(newobj)._class = CLASSOBJECT(ByteArray);
+    newobj->_class = CLASSOBJECT(ByteArray);
     return newobj;
 }
 
@@ -208,8 +208,8 @@ object MemoryManager::newChar(int value)
     object newobj;
 
     newobj = allocObject(1);
-    objectRef(newobj).basicAtPut(1, newInteger(value));
-    objectRef(newobj)._class = CLASSOBJECT(Char);
+    newobj->basicAtPut(1, newInteger(value));
+    newobj->_class = CLASSOBJECT(Char);
     return(newobj);
 }
 
@@ -218,13 +218,13 @@ object MemoryManager::newClass(const char* name)
     object newObj, nameObj, methTable;
 
     newObj = allocObject(classSize);
-    objectRef(newObj)._class = CLASSOBJECT(Class);
+    newObj->_class = CLASSOBJECT(Class);
 
     /* now make name */
     nameObj = newSymbol(name);
-    objectRef(newObj).basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
-    objectRef(newObj).basicAtPut(methodsInClass, methTable);
-    objectRef(newObj).basicAtPut(sizeInClass, newInteger(classSize));
+    newObj->basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
+    newObj->basicAtPut(methodsInClass, methTable);
+    newObj->basicAtPut(sizeInClass, newInteger(classSize));
 
     /* now put in global symbols table */
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -237,11 +237,11 @@ object MemoryManager::newContext(int link, object method, object args, object te
     object newObj;
 
     newObj = allocObject(contextSize);
-    objectRef(newObj)._class = CLASSOBJECT(Context);
-    objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
-    objectRef(newObj).basicAtPut(methodInContext, method);
-    objectRef(newObj).basicAtPut(argumentsInContext, args);
-    objectRef(newObj).basicAtPut(temporariesInContext, temp);
+    newObj->_class = CLASSOBJECT(Context);
+    newObj->basicAtPut(linkPtrInContext, newInteger(link));
+    newObj->basicAtPut(methodInContext, method);
+    newObj->basicAtPut(argumentsInContext, args);
+    newObj->basicAtPut(temporariesInContext, temp);
     return newObj;
 }
 
@@ -250,8 +250,8 @@ object MemoryManager::newDictionary(int size)
     object newObj;
 
     newObj = allocObject(dictionarySize);
-    objectRef(newObj)._class = CLASSOBJECT(Dictionary);
-    objectRef(newObj).basicAtPut(tableInDictionary, newArray(size));
+    newObj->_class = CLASSOBJECT(Dictionary);
+    newObj->basicAtPut(tableInDictionary, newArray(size));
     return newObj;
 }
 
@@ -260,8 +260,8 @@ object MemoryManager::newFloat(double d)
     object newObj;
 
     newObj = allocByte((int) sizeof (double));
-    ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
-    objectRef(newObj)._class = CLASSOBJECT(Float);
+    ncopy(newObj->charPtr(), (char *) &d, (int) sizeof (double));
+    newObj->_class = CLASSOBJECT(Float);
     return newObj;
 }
 
@@ -271,8 +271,8 @@ object MemoryManager::newInteger(int i)
     object newObj;
 
     newObj = allocByte((int) sizeof (int));
-    ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
-    objectRef(newObj)._class = CLASSOBJECT(Integer);
+    ncopy(newObj->charPtr(), (char *) &i, (int) sizeof (int));
+    newObj->_class = CLASSOBJECT(Integer);
     return newObj;
 #else
     return (i << 1) + 1;
@@ -285,8 +285,8 @@ object MemoryManager::newCPointer(void* l)
 
     int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
-    ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
-    objectRef(newObj)._class = CLASSOBJECT(CPointer);
+    ncopy(newObj->charPtr(), (char *) &l, (int) sizeof (void*));
+    newObj->_class = CLASSOBJECT(CPointer);
     return newObj;
 }
 
@@ -295,9 +295,9 @@ object MemoryManager::newLink(object key, object value)
     object newObj;
 
     newObj = allocObject(linkSize);
-    objectRef(newObj)._class = CLASSOBJECT(Link);
-    objectRef(newObj).basicAtPut(keyInLink, key);
-    objectRef(newObj).basicAtPut(valueInLink, value);
+    newObj->_class = CLASSOBJECT(Link);
+    newObj->basicAtPut(keyInLink, key);
+    newObj->basicAtPut(valueInLink, value);
     return newObj;
 }
 
@@ -305,7 +305,7 @@ object MemoryManager::newMethod()
 {   object newObj;
 
     newObj = allocObject(methodSize);
-    objectRef(newObj)._class = CLASSOBJECT(Method);
+    newObj->_class = CLASSOBJECT(Method);
     return newObj;
 }
 
@@ -314,7 +314,7 @@ object MemoryManager::newStString(const char* value)
   object newObj;
 
     newObj = allocStr(value);
-    objectRef(newObj)._class = CLASSOBJECT(String);
+    newObj->_class = CLASSOBJECT(String);
     return(newObj);
 }
 
@@ -329,7 +329,7 @@ object MemoryManager::newSymbol(const char* str)
 
     /* not found, must make */
     newObj = allocStr(str);
-    objectRef(newObj)._class = CLASSOBJECT(Symbol);
+    newObj->_class = CLASSOBJECT(Symbol);
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
     return newObj;
 }
@@ -343,7 +343,7 @@ object MemoryManager::copyFrom(object obj, int start, int size)
     newObj = newArray(size);
     for (i = 1; i <= size; i++) 
     {
-        objectRef(newObj).basicAtPut(i, objectRef(obj).basicAt(start));
+        newObj->basicAtPut(i, obj->basicAt(start));
         start++;
     }
     return newObj;
@@ -378,22 +378,22 @@ typedef struct _fileVisitor
 
 bool testFlagZero(Visitor* _this)
 {
-    return objectRef(_this->o).referenceCount == 0;
+    return _this->o->referenceCount == 0;
 }
 
 bool testFlagNonZero(Visitor* _this)
 {
-    return objectRef(_this->o).referenceCount != 0;
+    return _this->o->referenceCount != 0;
 }
 
 void clearFlag(Visitor* _this)
 {
-    objectRef(_this->o).referenceCount = 0;
+    _this->o->referenceCount = 0;
 }
 
 void setFlag(Visitor* _this)
 {
-    objectRef(_this->o).referenceCount = 1;
+    _this->o->referenceCount = 1;
     _this->count++;
 }
 
@@ -410,12 +410,12 @@ void visit(Visitor* cb)
 
         if(cb->preFunc)
             cb->preFunc(cb);
-        cb->o = objectRef(current)._class;
+        cb->o = current->_class;
         visit(cb);
-        s = objectRef(current).size;
+        s = current->size;
         if (s>0) 
         {
-            p = objectRef(current).memory;
+            p = current->memory;
             for (i=s; i; --i) 
             {
                 cb->o = *p++;
@@ -448,13 +448,13 @@ void saveObject(Visitor* _this)
   FileVisitor* fcb = (FileVisitor*)_this;
 
   dummyObject.ref = _this->o;
-  dummyObject._classRef = objectRef(_this->o)._class;
-  dummyObject.size = size = objectRef(_this->o).size;
+  dummyObject._classRef = _this->o->_class;
+  dummyObject.size = size = _this->o->size;
   fw(fcb->fp, (char *) &dummyObject, sizeof(dummyObject));
   if (size < 0) 
     size = ((- size) + 1) / 2;
   if (size != 0)
-    fw(fcb->fp, (char *) objectRef(_this->o).memory, sizeof(object) * size);
+    fw(fcb->fp, (char *) _this->o->memory, sizeof(object) * size);
 }
 
 
@@ -552,19 +552,19 @@ void relinkObject(Visitor* _this)
   if(_this->o)
   {
     // Fixup the class reference first
-    if(!fixupLink(lv->map, _this->count, &(objectRef(_this->o)._class)))
-      printf("No fixup found for class %p!\n", objectRef(_this->o)._class);
+    if(!fixupLink(lv->map, _this->count, &(_this->o->_class)))
+      printf("No fixup found for class %p!\n", _this->o->_class);
     // Then fixup all the object references if it's an object list object.
-    if(objectRef(_this->o).size > 0)
+    if(_this->o->size > 0)
     {
-      for(i = 0; i < objectRef(_this->o).size; ++i)
+      for(i = 0; i < _this->o->size; ++i)
       {
-        if(!fixupLink(lv->map, _this->count, &(objectRef(_this->o).memory[i])))
-          printf("No fixup found for member %p!\n", objectRef(_this->o).memory[i]);
+        if(!fixupLink(lv->map, _this->count, &(_this->o->memory[i])))
+          printf("No fixup found for member %p!\n", _this->o->memory[i]);
       }
     }
   }
-  objectRef(_this->o).referenceCount = 1;
+  _this->o->referenceCount = 1;
 }
 
 void MemoryManager::imageRead(FILE* fp)
@@ -609,11 +609,11 @@ void MemoryManager::imageRead(FILE* fp)
     map[i].newRef = newRef;
     ++i;
 
-    objectRef(newRef)._class = dummyObject._classRef;
+    newRef->_class = dummyObject._classRef;
     if (size != 0) 
-      fr(fp, (char *) objectRef(newRef).memory, sizeof(object) * (int) size);
+      fr(fp, (char *) newRef->memory, sizeof(object) * (int) size);
     else
-      objectRef(newRef).memory = (object *) 0;
+      newRef->memory = (object *) 0;
   }
   // Now that everything is read in, and the mapping table created, 
   // scan the objects, and fixup the addresses.
@@ -705,7 +705,7 @@ int ObjectStruct::intValue()
 {   
     int d;
 
-    if(this == &objectRef(nilobj))
+    if(this == nilobj)
         return 0;
     ncopy((char *) &d, charPtr(), (int) sizeof(int));
     return d;

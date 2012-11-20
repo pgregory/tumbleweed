@@ -66,13 +66,13 @@ static bool findMethod(object* methodClassLocation)
   methodClass = *methodClassLocation;
 
 
-//  printf("Looking for %s starting at %d\n", objectRef(messageToSend).charPtr(), methodClass);
+//  printf("Looking for %s starting at %d\n", messageToSend->charPtr(), methodClass);
   for (; methodClass != nilobj; methodClass = 
-      objectRef(methodClass).basicAt(superClassInClass)) {
-//    printf("Looking for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-    methodTable = objectRef(methodClass).basicAt(methodsInClass);
+      methodClass->basicAt(superClassInClass)) {
+//    printf("Looking for %s on %s\n", messageToSend->charPtr(), methodClass->basicAt(nameInClass)->charPtr());
+    methodTable = methodClass->basicAt(methodsInClass);
     if(methodTable == nilobj)
-      printf("Null method table on %s\n", objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
+      printf("Null method table on %s\n", methodClass->basicAt(nameInClass)->charPtr());
     method = hashEachElement(methodTable, hashObject(messageToSend), messTest);
     if (method != nilobj)
     {
@@ -147,11 +147,11 @@ bool execute(object aProcess, int maxsteps)
   MemoryManager* memmgr = MemoryManager::Instance();
 
   /* unpack the instance variables from the process */
-  processStack    = objectRef(aProcess).basicAt(stackInProcess);
+  processStack    = aProcess->basicAt(stackInProcess);
   psb = processStack->sysMemPtr();
-  j = getInteger(objectRef(aProcess).basicAt(stackTopInProcess));
+  j = getInteger(aProcess->basicAt(stackTopInProcess));
   pst = psb + (j-1);
-  linkPointer     = getInteger(objectRef(aProcess).basicAt(linkPtrInProcess));
+  linkPointer     = getInteger(aProcess->basicAt(linkPtrInProcess));
 
   /* set the process time-slice counter before entering loop */
   timeSliceCounter = maxsteps;
@@ -171,18 +171,18 @@ readLinkageBlock:
   else {    /* read from context object */
     cntx = contextObject->sysMemPtr();
     method = contextObject->basicAt(methodInContext);
-    arg = objectRef(contextObject->basicAt(argumentsInContext)).sysMemPtr();
-    temps = objectRef(contextObject->basicAt(temporariesInContext)).sysMemPtr();
+    arg = contextObject->basicAt(argumentsInContext)->sysMemPtr();
+    temps = contextObject->basicAt(temporariesInContext)->sysMemPtr();
   }
 
 #if !defined TW_SMALLINTEGER_AS_OBJECT
   if((argumentsAt(0) & 1) == 0)
 #endif
-    rcv = objectRef(argumentsAt(0)).sysMemPtr();
+    rcv = (argumentsAt(0))->sysMemPtr();
 
 readMethodInfo:
-  lits           = objectRef(method->basicAt(literalsInMethod)).sysMemPtr();
-  bp             = objectRef(method->basicAt(bytecodesInMethod)).bytePtr() - 1;
+  lits           = method->basicAt(literalsInMethod)->sysMemPtr();
+  bp             = method->basicAt(bytecodesInMethod)->bytePtr() - 1;
 
   while ( --timeSliceCounter > 0 ) {
     low = (high = nextByte()) & 0x0F;
@@ -193,10 +193,10 @@ readMethodInfo:
     }
 
     if (debugging) {
-      fprintf(stdout,"method %s %d ",objectRef(objectRef(method).basicAt(messageInMethod)).charPtr(), byteOffset);
+      fprintf(stdout,"method %s %d ",method->basicAt(messageInMethod)->charPtr(), byteOffset);
       if(NULL != rcv)
-        fprintf(stdout,"on %s ", objectRef(objectRef(getClass(argumentsAt(0))).basicAt(nameInClass)).charPtr());
-      fprintf(stdout,"stack %p %ld ",pst, *pst);
+        fprintf(stdout,"on %s ", getClass(argumentsAt(0))->basicAt(nameInClass)->charPtr());
+      fprintf(stdout,"stack %p %p ",pst, *pst);
       fprintf(stdout,"executing %d %d\n", high, low);
       fflush(stdout);
     }
@@ -291,7 +291,7 @@ doSendMessage:
 #if !defined TW_SMALLINTEGER_AS_OBJECT
         if((argumentsAt(0) & 1) == 0)
 #endif
-          rcv = objectRef(argumentsAt(0)).sysMemPtr();
+          rcv = (argumentsAt(0))->sysMemPtr();
         methodClass = getClass(argumentsAt(0));
 
 doFindMessage:
@@ -301,7 +301,7 @@ doFindMessage:
             (methodCache[i].lookupClass->m_handle == methodClass)) {
           method = methodCache[i].cacheMethod->m_handle;
           methodClass = methodCache[i].cacheClass->m_handle;
-//          printf("Cached method for %s on %s\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
+//          printf("Cached method for %s on %s\n", messageToSend->charPtr(), methodClass->basicAt(nameInClass)->charPtr());
         }
         else 
         {
@@ -318,7 +318,7 @@ doFindMessage:
               ipop(returnedObject);
               argarray->basicAtPut(j+1, returnedObject);
             }
-//            printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
+//            printf("Failed to find %s (%s)\n", messageToSend->charPtr(), methodClass->basicAt(nameInClass)->charPtr());
 //            printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
             ipush(messageToSend);
@@ -372,7 +372,7 @@ doFindMessage:
           processStack = growProcessStack(j, i);
           psb = processStack->sysMemPtr();
           pst = (psb + j);
-          objectRef(aProcess).basicAtPut(stackInProcess, processStack);
+          aProcess->basicAtPut(stackInProcess, processStack);
         }
 
         byteOffset = 1;
@@ -458,11 +458,11 @@ doFindMessage:
             break;
           case 25: /* basicAt: */
             j = getInteger(*(primargs+1));
-            returnedObject = objectRef(*primargs).basicAt(j);
+            returnedObject = (*primargs)->basicAt(j);
             break;
           case 31: /* basicAt:Put:*/
             j = getInteger(*(primargs+1));
-            objectRef(*primargs).basicAtPut(j, *(primargs+2));
+            (*primargs)->basicAtPut(j, *(primargs+2));
             returnedObject = nilobj;
             break;
           case 53: /* set time slice */
@@ -497,7 +497,7 @@ doFindMessage:
             returnedObject = memmgr->allocObject(j);
             break;
           case 87: /* value of symbol */
-            returnedObject = globalSymbol(objectRef(*primargs).charPtr());
+            returnedObject = globalSymbol((*primargs)->charPtr());
             break;
           default: 
             returnedObject = primitive(i, primargs); break;
@@ -592,14 +592,14 @@ doReturn:
 #if !defined TW_SMALLINTEGER_AS_OBJECT
             if((argumentsAt(0) & 1) == 0)
 #endif
-              rcv = objectRef(argumentsAt(0)).sysMemPtr();
+              rcv = (argumentsAt(0))->sysMemPtr();
             methodClass = method->basicAt(methodClassInMethod);
             /* if there is a superclass, use it
                otherwise for class Object (the only 
                class that doesn't have a superclass) use
                the class again */
             returnedObject = 
-              objectRef(methodClass).basicAt(superClassInClass);
+              methodClass->basicAt(superClassInClass);
             if (returnedObject != nilobj)
               methodClass = returnedObject;
             goto doFindMessage;
@@ -620,8 +620,8 @@ doReturn:
   /* object */
 
   processStack->basicAtPut(linkPointer+4, memmgr->newInteger(byteOffset));
-  objectRef(aProcess).basicAtPut(stackTopInProcess, memmgr->newInteger(processStackTop()));
-  objectRef(aProcess).basicAtPut(linkPtrInProcess, memmgr->newInteger(linkPointer));
+  aProcess->basicAtPut(stackTopInProcess, memmgr->newInteger(processStackTop()));
+  aProcess->basicAtPut(linkPtrInProcess, memmgr->newInteger(linkPointer));
 
   return true;
 }

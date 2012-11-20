@@ -270,7 +270,7 @@ static void readMethods(FILE* fd, bool printit)
 
     pp.setInstanceVariables(classObj);
     if (printit)
-        cp = objectRef(classObj->basicAt(nameInClass)).charPtr();
+        cp = classObj->basicAt(nameInClass)->charPtr();
 
     /* now find or create a method table */
     methTable = classObj->basicAt(methodsInClass);
