@@ -123,9 +123,8 @@ struct ObjectStruct
 
 };
 
-# define nilobj (object)0
-# define mBlockAlloc(size) (object *) calloc((unsigned) size, sizeof(object))
 extern ObjectStruct _nilobj;
+extern object nilobj;
 
 /*
     the dictionary symbols is the source of all symbols in the system
@@ -473,10 +472,7 @@ inline MemoryManager* MemoryManager::Instance()
 
 inline ObjectStruct& MemoryManager::objectFromID(object id)
 {
-    if(id)
-      return *id;
-    else
-      return _nilobj;
+  return *id;
 }
 
 

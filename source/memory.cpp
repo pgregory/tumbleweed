@@ -40,6 +40,7 @@ ObjectStruct _nilobj =
   0,
   NULL
 };
+object nilobj = &_nilobj;
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
@@ -84,6 +85,17 @@ MemoryManager::MemoryManager(size_t initialSize, size_t growCount) : noGC(false)
 
 MemoryManager::~MemoryManager()
 {
+}
+
+static object* mBlockAlloc(int size)
+{
+    int i;
+    object* result = (object *) calloc((unsigned) size, sizeof(object));
+
+    for(i = 0; i < size; ++i)
+      result[i] = nilobj;
+
+    return result;
 }
 
 
@@ -312,7 +324,7 @@ object MemoryManager::newSymbol(const char* str)
 
     /* first see if it is already there */
     newObj = globalKey(str);
-    if (newObj) 
+    if (newObj != nilobj) 
         return newObj;
 
     /* not found, must make */
@@ -390,7 +402,7 @@ void visit(Visitor* cb)
     int i, s;
     object *p;
 
-    if(cb->o && cb->test(cb))
+    if(cb->o != nilobj && cb->test(cb))
     {
         // Cache object name, as we're going to replace it for
         // nested calls.
@@ -448,7 +460,11 @@ void saveObject(Visitor* _this)
 
 void MemoryManager::imageWrite(FILE* fp)
 {
+  // Write the symbols object to use during fixup.
   fw(fp, (char *) &symbols, sizeof(object));
+
+  // Write the nil object to use during fixup.
+  fw(fp, (char *) &nilobj, sizeof(object));
 
 
   Visitor v;
@@ -509,8 +525,11 @@ bool fixupLink(mapEntry* map, long count, object* ref)
 {
   long i;
 
-  if(*ref == 0)
+  if(*ref == nilobj)
+  {
+    *ref = nilobj;
     return true;
+  }
 
   for(i = 0; i < count; ++i)
   {
@@ -551,15 +570,24 @@ void relinkObject(Visitor* _this)
 void MemoryManager::imageRead(FILE* fp)
 {   
   long i, count, size;
-  object oldRef, newRef;
+  object oldRef, newRef, nilAtStore;
   mapEntry* map;
 
   fr(fp, (char *) &symbols, sizeof(object));
+  fr(fp, (char *) &nilAtStore, sizeof(object));
+
   fr(fp, (char *) &count, sizeof(long));
+  // Add one for nil.
+  ++count;
   i = 0;
 
   // Allocate a remapping table.
   map = (mapEntry*)calloc(count, sizeof(mapEntry));
+
+  // Store the nilobj mapping
+  map[i].oldRef = nilAtStore;
+  map[i].newRef = nilobj;
+  ++i;
 
   while(fr(fp, (char *) &dummyObject, sizeof(dummyObject))) 
   {
@@ -732,7 +760,7 @@ void removeFromList(SObjectHandle* h)
 SObjectHandle* new_SObjectHandle()
 {
     SObjectHandle* h = (SObjectHandle*)calloc(1, sizeof(SObjectHandle));
-    h->m_handle = 0;
+    h->m_handle = nilobj;
     h->m_next = h->m_prev = 0;
 
     appendToList(h);
