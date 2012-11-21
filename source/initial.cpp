@@ -67,49 +67,49 @@ void makeInitialImage()
   SObjectHandle *lock_symbolObj = 0, *lock_symbolClass = 0, *lock_classClass = 0, *lock_metaClassClass = 0;
 
   /* first create the table, without class links */
-  symbols = MemoryManager::Instance()->allocObject(dictionarySize);
-  hashTable = MemoryManager::Instance()->allocObject(3 * 53);
+  symbols = allocObject(dictionarySize);
+  hashTable = allocObject(3 * 53);
   lock_hashTable = new_SObjectHandle_from_object(hashTable);
   symbols->basicAtPut(tableInDictionary, hashTable);
 
   /* next create #Symbol, Symbol and Class */
-  symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
+  symbolObj = newSymbol("Symbol");
   lock_symbolObj = new_SObjectHandle_from_object(symbolObj);
   symbols->basicAtPut(tableInDictionary, hashTable);
-  symbolClass = MemoryManager::Instance()->newClass("Symbol");
+  symbolClass = newClass("Symbol");
   lock_symbolClass = new_SObjectHandle_from_object(symbolClass);
   symbols->basicAtPut(tableInDictionary, hashTable);
-  integerClass = MemoryManager::Instance()->newClass("Integer");
+  integerClass = newClass("Integer");
   lock_integerClass = new_SObjectHandle_from_object(integerClass);
   symbols->basicAtPut(tableInDictionary, hashTable);
   symbolObj->_class = symbolClass;
-  classClass = MemoryManager::Instance()->newClass("Class");
+  classClass = newClass("Class");
   lock_classClass = new_SObjectHandle_from_object(classClass);
   symbols->basicAtPut(tableInDictionary, hashTable);
   symbolClass->_class = classClass;
   integerClass->_class = classClass;
-  metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
+  metaClassClass = newClass("MetaClass");
   lock_metaClassClass = new_SObjectHandle_from_object(metaClassClass);
   symbols->basicAtPut(tableInDictionary, hashTable);
   classClass->_class = metaClassClass;
 
   /* now fix up classes for symbol table */
   /* and make a couple common classes, just to hold their places */
-  MemoryManager::Instance()->newClass("Link");
-  MemoryManager::Instance()->newClass("ByteArray");
-  hashTable->_class = MemoryManager::Instance()->newClass("Array");
-  symbols->_class = MemoryManager::Instance()->newClass("Dictionary");
-  nilobj->_class = MemoryManager::Instance()->newClass("UndefinedObject");
-  MemoryManager::Instance()->newClass("String");
-  nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
+  newClass("Link");
+  newClass("ByteArray");
+  hashTable->_class = newClass("Array");
+  symbols->_class = newClass("Dictionary");
+  nilobj->_class = newClass("UndefinedObject");
+  newClass("String");
+  nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
 
-  classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
-  metaClassClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+  classClass->basicAtPut(methodsInClass, newDictionary(39));
+  metaClassClass->basicAtPut(methodsInClass, newDictionary(39));
 
   /* finally at least make true and false to be distinct */
-  object trueobj = MemoryManager::Instance()->newSymbol("true");
+  object trueobj = newSymbol("true");
   nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-  object falseobj = MemoryManager::Instance()->newSymbol("false");
+  object falseobj = newSymbol("false");
   nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
 
   free_SObjectHandle(lock_hashTable);

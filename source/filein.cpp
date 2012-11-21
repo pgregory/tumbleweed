@@ -47,11 +47,11 @@ static object findClass(const char* name)
 
     newobj = globalSymbol(name);
     if (newobj == nilobj)
-        newobj = MemoryManager::Instance()->newClass(name);
+        newobj = newClass(name);
     if (newobj->basicAt(sizeInClass) == nilobj) 
     {
         lock = new_SObjectHandle_from_object(newobj);
-        newobj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
+        newobj->basicAtPut(sizeInClass, newInteger(0));
         free_SObjectHandle(lock);
     }
     return newobj;
@@ -69,18 +69,18 @@ static object findClassWithMeta(const char* name, object metaObj)
         lock_metaObj = new_SObjectHandle_from_object(metaObj);
 
         size = getInteger(metaObj->basicAt(sizeInClass));
-        newObj = MemoryManager::Instance()->allocObject(size);
+        newObj = allocObject(size);
         lock_newObj = new_SObjectHandle_from_object(newObj);
         newObj->_class = metaObj;
 
         /* now make name */
-        nameObj = MemoryManager::Instance()->newSymbol(name);
+        nameObj = newSymbol(name);
         lock_nameObj = new_SObjectHandle_from_object(nameObj);
         newObj->basicAtPut(nameInClass, nameObj);
-        methTable = MemoryManager::Instance()->newDictionary(39);
+        methTable = newDictionary(39);
         lock_methTable = new_SObjectHandle_from_object(methTable);
         newObj->basicAtPut(methodsInClass, methTable);
-        newObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+        newObj->basicAtPut(sizeInClass, newInteger(size));
 
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -157,12 +157,12 @@ static void readRawClassDeclaration()
         instanceTop = 0;
         while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            instanceVariables[instanceTop] = newSymbol(ll.strToken().c_str());
             lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
             size++;
             ll.nextToken();
         }
-        vars = MemoryManager::Instance()->newArray(instanceTop);
+        vars = newArray(instanceTop);
         lock_vars = new_SObjectHandle_from_object(vars);
         for (i = 0; i < instanceTop; i++) 
         {
@@ -170,8 +170,8 @@ static void readRawClassDeclaration()
         }
         classObj->basicAtPut(variablesInClass, vars);
     }
-    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-    classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    classObj->basicAtPut(sizeInClass, newInteger(size));
+    classObj->basicAtPut(methodsInClass, newDictionary(39));
 
     free_SObjectHandle(lock_vars);
     while(--instanceTop >= 0)
@@ -225,12 +225,12 @@ static void readClassDeclaration()
         instanceTop = 0;
         while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            instanceVariables[instanceTop] = newSymbol(ll.strToken().c_str());
             lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
             size++;
             ll.nextToken();
         }
-        vars = MemoryManager::Instance()->newArray(instanceTop);
+        vars = newArray(instanceTop);
         lock_vars = new_SObjectHandle_from_object(vars);
         for (i = 0; i < instanceTop; i++) 
         {
@@ -238,8 +238,8 @@ static void readClassDeclaration()
         }
         classObj->basicAtPut(variablesInClass, vars);
     }
-    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-    classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    classObj->basicAtPut(sizeInClass, newInteger(size));
+    classObj->basicAtPut(methodsInClass, newDictionary(39));
 
     free_SObjectHandle(lock_vars);
     while(--instanceTop >= 0)
@@ -276,14 +276,14 @@ static void readMethods(FILE* fd, bool printit)
     methTable = classObj->basicAt(methodsInClass);
     if (methTable == nilobj) 
     {  /* must make */
-        methTable = MemoryManager::Instance()->newDictionary(MethodTableSize);
+        methTable = newDictionary(MethodTableSize);
         classObj->basicAtPut(methodsInClass, methTable);
     }
     lock_methTable = new_SObjectHandle_from_object(methTable);
 
     if(ll.nextToken() == strconst) 
     {
-        protocol = MemoryManager::Instance()->newStString(ll.strToken().c_str());
+        protocol = newStString(ll.strToken().c_str());
         lock_protocol = new_SObjectHandle_from_object(protocol);
     }
 
@@ -305,7 +305,7 @@ static void readMethods(FILE* fd, bool printit)
         }
 
         /* now we have a method */
-        theMethod = MemoryManager::Instance()->newMethod();
+        theMethod = newMethod();
         lock_theMethod = new_SObjectHandle_from_object(theMethod);
         pp.setLexer(Lexer(textBuffer));
         if (pp.parseMessageHandler(theMethod, savetext)) {
@@ -352,7 +352,7 @@ void fileIn(FILE* fd, bool printit)
             readMethods(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);
-        MemoryManager::Instance()->garbageCollect();
+        //garbageCollect();
     }
     delete[](textBuffer);
 }

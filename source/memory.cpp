@@ -45,20 +45,6 @@ object nilobj = &_nilobj;
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
 
-/*
-    in theory the objectTable should only be accessible to the memory
-    manager.  Indeed, given the right macro definitions, this can be
-    made so.  Never the less, for efficiency sake some of the macros
-    can also be defined to access the object table directly
-
-    Some systems (e.g. the Macintosh) have static limits (e.g. 32K)
-    which prevent the object table from being declared.
-    In this case the object table must first be allocated via
-    calloc during the initialization of the memory manager.
-*/
-
-MemoryManager* MemoryManager::m_pInstance = NULL;
-
 
 //
 // ncopy - copy exactly n bytes from place to place 
@@ -69,23 +55,6 @@ void ncopy(register char* p, register char* q, register int n)
         *p++ = *q++;
 }
 
-
-void MemoryManager::Initialise(size_t initialSize, size_t growCount)
-{
-    if(NULL != m_pInstance)
-        delete(m_pInstance);
-
-    m_pInstance = new MemoryManager(initialSize, growCount);
-}
-
-
-MemoryManager::MemoryManager(size_t initialSize, size_t growCount) : noGC(false)
-{
-}
-
-MemoryManager::~MemoryManager()
-{
-}
 
 static object* mBlockAlloc(int size)
 {
@@ -99,7 +68,7 @@ static object* mBlockAlloc(int size)
 }
 
 
-object MemoryManager::allocObject(size_t memorySize)
+object allocObject(size_t memorySize)
 {
     object ob = (object)calloc(1, sizeof(ObjectStruct));
     if(memorySize)
@@ -112,7 +81,7 @@ object MemoryManager::allocObject(size_t memorySize)
     return ob;
 }
 
-object MemoryManager::allocByte(size_t size)
+object allocByte(size_t size)
 {
     object newObj;
 
@@ -122,7 +91,7 @@ object MemoryManager::allocByte(size_t size)
     return newObj;
 }
 
-object MemoryManager::allocStr(register const char* str)
+object allocStr(register const char* str)
 {
     register object newSym;
     char* t;
@@ -141,7 +110,7 @@ object MemoryManager::allocStr(register const char* str)
     return(newSym);
 }
 
-bool MemoryManager::destroyObject(object z)
+bool destroyObject(object z)
 {
     free(z->memory);
     free(z);
@@ -149,34 +118,29 @@ bool MemoryManager::destroyObject(object z)
     return true;
 }
 
-int MemoryManager::garbageCollect()
-{
-    return 0;
-}
 
-
-size_t MemoryManager::objectCount()
+size_t objectCount()
 {   
     return storageSize() - freeSlotsCount();
 }
 
-size_t MemoryManager::storageSize() const
+size_t storageSize()
 {
     return 0;
 }
 
-size_t MemoryManager::freeSlotsCount()
+size_t freeSlotsCount()
 {   
     return 0;
 }
 
-std::string MemoryManager::statsString()
+std::string statsString()
 {
     return "";
 }
 
 
-object MemoryManager::newArray(int size)
+object newArray(int size)
 {   
     object newObj;
 
@@ -185,7 +149,7 @@ object MemoryManager::newArray(int size)
     return newObj;
 }
 
-object MemoryManager::newBlock()
+object newBlock()
 {   
     object newObj;
 
@@ -194,7 +158,7 @@ object MemoryManager::newBlock()
     return newObj;
 }
 
-object MemoryManager::newByteArray(int size)
+object newByteArray(int size)
 {   
     object newobj;
 
@@ -203,7 +167,7 @@ object MemoryManager::newByteArray(int size)
     return newobj;
 }
 
-object MemoryManager::newChar(int value)
+object newChar(int value)
 {   
     object newobj;
 
@@ -213,7 +177,7 @@ object MemoryManager::newChar(int value)
     return(newobj);
 }
 
-object MemoryManager::newClass(const char* name)
+object newClass(const char* name)
 {   
     object newObj, nameObj, methTable;
 
@@ -232,7 +196,7 @@ object MemoryManager::newClass(const char* name)
     return newObj;
 }
 
-object MemoryManager::newContext(int link, object method, object args, object temp)
+object newContext(int link, object method, object args, object temp)
 {   
     object newObj;
 
@@ -245,7 +209,7 @@ object MemoryManager::newContext(int link, object method, object args, object te
     return newObj;
 }
 
-object MemoryManager::newDictionary(int size)
+object newDictionary(int size)
 {   
     object newObj;
 
@@ -255,7 +219,7 @@ object MemoryManager::newDictionary(int size)
     return newObj;
 }
 
-object MemoryManager::newFloat(double d)
+object newFloat(double d)
 {   
     object newObj;
 
@@ -265,7 +229,7 @@ object MemoryManager::newFloat(double d)
     return newObj;
 }
 
-object MemoryManager::newInteger(int i)
+object newInteger(int i)
 {   
 #if defined TW_SMALLINTEGER_AS_OBJECT
     object newObj;
@@ -279,7 +243,7 @@ object MemoryManager::newInteger(int i)
 #endif
 }
 
-object MemoryManager::newCPointer(void* l)
+object newCPointer(void* l)
 {   
     object newObj;
 
@@ -290,7 +254,7 @@ object MemoryManager::newCPointer(void* l)
     return newObj;
 }
 
-object MemoryManager::newLink(object key, object value)
+object newLink(object key, object value)
 {   
     object newObj;
 
@@ -301,7 +265,7 @@ object MemoryManager::newLink(object key, object value)
     return newObj;
 }
 
-object MemoryManager::newMethod()
+object newMethod()
 {   object newObj;
 
     newObj = allocObject(methodSize);
@@ -309,7 +273,7 @@ object MemoryManager::newMethod()
     return newObj;
 }
 
-object MemoryManager::newStString(const char* value)
+object newStString(const char* value)
 {   
   object newObj;
 
@@ -318,7 +282,7 @@ object MemoryManager::newStString(const char* value)
     return(newObj);
 }
 
-object MemoryManager::newSymbol(const char* str)
+object newSymbol(const char* str)
 {    
     object newObj;
 
@@ -335,7 +299,7 @@ object MemoryManager::newSymbol(const char* str)
 }
 
 
-object MemoryManager::copyFrom(object obj, int start, int size)
+object copyFrom(object obj, int start, int size)
 {   
     object newObj;
     int i;
@@ -458,7 +422,7 @@ void saveObject(Visitor* _this)
 }
 
 
-void MemoryManager::imageWrite(FILE* fp)
+void imageWrite(FILE* fp)
 {
   // Write the symbols object to use during fixup.
   fw(fp, (char *) &symbols, sizeof(object));
@@ -567,7 +531,7 @@ void relinkObject(Visitor* _this)
   _this->o->referenceCount = 1;
 }
 
-void MemoryManager::imageRead(FILE* fp)
+void imageRead(FILE* fp)
 {   
   long i, count, size;
   object oldRef, newRef, nilAtStore;
@@ -636,17 +600,6 @@ void MemoryManager::imageRead(FILE* fp)
 
   free(map);
 }
-
-void MemoryManager::disableGC(bool disable)
-{
-    noGC = disable;
-}
-
-
-void MemoryManager::setGrowAmount(size_t amount)
-{
-}
-
 
 
 

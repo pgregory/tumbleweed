@@ -120,7 +120,7 @@ static object growProcessStack(int top, int toadd)
 
   if (toadd < 100) toadd = 100;
   size = processStack->size + toadd;
-  newStack = MemoryManager::Instance()->newArray(size);
+  newStack = newArray(size);
   for (i = 1; i <= top; i++) {
     newStack->basicAtPut(i, processStack->basicAt(i));
   }
@@ -143,8 +143,6 @@ bool execute(object aProcess, int maxsteps)
   int high;
   byte *bp;
   object intClass = globalSymbol("Integer");
-
-  MemoryManager* memmgr = MemoryManager::Instance();
 
   /* unpack the instance variables from the process */
   processStack    = aProcess->basicAt(stackInProcess);
@@ -221,11 +219,11 @@ readMethodInfo:
       case PushConstant:
         switch(low) {
           case 0: case 1: case 2:
-            ipush(memmgr->newInteger(low));
+            ipush(newInteger(low));
             break;
 
           case minusOne:
-            ipush(memmgr->newInteger(-1));
+            ipush(newInteger(-1));
             break;
 
           case contextConst:
@@ -235,15 +233,15 @@ readMethodInfo:
               {
                 /* not yet, do it now - first get real return point */
                 returnPoint = getInteger(processStackAt(linkPointer+2));
-                object args(memmgr->copyFrom(processStack, returnPoint, linkPointer - returnPoint));
+                object args(copyFrom(processStack, returnPoint, linkPointer - returnPoint));
                 SObjectHandle* lock_args = new_SObjectHandle_from_object(args);
-                object temp(memmgr->copyFrom(processStack, linkPointer + 6, methodTempSize(method)));
+                object temp(copyFrom(processStack, linkPointer + 6, methodTempSize(method)));
                 SObjectHandle* lock_temp = new_SObjectHandle_from_object(temp);
-                contextObject = memmgr->newContext(linkPointer, method, args, temp);
+                contextObject = newContext(linkPointer, method, args, temp);
                 processStack->basicAtPut(linkPointer+1, contextObject);
                 ipush(contextObject);
                 /* save byte pointer then restore things properly */
-                object temp2 = memmgr->newInteger(byteOffset);
+                object temp2 = newInteger(byteOffset);
                 processStack->basicAtPut(linkPointer+4, temp2);
                 free_SObjectHandle(lock_args);
                 free_SObjectHandle(lock_temp);
@@ -311,7 +309,7 @@ doFindMessage:
             /* not found, we invoke a smalltalk method */
             /* to recover */
             j = processStackTop() - returnPoint;
-            argarray = memmgr->newArray(j+1);
+            argarray = newArray(j+1);
             lock_argarray = new_SObjectHandle_from_object(argarray);
             for (; j >= 0; j--) 
             {
@@ -322,7 +320,7 @@ doFindMessage:
 //            printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
             ipush(messageToSend);
-            messageToSend = memmgr->newSymbol("message:notRecognizedWithArguments:");
+            messageToSend = newSymbol("message:notRecognizedWithArguments:");
             ipush(argarray);
             /* try again - if fail really give up */
             if (! findMethod(&methodClass)) {
@@ -341,7 +339,7 @@ doFindMessage:
         {
           /* being watched, we send to method itself */
           j = processStackTop() - returnPoint;
-          argarray = memmgr->newArray(j+1);
+          argarray = newArray(j+1);
           lock_argarray = new_SObjectHandle_from_object(argarray);
           for (; j >= 0; j--) {
             ipop(returnedObject);
@@ -349,7 +347,7 @@ doFindMessage:
           }
           ipush(method); /* push method */
           ipush(argarray);
-          messageToSend = memmgr->newSymbol("watchWith:");
+          messageToSend = newSymbol("watchWith:");
           /* try again - if fail really give up */
           methodClass = getClass(method);
           if (! findMethod(&methodClass)) {
@@ -361,7 +359,7 @@ doFindMessage:
         }
 
         /* save the current byte pointer */
-        processStack->basicAtPut(linkPointer+4, memmgr->newInteger(byteOffset));
+        processStack->basicAtPut(linkPointer+4, newInteger(byteOffset));
 
         /* make sure we have enough room in current process */
         /* stack, if not make stack larger */
@@ -378,19 +376,19 @@ doFindMessage:
         byteOffset = 1;
         /* now make linkage area */
         /* position 0 : old linkage pointer */
-        ipush(memmgr->newInteger(linkPointer));
+        ipush(newInteger(linkPointer));
         linkPointer = processStackTop();
         /* position 1 : context object (nil means stack) */
         ipush(nilobj);
         contextObject = processStack;
         cntx = psb;
         /* position 2 : return point */
-        ipush(memmgr->newInteger(returnPoint));
+        ipush(newInteger(returnPoint));
         arg = cntx + (returnPoint-1);
         /* position 3 : method */
         ipush(method);
         /* position 4 : bytecode counter */
-        ipush(memmgr->newInteger(byteOffset));
+        ipush(newInteger(byteOffset));
         /* then make space for temporaries */
         ipush(nilobj);
         temps = pst+1;
@@ -494,7 +492,7 @@ doFindMessage:
             break;
           case 58: /* allocObject */
             j = getInteger(*primargs);
-            returnedObject = memmgr->allocObject(j);
+            returnedObject = allocObject(j);
             break;
           case 87: /* value of symbol */
             returnedObject = globalSymbol((*primargs)->charPtr());
@@ -619,9 +617,9 @@ doReturn:
   /* before returning we put back the values in the current process */
   /* object */
 
-  processStack->basicAtPut(linkPointer+4, memmgr->newInteger(byteOffset));
-  aProcess->basicAtPut(stackTopInProcess, memmgr->newInteger(processStackTop()));
-  aProcess->basicAtPut(linkPtrInProcess, memmgr->newInteger(linkPointer));
+  processStack->basicAtPut(linkPointer+4, newInteger(byteOffset));
+  aProcess->basicAtPut(stackTopInProcess, newInteger(processStackTop()));
+  aProcess->basicAtPut(linkPtrInProcess, newInteger(linkPointer));
 
   return true;
 }
@@ -629,10 +627,9 @@ doReturn:
 
 object sendMessageToObject(object receiver, const char* message, object* args, int cargs)
 {
-  MemoryManager* memmgr = MemoryManager::Instance();
   object methodClass = getClass(receiver);
 
-  messageToSend = memmgr->newSymbol(message);
+  messageToSend = newSymbol(message);
   if (! findMethod(&methodClass)) 
   {
     return nilobj;
@@ -642,22 +639,22 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
   int stackTop = 10 + cargs;
 
   // Create a new process
-  object process = MemoryManager::Instance()->allocObject(processSize);
+  object process = allocObject(processSize);
   SObjectHandle* lock_process = new_SObjectHandle_from_object(process);
   // Create a stack for it
-  object stack = MemoryManager::Instance()->newArray(50);
+  object stack = newArray(50);
   SObjectHandle* lock_stack = new_SObjectHandle_from_object(stack);
   process->basicAtPut(stackInProcess, stack);
   // Set the stack top to past the arguments, link and context data
-  process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(stackTop));
+  process->basicAtPut(stackTopInProcess, newInteger(stackTop));
   // Set the link pointer to past the arguments
-  process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(linkOffset));
+  process->basicAtPut(linkPtrInProcess, newInteger(linkOffset));
   // Context is nil, meaning use the stack for context information
   stack->basicAtPut(contextInStack + cargs, nilobj);
   // Fill in the context data.
   stack->basicAtPut(methodInStack + cargs, method);
-  stack->basicAtPut(returnpointInStack + cargs, MemoryManager::Instance()->newInteger(1));
-  stack->basicAtPut(bytepointerInStack + cargs, MemoryManager::Instance()->newInteger(1));
+  stack->basicAtPut(returnpointInStack + cargs, newInteger(1));
+  stack->basicAtPut(bytepointerInStack + cargs, newInteger(1));
 
   // Fill in the first argument, as the receiver.
   stack->basicAtPut(1, receiver);
@@ -687,30 +684,30 @@ void runCode(const char * text)
     object stack, method, firstProcess;
     SObjectHandle *lock_stack, *lock_method, *lock_firstProcess;
 
-    method = MemoryManager::Instance()->newMethod();
+    method = newMethod();
     lock_method = new_SObjectHandle_from_object(method);
     Parser pp = Parser(Lexer(text));
     pp.setInstanceVariables(nilobj);
     bool result = pp.parseCode(method, false);
 
-    firstProcess = MemoryManager::Instance()->allocObject(processSize);
+    firstProcess = allocObject(processSize);
     lock_firstProcess = new_SObjectHandle_from_object(firstProcess);
-    stack = MemoryManager::Instance()->allocObject(50);
+    stack = allocObject(50);
     lock_stack = new_SObjectHandle_from_object(stack);
 
     /* make a process */
     firstProcess->basicAtPut(stackInProcess, stack);
-    firstProcess->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
-    firstProcess->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+    firstProcess->basicAtPut(stackTopInProcess, newInteger(10));
+    firstProcess->basicAtPut(linkPtrInProcess, newInteger(2));
 
     /* put argument on stack */
     stack->basicAtPut(argumentInStack, nilobj);   /* argument */
     /* now make a linkage area in stack */
     stack->basicAtPut(prevlinkInStack, nilobj);   /* previous link */
     stack->basicAtPut(contextInStack, nilobj);   /* context object (nil = stack) */
-    stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));    /* return point */
+    stack->basicAtPut(returnpointInStack, newInteger(1));    /* return point */
     stack->basicAtPut(methodInStack, method);   /* method */
-    stack->basicAtPut(bytepointerInStack, MemoryManager::Instance()->newInteger(1));    /* byte offset */
+    stack->basicAtPut(bytepointerInStack, newInteger(1));    /* byte offset */
 
     /* now go execute it */
     object saveProcessStack = processStack;

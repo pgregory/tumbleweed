@@ -48,7 +48,7 @@ void nameTableInsert(object dict, int hash, object key, object value)
             table->basicAtPut(hash+2, value);
             }
         else {
-            nwLink = MemoryManager::Instance()->newLink(key, value);
+            nwLink = newLink(key, value);
             link = table->basicAt(hash+3);
             if (link == nilobj) {
                 table->basicAtPut(hash+3, nwLink);
@@ -192,9 +192,9 @@ void initCommonSymbols()
     booleanSyms.push_back(globalSymbol("true"));
     booleanSyms.push_back(globalSymbol("false"));
     for (i = 0; unStrs[i]; ++i)
-        unSyms.push_back(MemoryManager::Instance()->newSymbol(unStrs[i]));
+        unSyms.push_back(newSymbol(unStrs[i]));
     for (i = 0; binStrs[i]; ++i)
-        binSyms.push_back(MemoryManager::Instance()->newSymbol(binStrs[i]));
+        binSyms.push_back(newSymbol(binStrs[i]));
     classSyms.resize(k__lastClass);
     for (i = 0; classStrs[i].index != k__lastClass; ++i)
         classSyms[classStrs[i].index] = globalSymbol(classStrs[i].name);

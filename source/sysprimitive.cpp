@@ -56,7 +56,7 @@ object sysPrimitive(int number, object* arguments)
   /* someday there will be more here */
   switch(number - 150) {
     case 0:     /* do a system() call */
-      returnedObject = MemoryManager::Instance()->newInteger(system(
+      returnedObject = newInteger(system(
             arguments[0]->charPtr()));
       break;
 
@@ -66,10 +66,10 @@ object sysPrimitive(int number, object* arguments)
         char command[256];
         printf("%s", arguments[0]->charPtr());
         gets(command);
-        returnedObject = MemoryManager::Instance()->newStString(command);
+        returnedObject = newStString(command);
 #else
         char* command = readline(arguments[0]->charPtr());
-        returnedObject = MemoryManager::Instance()->newStString(command);
+        returnedObject = newStString(command);
         add_history(command);
         free(command);
 #endif
@@ -78,25 +78,25 @@ object sysPrimitive(int number, object* arguments)
 
     case 2: /* get last error */ 
       {
-        returnedObject = MemoryManager::Instance()->newStString(gLastError);
+        returnedObject = newStString(gLastError);
       }
       break;
 
     case 3: /* force garbage collect */
       {
-        MemoryManager::Instance()->garbageCollect();
+        //garbageCollect();
       }
       break;
 
     case 4:
       {
-        returnedObject = MemoryManager::Instance()->newInteger(MemoryManager::Instance()->objectCount());
+        returnedObject = newInteger(objectCount());
       }
       break;
 
     case 5:
       {
-        returnedObject = MemoryManager::Instance()->newStString(MemoryManager::Instance()->statsString().c_str());
+        returnedObject = newStString(statsString().c_str());
       }
       break;
 

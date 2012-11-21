@@ -40,8 +40,7 @@ int main(int argc, char** argv)
 
     initialiseInterpreter();
 
-    MemoryManager::Instance()->imageRead(fp);
-    MemoryManager::Instance()->garbageCollect();
+    imageRead(fp);
 
     initCommonSymbols();
 #if defined TW_ENABLE_FFI

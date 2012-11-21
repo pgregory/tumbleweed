@@ -53,7 +53,7 @@ object ioPrimitive(int number, object* arguments)
         if (fp[i] == NULL)
           returnedObject = nilobj;
         else
-          returnedObject = MemoryManager::Instance()->newInteger(i);
+          returnedObject = newInteger(i);
       }
       break;
 
@@ -88,11 +88,11 @@ object ioPrimitive(int number, object* arguments)
           break;
         /* else we loop again */
       }
-      returnedObject = MemoryManager::Instance()->newStString(buffer);
+      returnedObject = newStString(buffer);
       break;
 
     case 7:     /* write an object image */
-      if (fp[i]) MemoryManager::Instance()->imageWrite(fp[i]);
+      if (fp[i]) imageWrite(fp[i]);
       returnedObject = booleanSyms[booleanTrue];
       break;
 
