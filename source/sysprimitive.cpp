@@ -57,18 +57,18 @@ object sysPrimitive(int number, object* arguments)
   switch(number - 150) {
     case 0:     /* do a system() call */
       returnedObject = newInteger(system(
-            arguments[0]->charPtr()));
+            charPtr(arguments[0])));
       break;
 
     case 1: /* editline, with history support */
       {
 #if defined WIN32
         char command[256];
-        printf("%s", arguments[0]->charPtr());
+        printf("%s", charPtr(arguments[0]));
         gets(command);
         returnedObject = newStString(command);
 #else
-        char* command = readline(arguments[0]->charPtr());
+        char* command = readline(charPtr(arguments[0]));
         returnedObject = newStString(command);
         add_history(command);
         free(command);

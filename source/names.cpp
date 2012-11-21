@@ -36,34 +36,34 @@ void nameTableInsert(object dict, int hash, object key, object value)
     object table, link, nwLink, nextLink, tablentry;
 
     /* first get the hash table */
-    table = dict->basicAt(tableInDictionary);
+    table = basicAt(dict,tableInDictionary);
 
     if (table->size < 3)
         sysError("attempt to insert into","too small name table");
     else {
         hash = 3 * ( hash % (table->size / 3));
-        tablentry = table->basicAt(hash+1);
+        tablentry = basicAt(table,hash+1);
         if ((tablentry == nilobj) || (tablentry == key)) {
-            table->basicAtPut(hash+1, key);
-            table->basicAtPut(hash+2, value);
+            basicAtPut(table,hash+1, key);
+            basicAtPut(table,hash+2, value);
             }
         else {
             nwLink = newLink(key, value);
-            link = table->basicAt(hash+3);
+            link = basicAt(table,hash+3);
             if (link == nilobj) {
-                table->basicAtPut(hash+3, nwLink);
+                basicAtPut(table,hash+3, nwLink);
                 }
             else
             {
                 int iter = 0;
                 while(1)
                 {
-                    if (link->basicAt(keyInLink) == key) {
-                        link->basicAtPut(valueInLink, value);
+                    if (basicAt(link,keyInLink) == key) {
+                        basicAtPut(link,valueInLink, value);
                         break;
                         }
-                    else if ((nextLink = link->basicAt(nextInLink)) == nilobj) {
-                        link->basicAtPut(nextInLink, nwLink);
+                    else if ((nextLink = basicAt(link,nextInLink)) == nilobj) {
+                        basicAtPut(link,nextInLink, nwLink);
                         break;
                         }
                     else
@@ -81,7 +81,7 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     register object *hp;
     int tablesize;
 
-    table = dict->basicAt(tableInDictionary);
+    table = basicAt(dict,tableInDictionary);
 
     /* now see if table is valid */
     if ((tablesize = table->size) < 3)
@@ -89,14 +89,14 @@ object hashEachElement(object dict, register int hash, int (*fun)(object))
     else 
     {
         hash = 1+ (3 * (hash % (tablesize / 3)));
-        hp = table->sysMemPtr() + (hash-1);
+        hp = sysMemPtr(table) + (hash-1);
         key = *hp++; /* table at: hash */
         value = *hp++; /* table at: hash + 1 */
         if ((key != nilobj) && (*fun)(key)) 
             return value;
         for (link = *hp; link != nilobj; link = *hp) 
         {
-            hp = link->sysMemPtr();
+            hp = sysMemPtr(link);
             key = *hp++; /* link at: 1 */
             value = *hp++; /* link at: 2 */
             if ((key != nilobj) && (*fun)(key))
@@ -126,7 +126,7 @@ static const char   *charBuffer;
 
 static int strTest(object key) /* test for string equality ---- strTest */
 {
-    if (key->charPtr() && streq(key->charPtr(), charBuffer)) {
+    if (charPtr(key) && streq(charPtr(key), charBuffer)) {
         objBuffer = key;
         return 1;
         }

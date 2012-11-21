@@ -70,7 +70,7 @@ char *selector, *str1, *str2;
         ignore sprintf(buffer,"error: %s %s", str1, str2);
         wmessage(buffer);
         }
-    parseok = false;
+    parseok = FALSE;
 }
 
 noreturn dspMethod(cp, mp)
@@ -96,8 +96,8 @@ int x, y;
 
     newObj = MemoryManager::Instance()->allocObject(2);
     newObj->setClass(globalSymbol("Point"));
-    newObj->basicAtPut(1, newInteger(x));
-    newObj->basicAtPut(2, newInteger(y));
+    basicAtPut(newObj,1, newInteger(x));
+    basicAtPut(newObj,2, newInteger(y));
     return newObj;
 }
 
@@ -149,7 +149,7 @@ object *arguments;
     case 160:   /* window open */
         i = intValue(arguments[0]); /* win number */
         if (ws[i].w) break; /* already open */
-        c = arguments[1]->charPtr();  /* title */
+        c = charPtr(arguments[1]);  /* title */
         j = intValue(arguments[2]); /* text or not */
         if (j) {
             ws[i].w = w = wopen(c, drawproc);
@@ -207,7 +207,7 @@ object *arguments;
     case 164:   /* title */
         i = intValue(arguments[0]); /* win number */
         if (! (w = ws[i].w)) break; /* return if no open */
-        c = arguments[1]->charPtr();
+        c = charPtr(arguments[1]);
         wsettitle(w, c);
         break;
 
@@ -220,7 +220,7 @@ object *arguments;
     case 166:   /* replace text */
         i = intValue(arguments[0]);
         if (ws[i].tp) {
-            tereplace(ws[i].tp, arguments[1]->charPtr());
+            tereplace(ws[i].tp, charPtr(arguments[1]));
             /* add newline */
             tereplace(ws[i].tp, "\n");
             }
@@ -272,13 +272,13 @@ object *arguments;
 
     case 180:   /* new menu */
         i = intValue(arguments[0]); /* win number */
-        c = arguments[1]->charPtr(); /* title */
+        c = charPtr(arguments[1]); /* title */
         mu[i] = wmenucreate(i, c);
         break;
 
     case 181:   /* menu item */
         i = intValue(arguments[0]); /* menu number */
-        c = arguments[1]->charPtr(); /* title */
+        c = charPtr(arguments[1]); /* title */
         if (isInteger(arguments[2]))
             j = intValue(arguments[2]);
         else j = -1;
@@ -301,7 +301,7 @@ object *arguments;
     case 190:   /* print text graphics */
         i = intValue(arguments[0]); /* x */
         j = intValue(arguments[1]); /* y */
-        c = arguments[2]->charPtr(); /* text */
+        c = charPtr(arguments[2]); /* text */
         wdrawtext(i, j, c, strlen(c));
         break;
 
@@ -360,34 +360,34 @@ object *arguments;
         break;
 
     case 200:   /* issue a message */
-        c = arguments[0]->charPtr();
+        c = charPtr(arguments[0]);
         wmessage(c);
         break;
 
     case 201:   /* ask a question */
         { char replybuffer[120];
-        strcpy(replybuffer, arguments[1]->charPtr());
-        if (waskstr(arguments[0]->charPtr(), replybuffer, 120))
+        strcpy(replybuffer, charPtr(arguments[1]));
+        if (waskstr(charPtr(arguments[0]), replybuffer, 120))
             returnedObject = newStString(replybuffer);
         }
         break;
     
     case 202:   /* asky a binary question */
-        i = waskync(arguments[0]->charPtr(), intValue(arguments[1]));
+        i = waskync(charPtr(arguments[0]), intValue(arguments[1]));
         if (i == 1) returnedObject = booleanSyms[booleanTrue];
         else if (i == 0) returnedObject = booleanSyms[booleanFalse];
         break;
 
     case 203:   /* ask for a file */
         { char replybuffer[120];
-        strcpy(replybuffer, arguments[1]->charPtr());
-        if (waskfile(arguments[0]->charPtr(), replybuffer, 120, intValue(arguments[2])))
+        strcpy(replybuffer, charPtr(arguments[1]));
+        if (waskfile(charPtr(arguments[0]), replybuffer, 120, intValue(arguments[2])))
             returnedObject = newStString(replybuffer);
         }
         break;
 
     case 204:   /* error message */
-        wperror(arguments[0]->charPtr());
+        wperror(charPtr(arguments[0]));
         break;
         
     case 205:   /* beep */

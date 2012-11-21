@@ -15,23 +15,23 @@
 # define instanceLimit 32   /* maximum number of instance vars permitted */
 # define methodLimit 64     /* maximum number of methods permitted */
 
-bool parseMessageHandler(object method, bool savetext);
-bool parseCode(object method, bool savetext);
+int parseMessageHandler(object method, int savetext);
+int parseCode(object method, int savetext);
 
 void setInstanceVariables(object aClass);
 
 
-void genMessage(bool toSuper, int argumentCount, object messagesym);
+void genMessage(int toSuper, int argumentCount, object messagesym);
 void genInstruction(int high, int low);
 void genCode(int value);
 int genLiteral(object aLiteral);
 void genInteger(int val);
 void expression();
-bool unaryContinuation(bool superReceiver);
-bool binaryContinuation(bool superReceiver);
-int optimizeBlock(int instruction, bool dopop);
-bool keyContinuation(bool superReceiver);
-void continuation(bool superReceiver);
+int unaryContinuation(int superReceiver);
+int binaryContinuation(int superReceiver);
+int optimizeBlock(int instruction, int dopop);
+int keyContinuation(int superReceiver);
+void continuation(int superReceiver);
 void parsePrimitive();
 int parseArray();
 void block();
@@ -40,9 +40,9 @@ void statement();
 void assignment(char* name);
 void temporaries();
 void messagePattern();
-bool nameTerm(const char *name);
-bool term();
-bool recordMethodBytecode(object method, bool savetext);
+int nameTerm(const char *name);
+int term();
+int recordMethodBytecode(object method, int savetext);
 
 void compilWarn(const char* selector, const char* str1, const char* str2);
 void compilError(const char* selector, const char* str1, const char* str2);

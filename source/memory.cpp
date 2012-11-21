@@ -30,7 +30,7 @@
 #include "names.h"
 
 
-bool debugging = false;
+int debugging = FALSE;
 ObjectStruct _nilobj =
 {
   NULL,
@@ -97,23 +97,23 @@ object allocStr(register const char* str)
     if(NULL != str)
     {
         newSym = allocByte(1 + strlen(str));
-        t = newSym->charPtr();
+        t = charPtr(newSym);
         strcpy(t, str);
     }
     else
     {
         newSym = allocByte(1);
-        newSym->charPtr()[0] = '\0';
+        charPtr(newSym)[0] = '\0';
     }
     return(newSym);
 }
 
-bool destroyObject(object z)
+int destroyObject(object z)
 {
     free(z->memory);
     free(z);
 
-    return true;
+    return TRUE;
 }
 
 
@@ -164,7 +164,7 @@ object newChar(int value)
     object newobj;
 
     newobj = allocObject(1);
-    newobj->basicAtPut(1, newInteger(value));
+    basicAtPut(newobj,1, newInteger(value));
     newobj->_class = CLASSOBJECT(Char);
     return(newobj);
 }
@@ -178,9 +178,9 @@ object newClass(const char* name)
 
     /* now make name */
     nameObj = newSymbol(name);
-    newObj->basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
-    newObj->basicAtPut(methodsInClass, methTable);
-    newObj->basicAtPut(sizeInClass, newInteger(classSize));
+    basicAtPut(newObj,nameInClass, nameObj); methTable = newDictionary(39);
+    basicAtPut(newObj,methodsInClass, methTable);
+    basicAtPut(newObj,sizeInClass, newInteger(classSize));
 
     /* now put in global symbols table */
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -194,10 +194,10 @@ object newContext(int link, object method, object args, object temp)
 
     newObj = allocObject(contextSize);
     newObj->_class = CLASSOBJECT(Context);
-    newObj->basicAtPut(linkPtrInContext, newInteger(link));
-    newObj->basicAtPut(methodInContext, method);
-    newObj->basicAtPut(argumentsInContext, args);
-    newObj->basicAtPut(temporariesInContext, temp);
+    basicAtPut(newObj,linkPtrInContext, newInteger(link));
+    basicAtPut(newObj,methodInContext, method);
+    basicAtPut(newObj,argumentsInContext, args);
+    basicAtPut(newObj,temporariesInContext, temp);
     return newObj;
 }
 
@@ -207,7 +207,7 @@ object newDictionary(int size)
 
     newObj = allocObject(dictionarySize);
     newObj->_class = CLASSOBJECT(Dictionary);
-    newObj->basicAtPut(tableInDictionary, newArray(size));
+    basicAtPut(newObj,tableInDictionary, newArray(size));
     return newObj;
 }
 
@@ -216,7 +216,7 @@ object newFloat(double d)
     object newObj;
 
     newObj = allocByte((int) sizeof (double));
-    ncopy(newObj->charPtr(), (char *) &d, (int) sizeof (double));
+    ncopy(charPtr(newObj), (char *) &d, (int) sizeof (double));
     newObj->_class = CLASSOBJECT(Float);
     return newObj;
 }
@@ -227,7 +227,7 @@ object newInteger(int i)
     object newObj;
 
     newObj = allocByte((int) sizeof (int));
-    ncopy(newObj->charPtr(), (char *) &i, (int) sizeof (int));
+    ncopy(charPtr(newObj), (char *) &i, (int) sizeof (int));
     newObj->_class = CLASSOBJECT(Integer);
     return newObj;
 #else
@@ -241,7 +241,7 @@ object newCPointer(void* l)
 
     int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
-    ncopy(newObj->charPtr(), (char *) &l, (int) sizeof (void*));
+    ncopy(charPtr(newObj), (char *) &l, (int) sizeof (void*));
     newObj->_class = CLASSOBJECT(CPointer);
     return newObj;
 }
@@ -252,8 +252,8 @@ object newLink(object key, object value)
 
     newObj = allocObject(linkSize);
     newObj->_class = CLASSOBJECT(Link);
-    newObj->basicAtPut(keyInLink, key);
-    newObj->basicAtPut(valueInLink, value);
+    basicAtPut(newObj,keyInLink, key);
+    basicAtPut(newObj,valueInLink, value);
     return newObj;
 }
 
@@ -299,7 +299,7 @@ object copyFrom(object obj, int start, int size)
     newObj = newArray(size);
     for (i = 1; i <= size; i++) 
     {
-        newObj->basicAtPut(i, obj->basicAt(start));
+        basicAtPut(newObj,i, basicAt(obj,start));
         start++;
     }
     return newObj;
@@ -317,7 +317,7 @@ static struct
 
 typedef struct _visitor
 {
-    bool(*test)(struct _visitor* env);
+    int(*test)(struct _visitor* env);
     void(*preFunc)(struct _visitor* env);
     void(*postFunc)(struct _visitor* env);
 
@@ -332,12 +332,12 @@ typedef struct _fileVisitor
     FILE* fp;
 } FileVisitor;
 
-bool testFlagZero(Visitor* _this)
+int testFlagZero(Visitor* _this)
 {
     return _this->o->referenceCount == 0;
 }
 
-bool testFlagNonZero(Visitor* _this)
+int testFlagNonZero(Visitor* _this)
 {
     return _this->o->referenceCount != 0;
 }
@@ -477,14 +477,14 @@ typedef struct _linkVisitor
     mapEntry* map;
 } LinkVisitor;
 
-bool fixupLink(mapEntry* map, long count, object* ref)
+int fixupLink(mapEntry* map, long count, object* ref)
 {
   long i;
 
   if(*ref == nilobj)
   {
     *ref = nilobj;
-    return true;
+    return TRUE;
   }
 
   for(i = 0; i < count; ++i)
@@ -493,10 +493,10 @@ bool fixupLink(mapEntry* map, long count, object* ref)
     {
       //printf("Fixing up %p with %p\n", *ref, map[i].newRef);
       *ref = map[i].newRef;
-      return true;
+      return TRUE;
     }
   }
-  return false;
+  return FALSE;
 }
 
 void relinkObject(Visitor* _this)
@@ -595,80 +595,6 @@ void imageRead(FILE* fp)
 
 
 
-int ObjectStruct::byteAt(int i)
-{
-    byte* bp;
-    unsigned char t;
-
-    if((i <= 0) || (i > 2 * - size))
-        sysError("index out of range", "byteAt");
-    else
-    {
-        bp = bytePtr();
-        t = bp[i-1];
-        i = (int) t;
-    }
-    return i;
-}
-
-void ObjectStruct::byteAtPut(int i, int x)
-{
-    byte *bp;
-    if ((i <= 0) || (i > 2 * - size)) 
-    {
-        sysError("index out of range", "byteAtPut");
-    }
-    else 
-    {
-        bp = bytePtr();
-        bp[i-1] = x;
-    }
-}
-
-object ObjectStruct::basicAt(int i)
-{
-    if(( i <= 0) || (i > size))
-    {
-        fprintf(stderr, "Indexing: %d\n", i);
-        sysError("index out of range", "basicAt");
-    }
-    else
-        return (sysMemPtr()[i-1]);
-
-    return nilobj;
-}
-
-double ObjectStruct::floatValue()
-{   
-    double d;
-
-    ncopy((char *) &d, charPtr(), (int) sizeof(double));
-    return d;
-}
-
-int ObjectStruct::intValue()
-{   
-    int d;
-
-    if(this == nilobj)
-        return 0;
-    ncopy((char *) &d, charPtr(), (int) sizeof(int));
-    return d;
-}
-
-void* ObjectStruct::cPointerValue()
-{   
-    if(NULL == charPtr())
-        sysError("invalid cPointer","cPointerValue");
-
-    void* l;
-
-    int s = sizeof(void*);
-    ncopy((char *) &l, charPtr(), (int) sizeof(void*));
-    return l;
-}
-
-
 
 SObjectHandle* head = 0;
 SObjectHandle* tail = 0;
@@ -745,4 +671,104 @@ int hash_SObjectHandle(SObjectHandle* h)
     return hashObject(h->m_handle);
 }
 
+
+
+
+
+object* sysMemPtr(object _this)
+{
+    return _this->memory;
+}
+
+byte* bytePtr(object _this)
+{
+    return (byte *)sysMemPtr(_this);
+}
+
+char* charPtr(object _this)
+{
+    return (char *)sysMemPtr(_this);
+}
+
+
+void basicAtPut(object _this, int i, object v)
+{
+    if((i <= 0) || (i > _this->size))
+        sysError("index out of range", "basicAtPut");
+    else
+        sysMemPtr(_this)[i-1] = v;
+}
+
+int byteAt(object _this, int i)
+{
+    byte* bp;
+    unsigned char t;
+
+    if((i <= 0) || (i > 2 * - _this->size))
+        sysError("index out of range", "byteAt");
+    else
+    {
+        bp = bytePtr(_this);
+        t = bp[i-1];
+        i = (int) t;
+    }
+    return i;
+}
+
+void byteAtPut(object _this, int i, int x)
+{
+    byte *bp;
+    if ((i <= 0) || (i > 2 * - _this->size)) 
+    {
+        sysError("index out of range", "byteAtPut");
+    }
+    else 
+    {
+        bp = bytePtr(_this);
+        bp[i-1] = x;
+    }
+}
+
+object basicAt(object _this, int i)
+{
+    if(( i <= 0) || (i > _this->size))
+    {
+        fprintf(stderr, "Indexing: %d\n", i);
+        sysError("index out of range", "basicAt");
+    }
+    else
+        return (sysMemPtr(_this)[i-1]);
+
+    return nilobj;
+}
+
+double floatValue(object _this)
+{   
+    double d;
+
+    ncopy((char *) &d, charPtr(_this), (int) sizeof(double));
+    return d;
+}
+
+int intValue(object _this)
+{   
+    int d;
+
+    if(_this == nilobj)
+        return 0;
+    ncopy((char *) &d, charPtr(_this), (int) sizeof(int));
+    return d;
+}
+
+void* cPointerValue(object _this)
+{   
+    if(NULL == charPtr(_this))
+        sysError("invalid cPointer","cPointerValue");
+
+    void* l;
+
+    int s = sizeof(void*);
+    ncopy((char *) &l, charPtr(_this), (int) sizeof(void*));
+    return l;
+}
 

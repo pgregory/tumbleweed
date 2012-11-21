@@ -48,3 +48,6 @@ prototypes aren't available */
 #endif
 
 void sysWarn(const char* s1, const char* s2);
+
+#define TRUE 1
+#define FALSE 0

@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     }
 
     /* execute the main system process loop repeatedly */
-    /*debugging = true;*/
+    /*debugging = TRUE;*/
 
     while (execute(firstProcess, 15000)) ;
 

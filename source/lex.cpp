@@ -59,7 +59,7 @@ char peek()
 }
 
 /* isClosing - characters which can close an expression */
-static bool isClosing(char c)
+static int isClosing(char c)
 {
     switch(c) 
     {
@@ -69,23 +69,23 @@ static bool isClosing(char c)
         case ';':
             case '\"': 
         case '\'':
-                return(true);
+                return(TRUE);
     }
-    return(false);
+    return(FALSE);
 }
 
 /* isSymbolChar - characters which can be part of symbols */
-static bool isSymbolChar(char c)
+static int isSymbolChar(char c)
 {
     if (isdigit(c) || isalpha(c)) 
-        return(true);
+        return(TRUE);
     if (isspace(c) || isClosing(c)) 
-        return(false);
-    return(true);
+        return(FALSE);
+    return(TRUE);
 }
 
 /* singleBinary - binary characters that cannot be continued */
-static bool singleBinary(char c)
+static int singleBinary(char c)
 {
     switch(c) 
     {
@@ -93,22 +93,22 @@ static bool singleBinary(char c)
         case '(': 
         case ')': 
         case ']':
-            return(true);
+            return(TRUE);
     }
-    return(false);
+    return(FALSE);
 }
 
-/* binarySecond - return true if char can be second char in binary symbol */
-static bool binarySecond(char c)
+/* binarySecond - return TRUE if char can be second char in binary symbol */
+static int binarySecond(char c)
 {
     if (isalpha(c) || isdigit(c) || isspace(c) || isClosing(c) || singleBinary(c))
-        return(false);
-    return(true);
+        return(FALSE);
+    return(TRUE);
 }
 
 tokentype nextToken()
 {   
-    bool sign;
+    int sign;
     char* tp;
 
     /* skip over blanks and comments */
@@ -187,11 +187,11 @@ tokentype nextToken()
         {  /* possible float */
             if (nextChar() && _cc == '-') 
             {
-                sign = true;
+                sign = TRUE;
                 nextChar();
             }
             else
-                sign = false;
+                sign = FALSE;
             if (_cc && isdigit(_cc)) 
             { /* yep, its a float */
                 *tp++ = 'e';

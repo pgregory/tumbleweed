@@ -29,7 +29,7 @@
 #include "env.h"
 #include "parser.h"
 
-bool _parseok;            /* parse still ok? */
+int _parseok;            /* parse still ok? */
 int _codeTop;            /* top position filled in code array */
 byte _codeArray[codeLimit];  /* bytecode array */
 int _literalTop;
@@ -63,7 +63,7 @@ void compilError(const char* _selector, const char* str1, const char* str2)
     fprintf(stderr,"compiler error: Method %s : %s %s\n", 
             _selector, str1, str2);
     //_snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", _selector, str1, str2);
-    _parseok = false;
+    _parseok = FALSE;
 }
 
 
@@ -77,13 +77,13 @@ void setInstanceVariables(object aClass)
         _instanceTop = 0;
     else 
     {
-        setInstanceVariables(aClass->basicAt(superClassInClass));
-        vars = aClass->basicAt(variablesInClass);
+        setInstanceVariables(basicAt(aClass,superClassInClass));
+        vars = basicAt(aClass,variablesInClass);
         if (vars != nilobj) 
         {
             limit = vars->size;
             for (i = 1; i <= limit; i++)
-                _instanceName[++_instanceTop] = vars->basicAt(i)->charPtr();
+                _instanceName[++_instanceTop] = charPtr(basicAt(vars,i));
         }
     }
 }
@@ -135,19 +135,19 @@ const char *glbsyms[] =
     0 
 };
 
-bool nameTerm(const char *name)
+int nameTerm(const char *name)
 {   
     int i;
-    bool done = false;
-    bool isSuper = false;
+    int done = FALSE;
+    int isSuper = FALSE;
 
     /* it might be self or super */
     if (streq(name, "self") || streq(name, "super")) 
     {
         genInstruction(PushArgument, 0);
-        done = true;
+        done = TRUE;
         if (streq(name,"super")) 
-            isSuper = true;
+            isSuper = TRUE;
     }
 
     /* or it might be a temporary (reverse this to get most recent first)*/
@@ -158,7 +158,7 @@ bool nameTerm(const char *name)
             if (streq(name, _temporaryName[i])) 
             {
                 genInstruction(PushTemporary, i-1);
-                done = true;
+                done = TRUE;
             }
         }
     }
@@ -171,7 +171,7 @@ bool nameTerm(const char *name)
             if (streq(name, _argumentName[i])) 
             {
                 genInstruction(PushArgument, i);
-                done = true;
+                done = TRUE;
             }
         }
     }
@@ -184,7 +184,7 @@ bool nameTerm(const char *name)
             if (streq(name, _instanceName[i])) 
             {
                 genInstruction(PushInstance, i-1);
-                done = true;
+                done = TRUE;
             }
         }
     }
@@ -197,7 +197,7 @@ bool nameTerm(const char *name)
             if (streq(name, glbsyms[i])) 
             {
                 genInstruction(PushConstant, i+4);
-                done = true;
+                done = TRUE;
             }
         }
     }
@@ -207,7 +207,7 @@ bool nameTerm(const char *name)
     if (! done) 
     {
         genInstruction(PushLiteral, genLiteral(newSymbol(name)));
-        genMessage(false, 0, newSymbol("value"));
+        genMessage(0, 0, newSymbol("value"));
     }
 
     return(isSuper);
@@ -299,16 +299,16 @@ int parseArray()
     for (i = size; i >= 1; i--) 
     {
         obj = _literalArray[_literalTop];
-        newLit->basicAtPut(i, obj);
+        basicAtPut(newLit,i, obj);
         _literalArray[_literalTop] = nilobj;
         _literalTop = _literalTop - 1;
     }
     return(genLiteral(newLit));
 }
 
-bool term()
+int term()
 {   
-    bool superTerm = false;  /* true if term is pseudo var super */
+    int superTerm = 0;  /* 1 if term is pseudo var super */
     tokentype token = currentToken();
 
     if (token == nameconst) 
@@ -402,9 +402,9 @@ void parsePrimitive()
     nextToken();
 }
 
-void genMessage(bool toSuper, int argumentCount, object messagesym)
+void genMessage(int toSuper, int argumentCount, object messagesym)
 {   
-    bool sent = false;
+    int sent = 0;
     int i;
 
     if ((! toSuper) && (argumentCount == 0))
@@ -413,7 +413,7 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
         {
             if (messagesym == unSyms[i]) {
                 genInstruction(SendUnary, i);
-                sent = true;
+                sent = TRUE;
             }
         }
     }
@@ -425,7 +425,7 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
             if (messagesym == binSyms[i]) 
             {
                 genInstruction(SendBinary, i);
-                sent = true;
+                sent = TRUE;
             }
         }
     }
@@ -443,10 +443,10 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
     }
 }
 
-bool unaryContinuation(bool superReceiver)
+int unaryContinuation(int superReceiver)
 {   
     int i;
-    bool sent;
+    int sent;
 
     while (_parseok && (currentToken() == nameconst)) 
     {
@@ -469,22 +469,22 @@ bool unaryContinuation(bool superReceiver)
            compilWarn(_selector,"message same as instance",
            tokenString); */
 
-        sent = false;
+        sent = 0;
 
         if (! sent) 
         {
             genMessage(superReceiver, 0, newSymbol(strToken()));
         }
         /* once a message is sent to super, reciever is not super */
-        superReceiver = false;
+        superReceiver = 0;
         nextToken();
     }
     return(superReceiver);
 }
 
-bool binaryContinuation(bool superReceiver)
+int binaryContinuation(int superReceiver)
 {   
-    bool superTerm;
+    int superTerm;
     object messagesym;
     SObjectHandle* lock_messageSym = 0;
 
@@ -497,13 +497,13 @@ bool binaryContinuation(bool superReceiver)
         superTerm = term();
         unaryContinuation(superTerm);
         genMessage(superReceiver, 1, messagesym);
-        superReceiver = false;
+        superReceiver = 0;
         free_SObjectHandle(lock_messageSym);
     }
     return(superReceiver);
 }
 
-int optimizeBlock(int instruction, bool dopop)
+int optimizeBlock(int instruction, int dopop)
 {   
     int location;
     enum blockstatus savebstat;
@@ -528,17 +528,17 @@ int optimizeBlock(int instruction, bool dopop)
     else 
     {
         binaryContinuation(term());
-        genMessage(false, 0, newSymbol("value"));
+        genMessage(0, 0, newSymbol("value"));
     }
     _codeArray[location] = _codeTop+1;
     _blocksat = savebstat;
     return(location);
 }
 
-bool keyContinuation(bool superReceiver)
+int keyContinuation(int superReceiver)
 {   
     int i, j, argumentCount;
-    bool sent, superTerm;
+    int sent, superTerm;
     object messagesym;
     char pattern[80];
 
@@ -547,28 +547,28 @@ bool keyContinuation(bool superReceiver)
     {
         if (strcmp(strToken(), "ifTrue:") == 0) 
         {
-            i = optimizeBlock(BranchIfFalse, false);
+            i = optimizeBlock(BranchIfFalse, 0);
             if (strcmp(strToken(), "ifFalse:") == 0) 
             {
                 _codeArray[i] = _codeTop + 3;
-                optimizeBlock(Branch, true);
+                optimizeBlock(Branch, 1);
             }
         }
         else if (strcmp(strToken(), "ifFalse:") == 0) 
         {
-            i = optimizeBlock(BranchIfTrue, false);
+            i = optimizeBlock(BranchIfTrue, 0);
             if (strcmp(strToken(), "ifTrue:") == 0) 
             {
                 _codeArray[i] = _codeTop + 3;
-                optimizeBlock(Branch, true);
+                optimizeBlock(Branch, 1);
             }
         }
         else if (strcmp(strToken(), "whileTrue:") == 0) 
         {
             j = _codeTop;
             genInstruction(DoSpecial, Duplicate);
-            genMessage(false, 0, newSymbol("value"));
-            i = optimizeBlock(BranchIfFalse, false);
+            genMessage(0, 0, newSymbol("value"));
+            i = optimizeBlock(BranchIfFalse, 0);
             genInstruction(DoSpecial, PopTop);
             genInstruction(DoSpecial, Branch);
             genCode(j+1);
@@ -576,9 +576,9 @@ bool keyContinuation(bool superReceiver)
             genInstruction(DoSpecial, PopTop);
         }
         else if (strcmp(strToken(), "and:") == 0)
-            optimizeBlock(AndBranch, false);
+            optimizeBlock(AndBranch, 0);
         else if (strcmp(strToken(), "or:") == 0)
-            optimizeBlock(OrBranch, false);
+            optimizeBlock(OrBranch, 0);
         else 
         {
             pattern[0] = '\0';
@@ -591,7 +591,7 @@ bool keyContinuation(bool superReceiver)
                 superTerm = term();
                 binaryContinuation(superTerm);
             }
-            sent = false;
+            sent = 0;
 
             /* check for predefined messages */
             messagesym = newSymbol(pattern);
@@ -601,12 +601,12 @@ bool keyContinuation(bool superReceiver)
                 genMessage(superReceiver, argumentCount, messagesym);
             }
         }
-        superReceiver = false;
+        superReceiver = 0;
     }
     return(superReceiver);
 }
 
-void continuation(bool superReceiver)
+void continuation(int superReceiver)
 {
     superReceiver = keyContinuation(superReceiver);
 
@@ -621,7 +621,7 @@ void continuation(bool superReceiver)
 
 void expression()
 {   
-    bool superTerm;
+    int superTerm;
     char assignname[60];
 
     if (currentToken() == nameconst) 
@@ -650,9 +650,9 @@ void expression()
 void assignment(char* name)
 {   
     int i;
-    bool done;
+    int done;
 
-    done = false;
+    done = 0;
 
     /* it might be a temporary */
     for (i = _temporaryTop; (! done) && (i > 0); i--)
@@ -661,7 +661,7 @@ void assignment(char* name)
         {
             expression();
             genInstruction(AssignTemporary, i-1);
-            done = true;
+            done = 1;
         }
     }
 
@@ -672,7 +672,7 @@ void assignment(char* name)
         {
             expression();
             genInstruction(AssignInstance, i-1);
-            done = true;
+            done = 1;
         }
     }
 
@@ -681,7 +681,7 @@ void assignment(char* name)
         genInstruction(PushArgument, 0);
         genInstruction(PushLiteral, genLiteral(newSymbol(name)));
         expression();
-        genMessage(false, 2, newSymbol("assign:value:"));
+        genMessage(0, 2, newSymbol("assign:value:"));
     }
 }
 
@@ -696,7 +696,7 @@ void statement()
         {
             /* change return point before returning */
             genInstruction(PushConstant, contextConst);
-            genMessage(false, 0, newSymbol("blockReturn"));
+            genMessage(0, 0, newSymbol("blockReturn"));
             genInstruction(DoSpecial, PopTop);
         }
         genInstruction(DoSpecial, StackReturn);
@@ -773,7 +773,7 @@ void block()
             else 
             {
                 tempsym = newSymbol(strToken());
-                _temporaryName[_temporaryTop] = tempsym->charPtr();
+                _temporaryName[_temporaryTop] = charPtr(tempsym);
             }
             nextToken();
         }
@@ -784,8 +784,8 @@ void block()
     }
     newBlk = newBlock();
     lock_newBlk = new_SObjectHandle_from_object(newBlk);
-    newBlk->basicAtPut(argumentCountInBlock, newInteger(argumentCount));
-    newBlk->basicAtPut(argumentLocationInBlock, 
+    basicAtPut(newBlk,argumentCountInBlock, newInteger(argumentCount));
+    basicAtPut(newBlk,argumentLocationInBlock, 
             newInteger(saveTemporary + 1));
     genInstruction(PushLiteral, genLiteral(newBlk));
     genInstruction(PushConstant, contextConst);
@@ -795,7 +795,7 @@ void block()
     fixLocation = _codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    newBlk->basicAtPut(bytecountPositionInBlock, newInteger(_codeTop+1));
+    basicAtPut(newBlk,bytecountPositionInBlock, newInteger(_codeTop+1));
     _blocksat = InBlock;
     body();
     if ((currentToken() == closing) && strcmp(strToken(), "]") == 0)
@@ -827,7 +827,7 @@ void temporaries()
             else 
             {
                 tempsym = newSymbol(strToken());
-                _temporaryName[_temporaryTop] = tempsym->charPtr();
+                _temporaryName[_temporaryTop] = charPtr(tempsym);
             }
             nextToken();
         }
@@ -852,7 +852,7 @@ void messagePattern()
         if (currentToken() != nameconst) 
             compilError(_selector,"binary message pattern not followed by name",_selector);
         argsym = newSymbol(strToken());
-        _argumentName[++_argumentTop] = argsym->charPtr();
+        _argumentName[++_argumentTop] = charPtr(argsym);
         nextToken();
     }
     else if (currentToken() == namecolon) 
@@ -868,7 +868,7 @@ void messagePattern()
             if (++_argumentTop > argumentLimit)
                 compilError(_selector,"too many arguments in method","");
             argsym = newSymbol(strToken());
-            _argumentName[_argumentTop] = argsym->charPtr();
+            _argumentName[_argumentTop] = charPtr(argsym);
             nextToken();
         }
     }
@@ -876,9 +876,9 @@ void messagePattern()
         compilError(_selector,"illegal message _selector", strToken());
 }
 
-bool parseCode(object method, bool savetext)
+int parseCode(object method, int savetext)
 {   
-    _parseok = true;
+    _parseok = 1;
 
     _blocksat = NotInBlock;
     _codeTop = 0;
@@ -891,9 +891,9 @@ bool parseCode(object method, bool savetext)
     return(recordMethodBytecode(method, savetext));
 }
 
-bool parseMessageHandler(object method, bool savetext)
+int parseMessageHandler(object method, int savetext)
 {   
-    _parseok = true;
+    _parseok = 1;
 
     _blocksat = NotInBlock;
     _codeTop = 0;
@@ -909,7 +909,7 @@ bool parseMessageHandler(object method, bool savetext)
 }
 
 
-bool recordMethodBytecode(object method, bool savetext)
+int recordMethodBytecode(object method, int savetext)
 {
     int i;
     object bytecodes, theLiterals;
@@ -923,39 +923,39 @@ bool recordMethodBytecode(object method, bool savetext)
 
     if (! _parseok) 
     {
-        method->basicAtPut(bytecodesInMethod, nilobj);
+        basicAtPut(method,bytecodesInMethod, nilobj);
     }
     else 
     {
         bytecodes = newByteArray(_codeTop);
-        bp = bytecodes->bytePtr();
+        bp = bytePtr(bytecodes);
         for (i = 0; i < _codeTop; i++) 
         {
             bp[i] = _codeArray[i];
         }
-        method->basicAtPut(messageInMethod, newSymbol(_selector));
-        method->basicAtPut(bytecodesInMethod, bytecodes);
+        basicAtPut(method,messageInMethod, newSymbol(_selector));
+        basicAtPut(method,bytecodesInMethod, bytecodes);
         if (_literalTop > 0) 
         {
             theLiterals = newArray(_literalTop);
             for (i = 1; i <= _literalTop; ++i) 
             {
-                theLiterals->basicAtPut(i, _literalArray[i]);
+                basicAtPut(theLiterals,i, _literalArray[i]);
             }
-            method->basicAtPut(literalsInMethod, theLiterals);
+            basicAtPut(method,literalsInMethod, theLiterals);
         }
         else 
         {
-            method->basicAtPut(literalsInMethod, nilobj);
+            basicAtPut(method,literalsInMethod, nilobj);
         }
-        method->basicAtPut(stackSizeInMethod, newInteger(6));
-        method->basicAtPut(temporarySizeInMethod,
+        basicAtPut(method,stackSizeInMethod, newInteger(6));
+        basicAtPut(method,temporarySizeInMethod,
                 newInteger(1 + _maxTemporary));
         if (savetext) 
         {
-            method->basicAtPut(textInMethod, newStString(source()));
+            basicAtPut(method,textInMethod, newStString(source()));
         }
-        return(true);
+        return(1);
     }
-    return(false);
+    return(0);
 }

@@ -22,7 +22,7 @@
 /*
     the following are switch settings, with default values
 */
-bool savetext = true;
+int savetext = TRUE;
 
 /*
     we read the input a line at a time, putting lines into the following
@@ -45,10 +45,10 @@ static object findClass(const char* name)
     newobj = globalSymbol(name);
     if (newobj == nilobj)
         newobj = newClass(name);
-    if (newobj->basicAt(sizeInClass) == nilobj) 
+    if (basicAt(newobj,sizeInClass) == nilobj) 
     {
         lock = new_SObjectHandle_from_object(newobj);
-        newobj->basicAtPut(sizeInClass, newInteger(0));
+        basicAtPut(newobj,sizeInClass, newInteger(0));
         free_SObjectHandle(lock);
     }
     return newobj;
@@ -65,7 +65,7 @@ static object findClassWithMeta(const char* name, object metaObj)
     {
         lock_metaObj = new_SObjectHandle_from_object(metaObj);
 
-        size = getInteger(metaObj->basicAt(sizeInClass));
+        size = getInteger(basicAt(metaObj,sizeInClass));
         newObj = allocObject(size);
         lock_newObj = new_SObjectHandle_from_object(newObj);
         newObj->_class = metaObj;
@@ -73,11 +73,11 @@ static object findClassWithMeta(const char* name, object metaObj)
         /* now make name */
         nameObj = newSymbol(name);
         lock_nameObj = new_SObjectHandle_from_object(nameObj);
-        newObj->basicAtPut(nameInClass, nameObj);
+        basicAtPut(newObj,nameInClass, nameObj);
         methTable = newDictionary(39);
         lock_methTable = new_SObjectHandle_from_object(methTable);
-        newObj->basicAtPut(methodsInClass, methTable);
-        newObj->basicAtPut(sizeInClass, newInteger(size));
+        basicAtPut(newObj,methodsInClass, methTable);
+        basicAtPut(newObj,sizeInClass, newInteger(size));
 
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -108,8 +108,8 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
     if(NULL != superclass)
     {
         superObj = findClass(superclass);
-        classObj->basicAtPut(superClassInClass, superObj);
-        size = getInteger(superObj->basicAt(sizeInClass));
+        basicAtPut(classObj,superClassInClass, superObj);
+        size = getInteger(basicAt(superObj,sizeInClass));
     }
     return classObj;
 }
@@ -147,7 +147,7 @@ static void readRawClassDeclaration()
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
-    size = getInteger(classObj->basicAt(sizeInClass));
+    size = getInteger(basicAt(classObj,sizeInClass));
 
     if (currentToken() == nameconst) 
     {     /* read instance var names */
@@ -163,12 +163,12 @@ static void readRawClassDeclaration()
         lock_vars = new_SObjectHandle_from_object(vars);
         for (i = 0; i < instanceTop; i++) 
         {
-            vars->basicAtPut(i+1, instanceVariables[i]);
+            basicAtPut(vars,i+1, instanceVariables[i]);
         }
-        classObj->basicAtPut(variablesInClass, vars);
+        basicAtPut(classObj,variablesInClass, vars);
     }
-    classObj->basicAtPut(sizeInClass, newInteger(size));
-    classObj->basicAtPut(methodsInClass, newDictionary(39));
+    basicAtPut(classObj,sizeInClass, newInteger(size));
+    basicAtPut(classObj,methodsInClass, newDictionary(39));
 
     free_SObjectHandle(lock_vars);
     while(--instanceTop >= 0)
@@ -217,7 +217,7 @@ static void readClassDeclaration()
 
     // Get the current class size, we'll build on this as 
     // we add instance variables.
-    size = getInteger(classObj->basicAt(sizeInClass));
+    size = getInteger(basicAt(classObj,sizeInClass));
 
     if (currentToken() == nameconst) 
     {     /* read instance var names */
@@ -233,12 +233,12 @@ static void readClassDeclaration()
         lock_vars = new_SObjectHandle_from_object(vars);
         for (i = 0; i < instanceTop; i++) 
         {
-            vars->basicAtPut(i+1, instanceVariables[i]);
+            basicAtPut(vars,i+1, instanceVariables[i]);
         }
-        classObj->basicAtPut(variablesInClass, vars);
+        basicAtPut(classObj,variablesInClass, vars);
     }
-    classObj->basicAtPut(sizeInClass, newInteger(size));
-    classObj->basicAtPut(methodsInClass, newDictionary(39));
+    basicAtPut(classObj,sizeInClass, newInteger(size));
+    basicAtPut(classObj,methodsInClass, newDictionary(39));
 
     free_SObjectHandle(lock_vars);
     while(--instanceTop >= 0)
@@ -250,7 +250,7 @@ static void readClassDeclaration()
 /*
     readClass reads a class method description
 */
-static void readMethods(FILE* fd, bool printit)
+static void readMethods(FILE* fd, int printit)
 {   
     object classObj, methTable, theMethod, selector;
     SObjectHandle *lock_classObj = 0, *lock_methTable = 0, *lock_theMethod = 0, *lock_selector = 0;
@@ -268,14 +268,14 @@ static void readMethods(FILE* fd, bool printit)
 
     setInstanceVariables(classObj);
     if (printit)
-        cp = classObj->basicAt(nameInClass)->charPtr();
+        cp = charPtr(basicAt(classObj,nameInClass));
 
     /* now find or create a method table */
-    methTable = classObj->basicAt(methodsInClass);
+    methTable = basicAt(classObj,methodsInClass);
     if (methTable == nilobj) 
     {  /* must make */
         methTable = newDictionary(MethodTableSize);
-        classObj->basicAtPut(methodsInClass, methTable);
+        basicAtPut(classObj,methodsInClass, methTable);
     }
     lock_methTable = new_SObjectHandle_from_object(methTable);
 
@@ -307,12 +307,12 @@ static void readMethods(FILE* fd, bool printit)
         lock_theMethod = new_SObjectHandle_from_object(theMethod);
         resetLexer(textBuffer);
         if (parseMessageHandler(theMethod, savetext)) {
-            selector = theMethod->basicAt(messageInMethod);
+            selector = basicAt(theMethod,messageInMethod);
             lock_selector = new_SObjectHandle_from_object(selector);
-            theMethod->basicAtPut(methodClassInMethod, classObj);
-            theMethod->basicAtPut(protocolInMethod, protocol);
+            basicAtPut(theMethod,methodClassInMethod, classObj);
+            basicAtPut(theMethod,protocolInMethod, protocol);
             if (printit)
-                dspMethod(cp, selector->charPtr());
+                dspMethod(cp, charPtr(selector));
             nameTableInsert(methTable, hashObject(selector), selector, theMethod);
         }
         else {
@@ -332,9 +332,9 @@ static void readMethods(FILE* fd, bool printit)
 /*
     fileIn reads in a module definition
 */
-void fileIn(FILE* fd, bool printit)
+void fileIn(FILE* fd, int printit)
 {
-    textBuffer = new char[TextBufferSize];
+    textBuffer = (char*)calloc(TextBufferSize, sizeof(char));
     while(fgets(textBuffer, TextBufferSize, fd) != NULL) 
     {
         resetLexer(textBuffer);
@@ -352,5 +352,5 @@ void fileIn(FILE* fd, bool printit)
             sysError("unrecognized line", textBuffer);
         //garbageCollect();
     }
-    delete[](textBuffer);
+    free(textBuffer);
 }

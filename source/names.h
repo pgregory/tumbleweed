@@ -26,8 +26,8 @@
 # define methodClassInMethod 7
 # define watchInMethod 8
 # define protocolInMethod 9
-# define methodStackSize(x) getInteger((x)->basicAt(stackSizeInMethod))
-# define methodTempSize(x) getInteger((x)->basicAt(temporarySizeInMethod))
+# define methodStackSize(x) getInteger(basicAt((x), stackSizeInMethod))
+# define methodTempSize(x) getInteger(basicAt((x), temporarySizeInMethod))
 
 # define contextSize 8
 # define linkPtrInContext 1

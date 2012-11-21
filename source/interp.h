@@ -45,7 +45,7 @@
 
 # define cacheSize 211
 
-extern bool execute(object aProcess, int maxsteps);
+extern int execute(object aProcess, int maxsteps);
 extern void flushCache(object messageToSend, object _class);
 extern void runCode(const char * text);
 extern void initialiseInterpreter();

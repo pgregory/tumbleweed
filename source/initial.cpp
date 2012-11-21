@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 
     /* when we are all done looking at the arguments, do initialization */
     fprintf(stderr,"initialization\n");
-    //debugging = true;
+    //debugging = TRUE;
     runCode("nil initialize\n");
     fprintf(stderr,"finished\n");
 
@@ -69,27 +69,27 @@ void makeInitialImage()
   symbols = allocObject(dictionarySize);
   hashTable = allocObject(3 * 53);
   lock_hashTable = new_SObjectHandle_from_object(hashTable);
-  symbols->basicAtPut(tableInDictionary, hashTable);
+  basicAtPut(symbols,tableInDictionary, hashTable);
 
   /* next create #Symbol, Symbol and Class */
   symbolObj = newSymbol("Symbol");
   lock_symbolObj = new_SObjectHandle_from_object(symbolObj);
-  symbols->basicAtPut(tableInDictionary, hashTable);
+  basicAtPut(symbols,tableInDictionary, hashTable);
   symbolClass = newClass("Symbol");
   lock_symbolClass = new_SObjectHandle_from_object(symbolClass);
-  symbols->basicAtPut(tableInDictionary, hashTable);
+  basicAtPut(symbols,tableInDictionary, hashTable);
   integerClass = newClass("Integer");
   lock_integerClass = new_SObjectHandle_from_object(integerClass);
-  symbols->basicAtPut(tableInDictionary, hashTable);
+  basicAtPut(symbols,tableInDictionary, hashTable);
   symbolObj->_class = symbolClass;
   classClass = newClass("Class");
   lock_classClass = new_SObjectHandle_from_object(classClass);
-  symbols->basicAtPut(tableInDictionary, hashTable);
+  basicAtPut(symbols,tableInDictionary, hashTable);
   symbolClass->_class = classClass;
   integerClass->_class = classClass;
   metaClassClass = newClass("MetaClass");
   lock_metaClassClass = new_SObjectHandle_from_object(metaClassClass);
-  symbols->basicAtPut(tableInDictionary, hashTable);
+  basicAtPut(symbols,tableInDictionary, hashTable);
   classClass->_class = metaClassClass;
 
   /* now fix up classes for symbol table */
@@ -102,8 +102,8 @@ void makeInitialImage()
   newClass("String");
   nameTableInsert(symbols, strHash("symbols"), newSymbol("symbols"), symbols);
 
-  classClass->basicAtPut(methodsInClass, newDictionary(39));
-  metaClassClass->basicAtPut(methodsInClass, newDictionary(39));
+  basicAtPut(classClass,methodsInClass, newDictionary(39));
+  basicAtPut(metaClassClass,methodsInClass, newDictionary(39));
 
   /* finally at least make true and false to be distinct */
   object trueobj = newSymbol("true");

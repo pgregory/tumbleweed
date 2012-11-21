@@ -9,8 +9,6 @@
 #ifndef LEX_H_INCLUDED
 #define LEX_H_INCLUDED
 
-#include <string>
-
 typedef enum tokensyms 
 { 
     nothing, 

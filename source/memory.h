@@ -57,70 +57,68 @@ struct ObjectStruct
     long size;
     //! A pointer to the data area of the object.
     object*memory;
-
-    //! Data pointer getter
-    object* sysMemPtr();
-    //! Get the data area as a byte pointer
-    byte* bytePtr();
-    //! Get the data area as a char pointer
-    char* charPtr();
-
-    /*! Basic indexed object getter.
-     *
-     * Get an object ID from the given index in the data area.
-     *
-     * \param index The index in the data area to access.
-     * \return The object ID at the given index.
-     */
-    object basicAt(int index);
-    /*! Basic indexed object insertion.
-     *
-     * Assigns the given object to the index if it is range.
-     *
-     * \param index The index to assign the value to.
-     * \param o The object to assign.
-     */
-    void basicAtPut(int index, object o);
-    /*! Byte accessor 
-     *
-     * Get the byte at the given index in the data area.
-     *
-     * \param index The index of the byte to get, if in range.
-     * \return The byte value at the index.
-     */
-    int byteAt(int index);
-    /*! Byte setter
-     *
-     * Set a value in the data area addressed as byte.
-     *
-     * \param index The index in the data area to update.
-     * \param value The value to put into the data area.
-     */
-    void byteAtPut(int index, int value);
-
-    /*! Float getter
-     *
-     * Get the value stored in the data area as a float.
-     *
-     * \return The float value this object holds.
-     */
-    double floatValue();
-    /*! Int getter
-     *
-     * Get the value stored in the data area as an integer.
-     *
-     * \return The int value this object holds.
-     */
-    int intValue();
-    /*! CPointer getter
-     *
-     * Get the value stored in the data area as a native C pointer.
-     *
-     * \return The pointer value this object holds.
-     */
-    void* cPointerValue();
-
 };
+
+//! Data pointer getter
+object* sysMemPtr(object _this);
+//! Get the data area as a byte pointer
+byte* bytePtr(object _this);
+//! Get the data area as a char pointer
+char* charPtr(object _this);
+/*! Basic indexed object getter.
+ *
+ * Get an object ID from the given index in the data area.
+ *
+ * \param index The index in the data area to access.
+ * \return The object ID at the given index.
+ */
+object basicAt(object _this, int index);
+/*! Basic indexed object insertion.
+ *
+ * Assigns the given object to the index if it is range.
+ *
+ * \param index The index to assign the value to.
+ * \param o The object to assign.
+ */
+void basicAtPut(object _this, int index, object o);
+/*! Byte accessor 
+ *
+ * Get the byte at the given index in the data area.
+ *
+ * \param index The index of the byte to get, if in range.
+ * \return The byte value at the index.
+ */
+int byteAt(object _this, int index);
+/*! Byte setter
+ *
+ * Set a value in the data area addressed as byte.
+ *
+ * \param index The index in the data area to update.
+ * \param value The value to put into the data area.
+ */
+void byteAtPut(object _this, int index, int value);
+
+/*! Float getter
+ *
+ * Get the value stored in the data area as a float.
+ *
+ * \return The float value this object holds.
+ */
+double floatValue(object _this);
+/*! Int getter
+ *
+ * Get the value stored in the data area as an integer.
+ *
+ * \return The int value this object holds.
+ */
+int intValue(object _this);
+/*! CPointer getter
+ *
+ * Get the value stored in the data area as a native C pointer.
+ *
+ * \return The pointer value this object holds.
+ */
+void* cPointerValue(object _this);
 
 extern ObjectStruct _nilobj;
 extern object nilobj;
@@ -136,13 +134,8 @@ extern object symbols;
 extern void sysError(const char*, const char*);
 extern void dspMethod(char*, char*);
 extern void initMemoryManager();
-extern bool debugging;
+extern int debugging;
 void givepause();
-
-
-#include <map>
-#include <vector>
-#include <string>
 
 
 /*! Get the count of live, referenced objects.
@@ -213,7 +206,7 @@ object allocStr(register const char* str);
  * \param z The object ID to destroy.
  * \return True if the object is added to the free list.
  */
-bool destroyObject(object z);
+int destroyObject(object z);
 
 /*! Create a new Array object.
  *
@@ -381,37 +374,12 @@ void imageRead(FILE* fp);
 void imageWrite(FILE* fp);
 
 
-inline object* ObjectStruct::sysMemPtr()
-{
-    return memory;
-}
-
-inline byte* ObjectStruct::bytePtr()
-{
-    return (byte *)sysMemPtr();
-}
-
-inline char* ObjectStruct::charPtr()
-{
-    return (char *)sysMemPtr();
-}
-
-
-inline void ObjectStruct::basicAtPut(int i, object v)
-{
-    if((i <= 0) || (i > size))
-        sysError("index out of range", "basicAtPut");
-    else
-        sysMemPtr()[i-1] = v;
-}
-
-
 
 //#define TW_SMALLINTEGER_AS_OBJECT
 // TODO: Need to deal with SmallIntegers here
 #if defined TW_SMALLINTEGER_AS_OBJECT
 
-#define getInteger(x) ((x)->intValue())
+#define getInteger(x) (intValue((x)))
 #define getClass(x) ((x)->_class)
 
 #else
