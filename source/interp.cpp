@@ -686,10 +686,9 @@ void runCode(const char * text)
 
     method = newMethod();
     lock_method = new_SObjectHandle_from_object(method);
-    Parser pp = Parser();
     resetLexer(text);
-    pp.setInstanceVariables(nilobj);
-    bool result = pp.parseCode(method, false);
+    setInstanceVariables(nilobj);
+    bool result = parseCode(method, false);
 
     firstProcess = allocObject(processSize);
     lock_firstProcess = new_SObjectHandle_from_object(firstProcess);

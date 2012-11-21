@@ -29,30 +29,51 @@
 #include "env.h"
 #include "parser.h"
 
-void Parser::compilWarn(const char* selector, const char* str1, const char* str2)
+bool _parseok;            /* parse still ok? */
+int _codeTop;            /* top position filled in code array */
+byte _codeArray[codeLimit];  /* bytecode array */
+std::vector<object> _literalArray;
+int _temporaryTop;
+char *_temporaryName[temporaryLimit];
+int _argumentTop;
+char *_argumentName[argumentLimit];
+int _instanceTop;
+char *_instanceName[instanceLimit];
+
+int _maxTemporary;      /* highest temporary see so far */
+char _selector[80];     /* message _selector */
+
+enum blockstatus 
+{
+    NotInBlock, 
+    InBlock, 
+    OptimizedBlock
+} _blocksat;
+
+void compilWarn(const char* _selector, const char* str1, const char* str2)
 {
     fprintf(stderr,"compiler warning: Method %s : %s %s\n", 
-            selector, str1, str2);
+            _selector, str1, str2);
 }
 
 
-void Parser::compilError(const char* selector, const char* str1, const char* str2)
+void compilError(const char* _selector, const char* str1, const char* str2)
 {
     fprintf(stderr,"compiler error: Method %s : %s %s\n", 
-            selector, str1, str2);
-    //_snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", selector, str1, str2);
-    parseok = false;
+            _selector, str1, str2);
+    //_snprintf(gLastError, 1024, "compiler error: Method %s : %s %s", _selector, str1, str2);
+    _parseok = false;
 }
 
 
 
-void Parser::setInstanceVariables(object aClass)
+void setInstanceVariables(object aClass)
 {   
     int i, limit;
     object vars;
 
     if (aClass == nilobj)
-        instanceTop = 0;
+        _instanceTop = 0;
     else 
     {
         setInstanceVariables(aClass->basicAt(superClassInClass));
@@ -61,20 +82,20 @@ void Parser::setInstanceVariables(object aClass)
         {
             limit = vars->size;
             for (i = 1; i <= limit; i++)
-                instanceName[++instanceTop] = vars->basicAt(i)->charPtr();
+                _instanceName[++_instanceTop] = vars->basicAt(i)->charPtr();
         }
     }
 }
 
-void Parser::genCode(int value)
+void genCode(int value)
 {
-    if (codeTop >= codeLimit)
-        compilError(selector,"too many bytecode instructions in method","");
+    if (_codeTop >= codeLimit)
+        compilError(_selector,"too many bytecode instructions in method","");
     else
-        codeArray[codeTop++] = value;
+        _codeArray[_codeTop++] = value;
 }
 
-void Parser::genInstruction(int high, int low)
+void genInstruction(int high, int low)
 {
     if (low >= 16) 
     {
@@ -85,13 +106,13 @@ void Parser::genInstruction(int high, int low)
         genCode(high * 16 + low);
 }
 
-int Parser::genLiteral(object aLiteral)
+int genLiteral(object aLiteral)
 {
-    literalArray.push_back(aLiteral);
-    return(literalArray.size()-1);
+    _literalArray.push_back(aLiteral);
+    return(_literalArray.size()-1);
 }
 
-void Parser::genInteger(int val)    /* generate an integer push */
+void genInteger(int val)    /* generate an integer push */
 {
     if (val == -1)
         genInstruction(PushConstant, minusOne);
@@ -108,7 +129,7 @@ const char *glbsyms[] =
     0 
 };
 
-bool Parser::nameTerm(const char *name)
+bool nameTerm(const char *name)
 {   
     int i;
     bool done = false;
@@ -126,9 +147,9 @@ bool Parser::nameTerm(const char *name)
     /* or it might be a temporary (reverse this to get most recent first)*/
     if (! done)
     {
-        for (i = temporaryTop; (! done) && ( i >= 1 ) ; i--)
+        for (i = _temporaryTop; (! done) && ( i >= 1 ) ; i--)
         {
-            if (streq(name, temporaryName[i])) 
+            if (streq(name, _temporaryName[i])) 
             {
                 genInstruction(PushTemporary, i-1);
                 done = true;
@@ -139,9 +160,9 @@ bool Parser::nameTerm(const char *name)
     /* or it might be an argument */
     if (! done)
     {
-        for (i = 1; (! done) && (i <= argumentTop ) ; i++)
+        for (i = 1; (! done) && (i <= _argumentTop ) ; i++)
         {
-            if (streq(name, argumentName[i])) 
+            if (streq(name, _argumentName[i])) 
             {
                 genInstruction(PushArgument, i);
                 done = true;
@@ -152,9 +173,9 @@ bool Parser::nameTerm(const char *name)
     /* or it might be an instance variable */
     if (! done)
     {
-        for (i = 1; (! done) && (i <= instanceTop); i++) 
+        for (i = 1; (! done) && (i <= _instanceTop); i++) 
         {
-            if (streq(name, instanceName[i])) 
+            if (streq(name, _instanceName[i])) 
             {
                 genInstruction(PushInstance, i-1);
                 done = true;
@@ -186,14 +207,14 @@ bool Parser::nameTerm(const char *name)
     return(isSuper);
 }
 
-int Parser::parseArray()
+int parseArray()
 {   
     int i, size, base;
     object newLit, obj;
 
-    base = literalArray.size();
+    base = _literalArray.size();
     nextToken();
-    while (parseok && (currentToken() != closing)) 
+    while (_parseok && (currentToken() != closing)) 
     {
         switch(currentToken()) 
         {
@@ -232,7 +253,7 @@ int Parser::parseArray()
                         genLiteral(newFloat(-floatToken()));
                     }
                     else
-                        compilError(selector,"negation not followed", "by number");
+                        compilError(_selector,"negation not followed", "by number");
                     nextToken();
                     break;
                 }
@@ -251,34 +272,34 @@ int Parser::parseArray()
                 break;
 
             default:
-                compilError(selector,"illegal text in literal array",
+                compilError(_selector,"illegal text in literal array",
                         strToken().c_str());
                 nextToken();
                 break;
         }
     }
 
-    if (parseok)
+    if (_parseok)
     {
         if (strToken().compare(")"))
-            compilError(selector,"array not terminated by right parenthesis",
+            compilError(_selector,"array not terminated by right parenthesis",
                     strToken().c_str());
         else
             nextToken();
     }
 
-    size = literalArray.size() - base;
+    size = _literalArray.size() - base;
     newLit = newArray(size);
     for (i = size; i >= 1; i--) 
     {
-        obj = literalArray.back();
+        obj = _literalArray.back();
         newLit->basicAtPut(i, obj);
-        literalArray.pop_back();
+        _literalArray.pop_back();
     }
     return(genLiteral(newLit));
 }
 
-bool Parser::term()
+bool term()
 {   
     bool superTerm = false;  /* true if term is pseudo var super */
     tokentype token = currentToken();
@@ -309,7 +330,7 @@ bool Parser::term()
                     genLiteral(newFloat(-floatToken())));
         }
         else
-            compilError(selector,"negation not followed",
+            compilError(_selector,"negation not followed",
                     "by number");
         nextToken();
     }
@@ -339,9 +360,9 @@ bool Parser::term()
     {
         nextToken();
         expression();
-        if (parseok)
+        if (_parseok)
             if ((currentToken() != closing) || strToken().compare(")"))
-                compilError(selector,"Missing Right Parenthesis","");
+                compilError(_selector,"Missing Right Parenthesis","");
             else
                 nextToken();
     }
@@ -350,21 +371,21 @@ bool Parser::term()
     else if ((token == binary) && strToken().compare("[") == 0)
         block();
     else
-        compilError(selector,"invalid expression start", strToken().c_str());
+        compilError(_selector,"invalid expression start", strToken().c_str());
 
     return(superTerm);
 }
 
-void Parser::parsePrimitive()
+void parsePrimitive()
 {   
     int primitiveNumber, argumentCount;
 
     if (nextToken() != intconst)
-        compilError(selector,"primitive number missing","");
+        compilError(_selector,"primitive number missing","");
     primitiveNumber = intToken();
     nextToken();
     argumentCount = 0;
-    while (parseok && ! ((currentToken() == binary) && strToken().compare(">") == 0)) 
+    while (_parseok && ! ((currentToken() == binary) && strToken().compare(">") == 0)) 
     {
         term();
         argumentCount++;
@@ -374,7 +395,7 @@ void Parser::parsePrimitive()
     nextToken();
 }
 
-void Parser::genMessage(bool toSuper, int argumentCount, object messagesym)
+void genMessage(bool toSuper, int argumentCount, object messagesym)
 {   
     bool sent = false;
     int i;
@@ -415,30 +436,30 @@ void Parser::genMessage(bool toSuper, int argumentCount, object messagesym)
     }
 }
 
-bool Parser::unaryContinuation(bool superReceiver)
+bool unaryContinuation(bool superReceiver)
 {   
     int i;
     bool sent;
 
-    while (parseok && (currentToken() == nameconst)) 
+    while (_parseok && (currentToken() == nameconst)) 
     {
         /* first check to see if it could be a temp by mistake */
-        for (i=1; i < temporaryTop; i++)
+        for (i=1; i < _temporaryTop; i++)
         {
-            if (strToken().compare(temporaryName[i]) == 0)
-                compilWarn(selector,"message same as temporary:",
+            if (strToken().compare(_temporaryName[i]) == 0)
+                compilWarn(_selector,"message same as temporary:",
                         strToken().c_str());
         }
-        for (i=1; i < argumentTop; i++)
+        for (i=1; i < _argumentTop; i++)
         {
-            if (strToken().compare(argumentName[i]) == 0)
-                compilWarn(selector,"message same as argument:",
+            if (strToken().compare(_argumentName[i]) == 0)
+                compilWarn(_selector,"message same as argument:",
                         strToken().c_str());
         }
         /* the next generates too many spurious messages */
-        /* for (i=1; i < instanceTop; i++)
-           if (streq(tokenString, instanceName[i]))
-           compilWarn(selector,"message same as instance",
+        /* for (i=1; i < _instanceTop; i++)
+           if (streq(tokenString, _instanceName[i]))
+           compilWarn(_selector,"message same as instance",
            tokenString); */
 
         sent = false;
@@ -454,14 +475,14 @@ bool Parser::unaryContinuation(bool superReceiver)
     return(superReceiver);
 }
 
-bool Parser::binaryContinuation(bool superReceiver)
+bool binaryContinuation(bool superReceiver)
 {   
     bool superTerm;
     object messagesym;
     SObjectHandle* lock_messageSym = 0;
 
     superReceiver = unaryContinuation(superReceiver);
-    while (parseok && (currentToken() == binary)) 
+    while (_parseok && (currentToken() == binary)) 
     {
         messagesym = newSymbol(strToken().c_str());
         lock_messageSym = new_SObjectHandle_from_object(messagesym);
@@ -475,14 +496,14 @@ bool Parser::binaryContinuation(bool superReceiver)
     return(superReceiver);
 }
 
-int Parser::optimizeBlock(int instruction, bool dopop)
+int optimizeBlock(int instruction, bool dopop)
 {   
     int location;
     enum blockstatus savebstat;
 
-    savebstat = blockstat;
+    savebstat = _blocksat;
     genInstruction(DoSpecial, instruction);
-    location = codeTop;
+    location = _codeTop;
     genCode(0);
     if (dopop)
         genInstruction(DoSpecial, PopTop);
@@ -490,11 +511,11 @@ int Parser::optimizeBlock(int instruction, bool dopop)
     if (strToken().compare("[") == 0) 
     {
         nextToken();
-        if (blockstat == NotInBlock)
-            blockstat = OptimizedBlock;
+        if (_blocksat == NotInBlock)
+            _blocksat = OptimizedBlock;
         body();
         if (strToken().compare("]"))
-            compilError(selector,"missing close","after block");
+            compilError(_selector,"missing close","after block");
         nextToken();
     }
     else 
@@ -502,12 +523,12 @@ int Parser::optimizeBlock(int instruction, bool dopop)
         binaryContinuation(term());
         genMessage(false, 0, newSymbol("value"));
     }
-    codeArray[location] = codeTop+1;
-    blockstat = savebstat;
+    _codeArray[location] = _codeTop+1;
+    _blocksat = savebstat;
     return(location);
 }
 
-bool Parser::keyContinuation(bool superReceiver)
+bool keyContinuation(bool superReceiver)
 {   
     int i, j, argumentCount;
     bool sent, superTerm;
@@ -522,7 +543,7 @@ bool Parser::keyContinuation(bool superReceiver)
             i = optimizeBlock(BranchIfFalse, false);
             if (strToken().compare("ifFalse:") == 0) 
             {
-                codeArray[i] = codeTop + 3;
+                _codeArray[i] = _codeTop + 3;
                 optimizeBlock(Branch, true);
             }
         }
@@ -531,20 +552,20 @@ bool Parser::keyContinuation(bool superReceiver)
             i = optimizeBlock(BranchIfTrue, false);
             if (strToken().compare("ifTrue:") == 0) 
             {
-                codeArray[i] = codeTop + 3;
+                _codeArray[i] = _codeTop + 3;
                 optimizeBlock(Branch, true);
             }
         }
         else if (strToken().compare("whileTrue:") == 0) 
         {
-            j = codeTop;
+            j = _codeTop;
             genInstruction(DoSpecial, Duplicate);
             genMessage(false, 0, newSymbol("value"));
             i = optimizeBlock(BranchIfFalse, false);
             genInstruction(DoSpecial, PopTop);
             genInstruction(DoSpecial, Branch);
             genCode(j+1);
-            codeArray[i] = codeTop+1;
+            _codeArray[i] = _codeTop+1;
             genInstruction(DoSpecial, PopTop);
         }
         else if (strToken().compare("and:") == 0)
@@ -555,7 +576,7 @@ bool Parser::keyContinuation(bool superReceiver)
         {
             pattern[0] = '\0';
             argumentCount = 0;
-            while (parseok && (currentToken() == namecolon)) 
+            while (_parseok && (currentToken() == namecolon)) 
             {
                 strcat(pattern, strToken().c_str());
                 argumentCount++;
@@ -578,11 +599,11 @@ bool Parser::keyContinuation(bool superReceiver)
     return(superReceiver);
 }
 
-void Parser::continuation(bool superReceiver)
+void continuation(bool superReceiver)
 {
     superReceiver = keyContinuation(superReceiver);
 
-    while (parseok && (currentToken() == closing) && strToken().compare(";") == 0) 
+    while (_parseok && (currentToken() == closing) && strToken().compare(";") == 0) 
     {
         genInstruction(DoSpecial, Duplicate);
         nextToken();
@@ -591,7 +612,7 @@ void Parser::continuation(bool superReceiver)
     }
 }
 
-void Parser::expression()
+void expression()
 {   
     bool superTerm;
     char assignname[60];
@@ -614,12 +635,12 @@ void Parser::expression()
     else 
     {
         superTerm = term();
-        if (parseok)
+        if (_parseok)
             continuation(superTerm);
     }
 }
 
-void Parser::assignment(char* name)
+void assignment(char* name)
 {   
     int i;
     bool done;
@@ -627,9 +648,9 @@ void Parser::assignment(char* name)
     done = false;
 
     /* it might be a temporary */
-    for (i = temporaryTop; (! done) && (i > 0); i--)
+    for (i = _temporaryTop; (! done) && (i > 0); i--)
     {
-        if (streq(name, temporaryName[i])) 
+        if (streq(name, _temporaryName[i])) 
         {
             expression();
             genInstruction(AssignTemporary, i-1);
@@ -638,9 +659,9 @@ void Parser::assignment(char* name)
     }
 
     /* or it might be an instance variable */
-    for (i = 1; (! done) && (i <= instanceTop); i++)
+    for (i = 1; (! done) && (i <= _instanceTop); i++)
     {
-        if (streq(name, instanceName[i])) 
+        if (streq(name, _instanceName[i])) 
         {
             expression();
             genInstruction(AssignInstance, i-1);
@@ -657,14 +678,14 @@ void Parser::assignment(char* name)
     }
 }
 
-void Parser::statement()
+void statement()
 {
 
     if ((currentToken() == binary) && strToken().compare("^") == 0) 
     {
         nextToken();
         expression();
-        if (blockstat == InBlock) 
+        if (_blocksat == InBlock) 
         {
             /* change return point before returning */
             genInstruction(PushConstant, contextConst);
@@ -679,10 +700,10 @@ void Parser::statement()
     }
 }
 
-void Parser::body()
+void body()
 {
     /* empty blocks are same as nil */
-    if ((blockstat == InBlock) || (blockstat == OptimizedBlock))
+    if ((_blocksat == InBlock) || (_blocksat == OptimizedBlock))
     {
         if ((currentToken() == closing) && strToken().compare("]") == 0) 
         {
@@ -691,7 +712,7 @@ void Parser::body()
         }
     }
 
-    while(parseok) 
+    while(_parseok) 
     {
         statement();
         if (currentToken() == closing)
@@ -712,14 +733,14 @@ void Parser::body()
                 break;  /* leaving result on stack */
             else 
             {
-                compilError(selector,"invalid statement ending; token is ",
+                compilError(_selector,"invalid statement ending; token is ",
                         strToken().c_str());
             }
         }
     }
 }
 
-void Parser::block()
+void block()
 {   
     int saveTemporary, argumentCount, fixLocation;
     object tempsym; 
@@ -727,30 +748,30 @@ void Parser::block()
     SObjectHandle* lock_newBlk = 0;
     enum blockstatus savebstat;
 
-    saveTemporary = temporaryTop;
-    savebstat = blockstat;
+    saveTemporary = _temporaryTop;
+    savebstat = _blocksat;
     argumentCount = 0;
     if ((nextToken() == binary) && strToken().compare(":") == 0) 
     {
-        while (parseok && (currentToken() == binary) && strToken().compare(":") == 0) 
+        while (_parseok && (currentToken() == binary) && strToken().compare(":") == 0) 
         {
             if (nextToken() != nameconst)
-                compilError(selector,"name must follow colon",
+                compilError(_selector,"name must follow colon",
                         "in block argument list");
-            if (++temporaryTop > maxTemporary)
-                maxTemporary = temporaryTop;
+            if (++_temporaryTop > _maxTemporary)
+                _maxTemporary = _temporaryTop;
             argumentCount++;
-            if (temporaryTop > temporaryLimit)
-                compilError(selector,"too many temporaries in method","");
+            if (_temporaryTop > temporaryLimit)
+                compilError(_selector,"too many temporaries in method","");
             else 
             {
                 tempsym = newSymbol(strToken().c_str());
-                temporaryName[temporaryTop] = tempsym->charPtr();
+                _temporaryName[_temporaryTop] = tempsym->charPtr();
             }
             nextToken();
         }
         if ((currentToken() != binary) || strToken().compare("|"))
-            compilError(selector,"block argument list must be terminated",
+            compilError(_selector,"block argument list must be terminated",
                     "by |");
         nextToken();
     }
@@ -764,157 +785,157 @@ void Parser::block()
     genInstruction(DoPrimitive, 2);
     genCode(29);
     genInstruction(DoSpecial, Branch);
-    fixLocation = codeTop;
+    fixLocation = _codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    newBlk->basicAtPut(bytecountPositionInBlock, newInteger(codeTop+1));
-    blockstat = InBlock;
+    newBlk->basicAtPut(bytecountPositionInBlock, newInteger(_codeTop+1));
+    _blocksat = InBlock;
     body();
     if ((currentToken() == closing) && strToken().compare("]") == 0)
         nextToken();
     else
-        compilError(selector,"block not terminated by ]","");
+        compilError(_selector,"block not terminated by ]","");
     genInstruction(DoSpecial, StackReturn);
-    codeArray[fixLocation] = codeTop+1;
-    temporaryTop = saveTemporary;
-    blockstat = savebstat;
+    _codeArray[fixLocation] = _codeTop+1;
+    _temporaryTop = saveTemporary;
+    _blocksat = savebstat;
 
     free_SObjectHandle(lock_newBlk);
 }
 
-void Parser::temporaries()
+void temporaries()
 {   
     object tempsym;
 
-    temporaryTop = 0;
+    _temporaryTop = 0;
     if ((currentToken() == binary) && strToken().compare("|") == 0) 
     {
         nextToken();
         while (currentToken() == nameconst) 
         {
-            if (++temporaryTop > maxTemporary)
-                maxTemporary = temporaryTop;
-            if (temporaryTop > temporaryLimit)
-                compilError(selector,"too many temporaries in method","");
+            if (++_temporaryTop > _maxTemporary)
+                _maxTemporary = _temporaryTop;
+            if (_temporaryTop > temporaryLimit)
+                compilError(_selector,"too many temporaries in method","");
             else 
             {
                 tempsym = newSymbol(strToken().c_str());
-                temporaryName[temporaryTop] = tempsym->charPtr();
+                _temporaryName[_temporaryTop] = tempsym->charPtr();
             }
             nextToken();
         }
         if ((currentToken() != binary) || strToken().compare("|"))
-            compilError(selector,"temporary list not terminated by bar","");
+            compilError(_selector,"temporary list not terminated by bar","");
         else
             nextToken();
     }
 }
 
-void Parser::messagePattern()
+void messagePattern()
 {   
     object argsym;
 
-    argumentTop = 0;
-    strcpy(selector, strToken().c_str());
+    _argumentTop = 0;
+    strcpy(_selector, strToken().c_str());
     if (currentToken() == nameconst)     /* unary message pattern */
         nextToken();
     else if (currentToken() == binary) 
     { /* binary message pattern */
         nextToken();
         if (currentToken() != nameconst) 
-            compilError(selector,"binary message pattern not followed by name",selector);
+            compilError(_selector,"binary message pattern not followed by name",_selector);
         argsym = newSymbol(strToken().c_str());
-        argumentName[++argumentTop] = argsym->charPtr();
+        _argumentName[++_argumentTop] = argsym->charPtr();
         nextToken();
     }
     else if (currentToken() == namecolon) 
     {  /* keyword message pattern */
-        selector[0] = '\0';
-        while (parseok && (currentToken() == namecolon)) 
+        _selector[0] = '\0';
+        while (_parseok && (currentToken() == namecolon)) 
         {
-            strcat(selector, strToken().c_str());
+            strcat(_selector, strToken().c_str());
             nextToken();
             if (currentToken() != nameconst)
-                compilError(selector,"keyword message pattern",
+                compilError(_selector,"keyword message pattern",
                         "not followed by a name");
-            if (++argumentTop > argumentLimit)
-                compilError(selector,"too many arguments in method","");
+            if (++_argumentTop > argumentLimit)
+                compilError(_selector,"too many arguments in method","");
             argsym = newSymbol(strToken().c_str());
-            argumentName[argumentTop] = argsym->charPtr();
+            _argumentName[_argumentTop] = argsym->charPtr();
             nextToken();
         }
     }
     else
-        compilError(selector,"illegal message selector", strToken().c_str());
+        compilError(_selector,"illegal message _selector", strToken().c_str());
 }
 
-bool Parser::parseCode(object method, bool savetext)
+bool parseCode(object method, bool savetext)
 {   
-    literalArray.clear();
-    parseok = true;
+    _literalArray.clear();
+    _parseok = true;
 
-    blockstat = NotInBlock;
-    codeTop = 0;
-    temporaryTop = argumentTop =0;
-    maxTemporary = 0;
+    _blocksat = NotInBlock;
+    _codeTop = 0;
+    _temporaryTop = _argumentTop =0;
+    _maxTemporary = 0;
 
     temporaries();
-    if (parseok)
+    if (_parseok)
         body();
     return(recordMethodBytecode(method, savetext));
 }
 
-bool Parser::parseMessageHandler(object method, bool savetext)
+bool parseMessageHandler(object method, bool savetext)
 {   
-    literalArray.clear();
-    parseok = true;
+    _literalArray.clear();
+    _parseok = true;
 
-    blockstat = NotInBlock;
-    codeTop = 0;
-    temporaryTop = argumentTop =0;
-    maxTemporary = 0;
+    _blocksat = NotInBlock;
+    _codeTop = 0;
+    _temporaryTop = _argumentTop =0;
+    _maxTemporary = 0;
 
     messagePattern();
-    if (parseok)
+    if (_parseok)
         temporaries();
-    if (parseok)
+    if (_parseok)
         body();
     return(recordMethodBytecode(method, savetext));
 }
 
 
-bool Parser::recordMethodBytecode(object method, bool savetext)
+bool recordMethodBytecode(object method, bool savetext)
 {
     int i;
     object bytecodes, theLiterals;
     byte *bp;
 
-    if (parseok) 
+    if (_parseok) 
     {
         genInstruction(DoSpecial, PopTop);
         genInstruction(DoSpecial, SelfReturn);
     }
 
-    if (! parseok) 
+    if (! _parseok) 
     {
         method->basicAtPut(bytecodesInMethod, nilobj);
     }
     else 
     {
-        bytecodes = newByteArray(codeTop);
+        bytecodes = newByteArray(_codeTop);
         bp = bytecodes->bytePtr();
-        for (i = 0; i < codeTop; i++) 
+        for (i = 0; i < _codeTop; i++) 
         {
-            bp[i] = codeArray[i];
+            bp[i] = _codeArray[i];
         }
-        method->basicAtPut(messageInMethod, newSymbol(selector));
+        method->basicAtPut(messageInMethod, newSymbol(_selector));
         method->basicAtPut(bytecodesInMethod, bytecodes);
-        if (!literalArray.empty()) 
+        if (!_literalArray.empty()) 
         {
-            theLiterals = newArray(literalArray.size());
-            for (i = 1; i <= literalArray.size(); i++) 
+            theLiterals = newArray(_literalArray.size());
+            for (i = 1; i <= _literalArray.size(); i++) 
             {
-                theLiterals->basicAtPut(i, literalArray[i-1]);
+                theLiterals->basicAtPut(i, _literalArray[i-1]);
             }
             method->basicAtPut(literalsInMethod, theLiterals);
         }
@@ -924,7 +945,7 @@ bool Parser::recordMethodBytecode(object method, bool savetext)
         }
         method->basicAtPut(stackSizeInMethod, newInteger(6));
         method->basicAtPut(temporarySizeInMethod,
-                newInteger(1 + maxTemporary));
+                newInteger(1 + _maxTemporary));
         if (savetext) 
         {
             method->basicAtPut(textInMethod, newStString(source()));

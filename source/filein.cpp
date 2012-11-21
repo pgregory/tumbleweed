@@ -258,7 +258,6 @@ static void readMethods(FILE* fd, bool printit)
     char *cp, *eoftest, lineBuffer[LINEBUFFERSIZE];
     object protocol = 0;
     SObjectHandle *lock_protocol = 0;
-    Parser pp;
 
     lineBuffer[0] = '\0';
     protocol = nilobj;
@@ -267,7 +266,7 @@ static void readMethods(FILE* fd, bool printit)
     classObj = findClass(strToken().c_str());
     lock_classObj = new_SObjectHandle_from_object(classObj);
 
-    pp.setInstanceVariables(classObj);
+    setInstanceVariables(classObj);
     if (printit)
         cp = classObj->basicAt(nameInClass)->charPtr();
 
@@ -307,7 +306,7 @@ static void readMethods(FILE* fd, bool printit)
         theMethod = newMethod();
         lock_theMethod = new_SObjectHandle_from_object(theMethod);
         resetLexer(textBuffer);
-        if (pp.parseMessageHandler(theMethod, savetext)) {
+        if (parseMessageHandler(theMethod, savetext)) {
             selector = theMethod->basicAt(messageInMethod);
             lock_selector = new_SObjectHandle_from_object(selector);
             theMethod->basicAtPut(methodClassInMethod, classObj);

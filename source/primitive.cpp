@@ -340,10 +340,9 @@ static object trinaryPrims(int number, object firstarg, object secondarg, object
 
     case 9:         /* compile method */
       {
-        Parser pp = Parser();
         resetLexer(secondarg->charPtr());
-        pp.setInstanceVariables(firstarg);
-        if (pp.parseMessageHandler(thirdarg, false)) {
+        setInstanceVariables(firstarg);
+        if (parseMessageHandler(thirdarg, false)) {
           flushCache(thirdarg->basicAt(messageInMethod), firstarg);
           thirdarg->basicAtPut(methodClassInMethod, firstarg);
           returnedObject = booleanSyms[booleanTrue];
