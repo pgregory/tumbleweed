@@ -29,8 +29,6 @@
 #include <math.h>
 #include <time.h>
 
-#include <sstream>
-
 #if !defined WIN32
 #include <sys/time.h>
 #else
@@ -68,7 +66,7 @@ static object zeroaryPrims(int number)
       break;
 
     case 2:
-      fprintf(stderr, "%s", statsString().c_str());
+      //fprintf(stderr, "%s", statsString().c_str());
       break;
 
     case 3:         /* return a random number */
@@ -612,14 +610,14 @@ static object floatBinary(int number, double first, double second)
 static object cPointerUnary(int number, void* firstarg)
 {   
   object returnedObject;
+  char cpointerString[100];
 
   switch(number) 
   {
     case 1:     /* cPointer value asString */
       {
-        std::stringstream ss;
-        ss << firstarg;
-        returnedObject = newStString(ss.str().c_str());
+        snprintf(cpointerString, 100, "%p", firstarg);
+        returnedObject = newStString(cpointerString);
       }
       break;
     default:

@@ -8,7 +8,6 @@
    will replace this file with another.
    */
 
-#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #if !defined WIN32
@@ -676,15 +675,16 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 object ffiPrimitive(int number, object* arguments)
 {   
   object returnedObject = nilobj;
-  std::stringstream libName;
+  char libName[100];
+  char err[100];
 
   switch(number - 180) {
     case 0: /* dlopen */
 #if !defined WIN32
           {
         char* p = arguments[0]->charPtr();
-        libName << p << "." << SO_EXT;
-        FFI_LibraryHandle handle = dlopen(libName.str().c_str(), RTLD_LAZY);
+        snprintf(libName, 100, "%s.%s", p, SO_EXT);
+        FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
           returnedObject = MemoryManager::Instance()->newCPointer(handle);
         else 
@@ -697,14 +697,14 @@ object ffiPrimitive(int number, object* arguments)
 #else
           {
         char* p = arguments[0]->charPtr();
-        libName << p << "." << SO_EXT;
-        FFI_LibraryHandle handle = LoadLibrary(libName.str().c_str());
+        snprintf(libName, 100, "%s.%s", p, SO_EXT);
+        FFI_LibraryHandle handle = LoadLibrary(libName);
         if(NULL != handle)
           returnedObject = MemoryManager::Instance()->newCPointer(handle);
         else 
         {
           // \todo: GetLastError() etc.
-          sysWarn("library not found",libName.str().c_str());
+          sysWarn("library not found",libName);
           returnedObject = nilobj;
         }
       }
@@ -724,9 +724,8 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = MemoryManager::Instance()->newCPointer(func);
           else
           {
-            std::stringstream err;
-            err << "function " << p << " not found in library";
-            sysWarn(err.str().c_str(), "ffiPrimitive");
+            snprintf(err, 100, "function %s not found in library", p);
+            sysWarn(err, "ffiPrimitive");
             returnedObject = nilobj;
           }
         }
@@ -743,9 +742,8 @@ object ffiPrimitive(int number, object* arguments)
             returnedObject = MemoryManager::Instance()->newCPointer(func);
           else
           {
-            std::stringstream err;
-            err << "function " << p << " not found in library";
-            sysWarn(err.str().c_str(), "ffiPrimitive");
+            snprintf(err, 100, "function %s not found in library", p);
+            sysWarn(err, "ffiPrimitive");
             returnedObject = nilobj;
           }
         }

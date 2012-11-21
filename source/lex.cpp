@@ -12,7 +12,6 @@
 # include "env.h"
 # include "memory.h"
 # include "lex.h"
-# include <deque>
 
 static tokentype   _currentToken;
 static int _tokenInteger;
@@ -21,12 +20,13 @@ static char _tokenString[80];
 static const char* _source;
 static const char *_cp;
 static char _cc;
-static std::deque<char> _pushBuffer;
+static int _pbTop;
+static char _pushBuffer[20];
 
 
 void resetLexer(const char* src)
 {
-    _pushBuffer.clear();
+    _pbTop = 0;
     _source = src;
     _cp = _source;
     /* get first token */
@@ -36,17 +36,14 @@ void resetLexer(const char* src)
 /* pushBack - push one character back into the input */
 static void pushBack(char c)
 {
-    _pushBuffer.push_back(c);
+    _pushBuffer[_pbTop++] = c;
 }
 
 /* nextChar - retrieve the next char, from buffer or input */
 static char nextChar()
 {
-    if (!_pushBuffer.empty()) 
-    {
-        _cc = _pushBuffer.back();
-        _pushBuffer.pop_back();
-    }
+    if (_pbTop > 0) 
+        _cc = _pushBuffer[--_pbTop];
     else if (*_cp) 
         _cc = *_cp++;
     else 

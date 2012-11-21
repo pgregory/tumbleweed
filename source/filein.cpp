@@ -6,8 +6,6 @@
 */
 
 
-#include <sstream>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -123,7 +121,7 @@ static void readRawClassDeclaration()
 {   
     object classObj, vars;
     SObjectHandle *lock_classObj, *lock_vars;
-    std::string className, metaName, superName;
+    char className[100], metaName[100], superName[100];
     int i, size, instanceTop;
     // todo: fixed length variables array!
     object instanceVariables[15];
@@ -131,20 +129,20 @@ static void readRawClassDeclaration()
 
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = strToken();
+    strncpy(className, strToken(), 100);
     size = 0;
     if (nextToken() == nameconst) 
     { /* read metaclass name */
-        metaName = strToken();
+        strncpy(metaName, strToken(), 100);
         nextToken();
     }
     if (currentToken() == nameconst) 
     { /* read superclass name */
-        superName = strToken();
+        strncpy(superName, strToken(), 100);
         nextToken();
     }
 
-    classObj = createRawClass(className.c_str(), metaName.c_str(), superName.c_str());
+    classObj = createRawClass(className, metaName, superName);
     lock_classObj = new_SObjectHandle_from_object(classObj);
 
     // Get the current class size, we'll build on this as 
@@ -185,7 +183,7 @@ static void readClassDeclaration()
 {   
     object classObj, metaObj, vars;
     SObjectHandle *lock_classObj, *lock_metaObj, *lock_vars = 0;
-    std::string className, superName;
+    char className[100], superName[100];
     int i, size, instanceTop = 0;
     // todo: fixed length variables array!
     object instanceVariables[15];
@@ -194,24 +192,26 @@ static void readClassDeclaration()
     char metaClassName[100];
     char metaSuperClassName[100];
 
+    superName[0] = '\0';
+
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
-    className = strToken();
+    strncpy(className, strToken(), 100);
     if (nextToken() == nameconst) 
     { /* read superclass name */
-        superName = strToken();
+        strncpy(superName, strToken(), 100);
         nextToken();
     }
     // todo: sprintf eradication!
-    sprintf(metaClassName, "Meta%s", className.c_str());
-    if(!superName.empty())
-        sprintf(metaSuperClassName, "Meta%s", superName.c_str());
+    sprintf(metaClassName, "Meta%s", className);
+    if(strlen(superName) != 0)
+        sprintf(metaSuperClassName, "Meta%s", superName);
     else
         sprintf(metaSuperClassName, "Class");
 
     metaObj = createRawClass(metaClassName, "Class", metaSuperClassName);
     lock_metaObj = new_SObjectHandle_from_object(metaObj);
-    classObj = createRawClass(className.c_str(), metaClassName, superName.c_str());
+    classObj = createRawClass(className, metaClassName, superName);
     lock_classObj = new_SObjectHandle_from_object(classObj);
     classObj->_class = metaObj;
 

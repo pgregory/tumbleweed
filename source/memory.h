@@ -160,15 +160,6 @@ size_t freeSlotsCount();
 
 size_t storageSize();
 
-/*! Dump object memory stats into a string.
- *
- * Get various stats about the status of the memory
- * manager into a string for display.
- *
- * \return A string showing the current memory manager status.
- */
-std::string statsString();
-
 /*! Copy data from an object into a new array.
  *
  * Copy the object ID's from the given object's data area

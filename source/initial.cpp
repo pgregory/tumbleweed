@@ -4,7 +4,6 @@
 
     initial image maker
 */
-#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +24,7 @@ int initial = 1;    /* making initial image */
 int main(int argc, char** argv) 
 {   
     int i;
+    char methbuf[500];
 
     initialiseInterpreter();
     makeInitialImage();
@@ -34,11 +34,10 @@ int main(int argc, char** argv)
     initFFISymbols();
 #endif
 
-    for (i = 1; i < argc; i++) {
-        std::stringstream methbuf;
-        //fprintf(stderr,"%s:\n", argv[i]);
-        methbuf << "<120 1 '" << argv[i] << "' 'r'>. <123 1>. <121 1>";
-        runCode(methbuf.str().c_str());
+    for (i = 1; i < argc; i++) 
+    {
+        snprintf(methbuf, 500, "<120 1 '%s' 'r'>. <123 1>. <121 1>", argv[i]);
+        runCode(methbuf);
 
     }
 

@@ -90,11 +90,18 @@ enum ClassSymbols {
 # define CLASSOBJECT(cname) (classSyms[k##cname])
 #endif
 
-extern std::vector<object> unSyms, binSyms, classSyms;
+extern object unSyms[];
+extern const int num_unSyms;
+
+extern object binSyms[];
+extern const int num_binSyms;
+
+extern object classSyms[];
+extern const int num_classSyms;
 
 # define booleanTrue 0
 # define booleanFalse 1
-extern std::vector<object> booleanSyms;
+extern object booleanSyms[];
 
 extern void nameTableInsert( object, int, object, object);
 /*extern object hashEachElement( OBJ X INT X INT FUNC );*/

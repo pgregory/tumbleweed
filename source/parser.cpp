@@ -32,7 +32,8 @@
 bool _parseok;            /* parse still ok? */
 int _codeTop;            /* top position filled in code array */
 byte _codeArray[codeLimit];  /* bytecode array */
-std::vector<object> _literalArray;
+int _literalTop;
+object _literalArray[literalLimit];
 int _temporaryTop;
 char *_temporaryName[temporaryLimit];
 int _argumentTop;
@@ -108,8 +109,13 @@ void genInstruction(int high, int low)
 
 int genLiteral(object aLiteral)
 {
-    _literalArray.push_back(aLiteral);
-    return(_literalArray.size()-1);
+    if (_literalTop >= literalLimit)
+        compilError(_selector,"too many literals in method","");
+    else 
+    {
+        _literalArray[++_literalTop] = aLiteral;
+    }
+    return(_literalTop - 1);
 }
 
 void genInteger(int val)    /* generate an integer push */
@@ -212,7 +218,7 @@ int parseArray()
     int i, size, base;
     object newLit, obj;
 
-    base = _literalArray.size();
+    base = _literalTop;
     nextToken();
     while (_parseok && (currentToken() != closing)) 
     {
@@ -288,13 +294,14 @@ int parseArray()
             nextToken();
     }
 
-    size = _literalArray.size() - base;
+    size = _literalTop - base;
     newLit = newArray(size);
     for (i = size; i >= 1; i--) 
     {
-        obj = _literalArray.back();
+        obj = _literalArray[_literalTop];
         newLit->basicAtPut(i, obj);
-        _literalArray.pop_back();
+        _literalArray[_literalTop] = nilobj;
+        _literalTop = _literalTop - 1;
     }
     return(genLiteral(newLit));
 }
@@ -402,7 +409,7 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
 
     if ((! toSuper) && (argumentCount == 0))
     {
-        for (i = 0; (! sent) && i < unSyms.size() ; i++)
+        for (i = 0; (! sent) && i < num_unSyms ; i++)
         {
             if (messagesym == unSyms[i]) {
                 genInstruction(SendUnary, i);
@@ -413,7 +420,7 @@ void genMessage(bool toSuper, int argumentCount, object messagesym)
 
     if ((! toSuper) && (argumentCount == 1))
     {
-        for (i = 0; (! sent) && i < binSyms.size(); i++)
+        for (i = 0; (! sent) && i < num_binSyms; i++)
         {
             if (messagesym == binSyms[i]) 
             {
@@ -871,12 +878,11 @@ void messagePattern()
 
 bool parseCode(object method, bool savetext)
 {   
-    _literalArray.clear();
     _parseok = true;
 
     _blocksat = NotInBlock;
     _codeTop = 0;
-    _temporaryTop = _argumentTop =0;
+    _literalTop = _temporaryTop = _argumentTop =0;
     _maxTemporary = 0;
 
     temporaries();
@@ -887,12 +893,11 @@ bool parseCode(object method, bool savetext)
 
 bool parseMessageHandler(object method, bool savetext)
 {   
-    _literalArray.clear();
     _parseok = true;
 
     _blocksat = NotInBlock;
     _codeTop = 0;
-    _temporaryTop = _argumentTop =0;
+    _literalTop = _temporaryTop = _argumentTop =0;
     _maxTemporary = 0;
 
     messagePattern();
@@ -930,12 +935,12 @@ bool recordMethodBytecode(object method, bool savetext)
         }
         method->basicAtPut(messageInMethod, newSymbol(_selector));
         method->basicAtPut(bytecodesInMethod, bytecodes);
-        if (!_literalArray.empty()) 
+        if (_literalTop > 0) 
         {
-            theLiterals = newArray(_literalArray.size());
-            for (i = 1; i <= _literalArray.size(); i++) 
+            theLiterals = newArray(_literalTop);
+            for (i = 1; i <= _literalTop; ++i) 
             {
-                theLiterals->basicAtPut(i, _literalArray[i-1]);
+                theLiterals->basicAtPut(i, _literalArray[i]);
             }
             method->basicAtPut(literalsInMethod, theLiterals);
         }

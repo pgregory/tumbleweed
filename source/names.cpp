@@ -147,19 +147,54 @@ object nameTableLookup(object dict, const char* str)
     return hashEachElement(dict, strHash(str), strTest);
 }
 
-std::vector<object> booleanSyms;
-std::vector<object> unSyms;
-std::vector<object> binSyms;
-std::vector<object> classSyms;
+const char *unStrs[] = {
+    "isNil", 
+    "notNil", 
+    "value", 
+    "new", 
+    "class", 
+    "size",
+    "basicSize", 
+    "print", 
+    "printString", 
+};
 
-const char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
-"basicSize", "print", "printString", 0};
+const int num_unSyms = sizeof(unStrs)/sizeof(unStrs[0]);
+object unSyms[num_unSyms];
 
-const char *binStrs[] = {"+", "-", "<", ">", "<=", ">=", "=", "~=", "*", 
-"quo:", "rem:", "bitAnd:", "bitXor:", "==",
-",", "at:", "basicAt:", "do:", "coerce:", "error:", "includesKey:",
-"isMemberOf:", "new:", "to:", "value:", "whileTrue:", "addFirst:", "addLast:",
-0};
+const char *binStrs[] = {
+    "+", 
+    "-", 
+    "<", 
+    ">", 
+    "<=", 
+    ">=", 
+    "=", 
+    "~=", 
+    "*", 
+    "quo:", 
+    "rem:", 
+    "bitAnd:", 
+    "bitXor:", 
+    "==",
+    ",", 
+    "at:", 
+    "basicAt:", 
+    "do:", 
+    "coerce:", 
+    "error:", 
+    "includesKey:",
+    "isMemberOf:", 
+    "new:", 
+    "to:", 
+    "value:", 
+    "whileTrue:", 
+    "addFirst:", 
+    "addLast:",
+};
+
+const int num_binSyms = sizeof(binStrs)/sizeof(binStrs[0]);
+object binSyms[num_binSyms];
 
 const struct { 
     const char* name; 
@@ -180,22 +215,24 @@ const struct {
     { "String", kString },
     { "Symbol", kSymbol },
     { "Process", kProcess },
-
-    { 0, k__lastClass },
 };
+
+const int num_classSyms = sizeof(classStrs)/sizeof(classStrs[0]);
+object classSyms[num_classSyms];
+
+object booleanSyms[2];
 
 /* initialize common symbols used by the parser and interpreter */
 void initCommonSymbols()
 {   
     int i;
 
-    booleanSyms.push_back(globalSymbol("true"));
-    booleanSyms.push_back(globalSymbol("false"));
-    for (i = 0; unStrs[i]; ++i)
-        unSyms.push_back(newSymbol(unStrs[i]));
-    for (i = 0; binStrs[i]; ++i)
-        binSyms.push_back(newSymbol(binStrs[i]));
-    classSyms.resize(k__lastClass);
-    for (i = 0; classStrs[i].index != k__lastClass; ++i)
+    booleanSyms[0] = globalSymbol("true");
+    booleanSyms[1] = globalSymbol("false");
+    for (i = 0; i < num_unSyms; ++i)
+        unSyms[i] = newSymbol(unStrs[i]);
+    for (i = 0; i < num_binSyms; ++i)
+        binSyms[i] = newSymbol(binStrs[i]);
+    for (i = 0; i < num_classSyms; ++i)
         classSyms[classStrs[i].index] = globalSymbol(classStrs[i].name);
 }

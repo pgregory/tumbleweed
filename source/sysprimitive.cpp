@@ -96,7 +96,7 @@ object sysPrimitive(int number, object* arguments)
 
     case 5:
       {
-        returnedObject = newStString(statsString().c_str());
+        //returnedObject = newStString(statsString().c_str());
       }
       break;
 

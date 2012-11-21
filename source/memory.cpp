@@ -21,8 +21,6 @@
 
 */
 
-#include <sstream>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -133,12 +131,6 @@ size_t freeSlotsCount()
 {   
     return 0;
 }
-
-std::string statsString()
-{
-    return "";
-}
-
 
 object newArray(int size)
 {   
