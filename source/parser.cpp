@@ -192,79 +192,79 @@ int Parser::parseArray()
     object newLit, obj;
 
     base = literalArray.size();
-    m_lexer.nextToken();
-    while (parseok && (m_lexer.currentToken() != closing)) 
+    nextToken();
+    while (parseok && (currentToken() != closing)) 
     {
-        switch(m_lexer.currentToken()) 
+        switch(currentToken()) 
         {
             case arraybegin:
                 parseArray();
                 break;
 
             case intconst:
-                genLiteral(newInteger(m_lexer.intToken()));
-                m_lexer.nextToken();
+                genLiteral(newInteger(intToken()));
+                nextToken();
                 break;
 
             case floatconst:
-                genLiteral(newFloat(m_lexer.floatToken()));
-                m_lexer.nextToken();
+                genLiteral(newFloat(floatToken()));
+                nextToken();
                 break;
 
             case nameconst: case namecolon: case symconst:
-                genLiteral(newSymbol(m_lexer.strToken().c_str()));
-                m_lexer.nextToken();
+                genLiteral(newSymbol(strToken().c_str()));
+                nextToken();
                 break;
 
             case binary:
-                if (m_lexer.strToken().compare("(") == 0) 
+                if (strToken().compare("(") == 0) 
                 {
                     parseArray();
                     break;
                 }
-                if (m_lexer.strToken().compare("-") == 0 && isdigit(m_lexer.peek())) 
+                if (strToken().compare("-") == 0 && isdigit(peek())) 
                 {
-                    m_lexer.nextToken();
-                    if (m_lexer.currentToken() == intconst)
-                        genLiteral(newInteger(-m_lexer.intToken()));
-                    else if (m_lexer.currentToken() == floatconst) 
+                    nextToken();
+                    if (currentToken() == intconst)
+                        genLiteral(newInteger(-intToken()));
+                    else if (currentToken() == floatconst) 
                     {
-                        genLiteral(newFloat(-m_lexer.floatToken()));
+                        genLiteral(newFloat(-floatToken()));
                     }
                     else
                         compilError(selector,"negation not followed", "by number");
-                    m_lexer.nextToken();
+                    nextToken();
                     break;
                 }
-                genLiteral(newSymbol(m_lexer.strToken().c_str()));
-                m_lexer.nextToken();
+                genLiteral(newSymbol(strToken().c_str()));
+                nextToken();
                 break;
 
             case charconst:
-                genLiteral(newChar( m_lexer.intToken()));
-                m_lexer.nextToken();
+                genLiteral(newChar( intToken()));
+                nextToken();
                 break;
 
             case strconst:
-                genLiteral(newStString(m_lexer.strToken().c_str()));
-                m_lexer.nextToken();
+                genLiteral(newStString(strToken().c_str()));
+                nextToken();
                 break;
 
             default:
                 compilError(selector,"illegal text in literal array",
-                        m_lexer.strToken().c_str());
-                m_lexer.nextToken();
+                        strToken().c_str());
+                nextToken();
                 break;
         }
     }
 
     if (parseok)
     {
-        if (m_lexer.strToken().compare(")"))
+        if (strToken().compare(")"))
             compilError(selector,"array not terminated by right parenthesis",
-                    m_lexer.strToken().c_str());
+                    strToken().c_str());
         else
-            m_lexer.nextToken();
+            nextToken();
     }
 
     size = literalArray.size() - base;
@@ -281,76 +281,76 @@ int Parser::parseArray()
 bool Parser::term()
 {   
     bool superTerm = false;  /* true if term is pseudo var super */
-    tokentype token = m_lexer.currentToken();
+    tokentype token = currentToken();
 
     if (token == nameconst) 
     {
-        superTerm = nameTerm(m_lexer.strToken().c_str());
-        m_lexer.nextToken();
+        superTerm = nameTerm(strToken().c_str());
+        nextToken();
     }
     else if (token == intconst) 
     {
-        genInteger(m_lexer.intToken());
-        m_lexer.nextToken();
+        genInteger(intToken());
+        nextToken();
     }
     else if (token == floatconst) 
     {
-        genInstruction(PushLiteral, genLiteral(newFloat(m_lexer.floatToken())));
-        m_lexer.nextToken();
+        genInstruction(PushLiteral, genLiteral(newFloat(floatToken())));
+        nextToken();
     }
-    else if ((token == binary) && m_lexer.strToken().compare("-") == 0) 
+    else if ((token == binary) && strToken().compare("-") == 0) 
     {
-        token = m_lexer.nextToken();
+        token = nextToken();
         if (token == intconst)
-            genInteger(- m_lexer.intToken());
+            genInteger(- intToken());
         else if (token == floatconst) 
         {
             genInstruction(PushLiteral,
-                    genLiteral(newFloat(-m_lexer.floatToken())));
+                    genLiteral(newFloat(-floatToken())));
         }
         else
             compilError(selector,"negation not followed",
                     "by number");
-        m_lexer.nextToken();
+        nextToken();
     }
     else if (token == charconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(newChar(m_lexer.intToken())));
-        m_lexer.nextToken();
+                genLiteral(newChar(intToken())));
+        nextToken();
     }
     else if (token == symconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(newSymbol(m_lexer.strToken().c_str())));
-        m_lexer.nextToken();
+                genLiteral(newSymbol(strToken().c_str())));
+        nextToken();
     }
     else if (token == strconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(newStString(m_lexer.strToken().c_str())));
-        m_lexer.nextToken();
+                genLiteral(newStString(strToken().c_str())));
+        nextToken();
     }
     else if (token == arraybegin) 
     {
         genInstruction(PushLiteral, parseArray());
     }
-    else if ((token == binary) && m_lexer.strToken().compare("(") == 0) 
+    else if ((token == binary) && strToken().compare("(") == 0) 
     {
-        m_lexer.nextToken();
+        nextToken();
         expression();
         if (parseok)
-            if ((m_lexer.currentToken() != closing) || m_lexer.strToken().compare(")"))
+            if ((currentToken() != closing) || strToken().compare(")"))
                 compilError(selector,"Missing Right Parenthesis","");
             else
-                m_lexer.nextToken();
+                nextToken();
     }
-    else if ((token == binary) && m_lexer.strToken().compare("<") == 0)
+    else if ((token == binary) && strToken().compare("<") == 0)
         parsePrimitive();
-    else if ((token == binary) && m_lexer.strToken().compare("[") == 0)
+    else if ((token == binary) && strToken().compare("[") == 0)
         block();
     else
-        compilError(selector,"invalid expression start", m_lexer.strToken().c_str());
+        compilError(selector,"invalid expression start", strToken().c_str());
 
     return(superTerm);
 }
@@ -359,19 +359,19 @@ void Parser::parsePrimitive()
 {   
     int primitiveNumber, argumentCount;
 
-    if (m_lexer.nextToken() != intconst)
+    if (nextToken() != intconst)
         compilError(selector,"primitive number missing","");
-    primitiveNumber = m_lexer.intToken();
-    m_lexer.nextToken();
+    primitiveNumber = intToken();
+    nextToken();
     argumentCount = 0;
-    while (parseok && ! ((m_lexer.currentToken() == binary) && m_lexer.strToken().compare(">") == 0)) 
+    while (parseok && ! ((currentToken() == binary) && strToken().compare(">") == 0)) 
     {
         term();
         argumentCount++;
     }
     genInstruction(DoPrimitive, argumentCount);
     genCode(primitiveNumber);
-    m_lexer.nextToken();
+    nextToken();
 }
 
 void Parser::genMessage(bool toSuper, int argumentCount, object messagesym)
@@ -420,36 +420,36 @@ bool Parser::unaryContinuation(bool superReceiver)
     int i;
     bool sent;
 
-    while (parseok && (m_lexer.currentToken() == nameconst)) 
+    while (parseok && (currentToken() == nameconst)) 
     {
         /* first check to see if it could be a temp by mistake */
         for (i=1; i < temporaryTop; i++)
         {
-            if (m_lexer.strToken().compare(temporaryName[i]) == 0)
+            if (strToken().compare(temporaryName[i]) == 0)
                 compilWarn(selector,"message same as temporary:",
-                        m_lexer.strToken().c_str());
+                        strToken().c_str());
         }
         for (i=1; i < argumentTop; i++)
         {
-            if (m_lexer.strToken().compare(argumentName[i]) == 0)
+            if (strToken().compare(argumentName[i]) == 0)
                 compilWarn(selector,"message same as argument:",
-                        m_lexer.strToken().c_str());
+                        strToken().c_str());
         }
         /* the next generates too many spurious messages */
         /* for (i=1; i < instanceTop; i++)
-           if (streq(m_lexer.tokenString, instanceName[i]))
+           if (streq(tokenString, instanceName[i]))
            compilWarn(selector,"message same as instance",
-           m_lexer.tokenString); */
+           tokenString); */
 
         sent = false;
 
         if (! sent) 
         {
-            genMessage(superReceiver, 0, newSymbol(m_lexer.strToken().c_str()));
+            genMessage(superReceiver, 0, newSymbol(strToken().c_str()));
         }
         /* once a message is sent to super, reciever is not super */
         superReceiver = false;
-        m_lexer.nextToken();
+        nextToken();
     }
     return(superReceiver);
 }
@@ -461,11 +461,11 @@ bool Parser::binaryContinuation(bool superReceiver)
     SObjectHandle* lock_messageSym = 0;
 
     superReceiver = unaryContinuation(superReceiver);
-    while (parseok && (m_lexer.currentToken() == binary)) 
+    while (parseok && (currentToken() == binary)) 
     {
-        messagesym = newSymbol(m_lexer.strToken().c_str());
+        messagesym = newSymbol(strToken().c_str());
         lock_messageSym = new_SObjectHandle_from_object(messagesym);
-        m_lexer.nextToken();
+        nextToken();
         superTerm = term();
         unaryContinuation(superTerm);
         genMessage(superReceiver, 1, messagesym);
@@ -486,16 +486,16 @@ int Parser::optimizeBlock(int instruction, bool dopop)
     genCode(0);
     if (dopop)
         genInstruction(DoSpecial, PopTop);
-    m_lexer.nextToken();
-    if (m_lexer.strToken().compare("[") == 0) 
+    nextToken();
+    if (strToken().compare("[") == 0) 
     {
-        m_lexer.nextToken();
+        nextToken();
         if (blockstat == NotInBlock)
             blockstat = OptimizedBlock;
         body();
-        if (m_lexer.strToken().compare("]"))
+        if (strToken().compare("]"))
             compilError(selector,"missing close","after block");
-        m_lexer.nextToken();
+        nextToken();
     }
     else 
     {
@@ -515,27 +515,27 @@ bool Parser::keyContinuation(bool superReceiver)
     char pattern[80];
 
     superReceiver = binaryContinuation(superReceiver);
-    if (m_lexer.currentToken() == namecolon) 
+    if (currentToken() == namecolon) 
     {
-        if (m_lexer.strToken().compare("ifTrue:") == 0) 
+        if (strToken().compare("ifTrue:") == 0) 
         {
             i = optimizeBlock(BranchIfFalse, false);
-            if (m_lexer.strToken().compare("ifFalse:") == 0) 
+            if (strToken().compare("ifFalse:") == 0) 
             {
                 codeArray[i] = codeTop + 3;
                 optimizeBlock(Branch, true);
             }
         }
-        else if (m_lexer.strToken().compare("ifFalse:") == 0) 
+        else if (strToken().compare("ifFalse:") == 0) 
         {
             i = optimizeBlock(BranchIfTrue, false);
-            if (m_lexer.strToken().compare("ifTrue:") == 0) 
+            if (strToken().compare("ifTrue:") == 0) 
             {
                 codeArray[i] = codeTop + 3;
                 optimizeBlock(Branch, true);
             }
         }
-        else if (m_lexer.strToken().compare("whileTrue:") == 0) 
+        else if (strToken().compare("whileTrue:") == 0) 
         {
             j = codeTop;
             genInstruction(DoSpecial, Duplicate);
@@ -547,19 +547,19 @@ bool Parser::keyContinuation(bool superReceiver)
             codeArray[i] = codeTop+1;
             genInstruction(DoSpecial, PopTop);
         }
-        else if (m_lexer.strToken().compare("and:") == 0)
+        else if (strToken().compare("and:") == 0)
             optimizeBlock(AndBranch, false);
-        else if (m_lexer.strToken().compare("or:") == 0)
+        else if (strToken().compare("or:") == 0)
             optimizeBlock(OrBranch, false);
         else 
         {
             pattern[0] = '\0';
             argumentCount = 0;
-            while (parseok && (m_lexer.currentToken() == namecolon)) 
+            while (parseok && (currentToken() == namecolon)) 
             {
-                strcat(pattern, m_lexer.strToken().c_str());
+                strcat(pattern, strToken().c_str());
                 argumentCount++;
-                m_lexer.nextToken();
+                nextToken();
                 superTerm = term();
                 binaryContinuation(superTerm);
             }
@@ -582,10 +582,10 @@ void Parser::continuation(bool superReceiver)
 {
     superReceiver = keyContinuation(superReceiver);
 
-    while (parseok && (m_lexer.currentToken() == closing) && m_lexer.strToken().compare(";") == 0) 
+    while (parseok && (currentToken() == closing) && strToken().compare(";") == 0) 
     {
         genInstruction(DoSpecial, Duplicate);
-        m_lexer.nextToken();
+        nextToken();
         keyContinuation(superReceiver);
         genInstruction(DoSpecial, PopTop);
     }
@@ -596,13 +596,13 @@ void Parser::expression()
     bool superTerm;
     char assignname[60];
 
-    if (m_lexer.currentToken() == nameconst) 
+    if (currentToken() == nameconst) 
     {   /* possible assignment */
-        strcpy(assignname, m_lexer.strToken().c_str());
-        m_lexer.nextToken();
-        if ((m_lexer.currentToken() == binary) && m_lexer.strToken().compare("<-") == 0) 
+        strcpy(assignname, strToken().c_str());
+        nextToken();
+        if ((currentToken() == binary) && strToken().compare("<-") == 0) 
         {
-            m_lexer.nextToken();
+            nextToken();
             assignment(assignname);
         }
         else 
@@ -660,9 +660,9 @@ void Parser::assignment(char* name)
 void Parser::statement()
 {
 
-    if ((m_lexer.currentToken() == binary) && m_lexer.strToken().compare("^") == 0) 
+    if ((currentToken() == binary) && strToken().compare("^") == 0) 
     {
-        m_lexer.nextToken();
+        nextToken();
         expression();
         if (blockstat == InBlock) 
         {
@@ -684,7 +684,7 @@ void Parser::body()
     /* empty blocks are same as nil */
     if ((blockstat == InBlock) || (blockstat == OptimizedBlock))
     {
-        if ((m_lexer.currentToken() == closing) && m_lexer.strToken().compare("]") == 0) 
+        if ((currentToken() == closing) && strToken().compare("]") == 0) 
         {
             genInstruction(PushConstant, nilConst);
             return;
@@ -694,11 +694,11 @@ void Parser::body()
     while(parseok) 
     {
         statement();
-        if (m_lexer.currentToken() == closing)
+        if (currentToken() == closing)
         {
-            if (m_lexer.strToken().compare(".") == 0) 
+            if (strToken().compare(".") == 0) 
             {
-                if (m_lexer.nextToken() == inputend)
+                if (nextToken() == inputend)
                     break;
                 else  /* pop result, go to next statement */
                     genInstruction(DoSpecial, PopTop);
@@ -708,12 +708,12 @@ void Parser::body()
         }
         else
         {
-            if (m_lexer.currentToken() == inputend)
+            if (currentToken() == inputend)
                 break;  /* leaving result on stack */
             else 
             {
                 compilError(selector,"invalid statement ending; token is ",
-                        m_lexer.strToken().c_str());
+                        strToken().c_str());
             }
         }
     }
@@ -730,11 +730,11 @@ void Parser::block()
     saveTemporary = temporaryTop;
     savebstat = blockstat;
     argumentCount = 0;
-    if ((m_lexer.nextToken() == binary) && m_lexer.strToken().compare(":") == 0) 
+    if ((nextToken() == binary) && strToken().compare(":") == 0) 
     {
-        while (parseok && (m_lexer.currentToken() == binary) && m_lexer.strToken().compare(":") == 0) 
+        while (parseok && (currentToken() == binary) && strToken().compare(":") == 0) 
         {
-            if (m_lexer.nextToken() != nameconst)
+            if (nextToken() != nameconst)
                 compilError(selector,"name must follow colon",
                         "in block argument list");
             if (++temporaryTop > maxTemporary)
@@ -744,15 +744,15 @@ void Parser::block()
                 compilError(selector,"too many temporaries in method","");
             else 
             {
-                tempsym = newSymbol(m_lexer.strToken().c_str());
+                tempsym = newSymbol(strToken().c_str());
                 temporaryName[temporaryTop] = tempsym->charPtr();
             }
-            m_lexer.nextToken();
+            nextToken();
         }
-        if ((m_lexer.currentToken() != binary) || m_lexer.strToken().compare("|"))
+        if ((currentToken() != binary) || strToken().compare("|"))
             compilError(selector,"block argument list must be terminated",
                     "by |");
-        m_lexer.nextToken();
+        nextToken();
     }
     newBlk = newBlock();
     lock_newBlk = new_SObjectHandle_from_object(newBlk);
@@ -770,8 +770,8 @@ void Parser::block()
     newBlk->basicAtPut(bytecountPositionInBlock, newInteger(codeTop+1));
     blockstat = InBlock;
     body();
-    if ((m_lexer.currentToken() == closing) && m_lexer.strToken().compare("]") == 0)
-        m_lexer.nextToken();
+    if ((currentToken() == closing) && strToken().compare("]") == 0)
+        nextToken();
     else
         compilError(selector,"block not terminated by ]","");
     genInstruction(DoSpecial, StackReturn);
@@ -787,10 +787,10 @@ void Parser::temporaries()
     object tempsym;
 
     temporaryTop = 0;
-    if ((m_lexer.currentToken() == binary) && m_lexer.strToken().compare("|") == 0) 
+    if ((currentToken() == binary) && strToken().compare("|") == 0) 
     {
-        m_lexer.nextToken();
-        while (m_lexer.currentToken() == nameconst) 
+        nextToken();
+        while (currentToken() == nameconst) 
         {
             if (++temporaryTop > maxTemporary)
                 maxTemporary = temporaryTop;
@@ -798,15 +798,15 @@ void Parser::temporaries()
                 compilError(selector,"too many temporaries in method","");
             else 
             {
-                tempsym = newSymbol(m_lexer.strToken().c_str());
+                tempsym = newSymbol(strToken().c_str());
                 temporaryName[temporaryTop] = tempsym->charPtr();
             }
-            m_lexer.nextToken();
+            nextToken();
         }
-        if ((m_lexer.currentToken() != binary) || m_lexer.strToken().compare("|"))
+        if ((currentToken() != binary) || strToken().compare("|"))
             compilError(selector,"temporary list not terminated by bar","");
         else
-            m_lexer.nextToken();
+            nextToken();
     }
 }
 
@@ -815,37 +815,37 @@ void Parser::messagePattern()
     object argsym;
 
     argumentTop = 0;
-    strcpy(selector, m_lexer.strToken().c_str());
-    if (m_lexer.currentToken() == nameconst)     /* unary message pattern */
-        m_lexer.nextToken();
-    else if (m_lexer.currentToken() == binary) 
+    strcpy(selector, strToken().c_str());
+    if (currentToken() == nameconst)     /* unary message pattern */
+        nextToken();
+    else if (currentToken() == binary) 
     { /* binary message pattern */
-        m_lexer.nextToken();
-        if (m_lexer.currentToken() != nameconst) 
+        nextToken();
+        if (currentToken() != nameconst) 
             compilError(selector,"binary message pattern not followed by name",selector);
-        argsym = newSymbol(m_lexer.strToken().c_str());
+        argsym = newSymbol(strToken().c_str());
         argumentName[++argumentTop] = argsym->charPtr();
-        m_lexer.nextToken();
+        nextToken();
     }
-    else if (m_lexer.currentToken() == namecolon) 
+    else if (currentToken() == namecolon) 
     {  /* keyword message pattern */
         selector[0] = '\0';
-        while (parseok && (m_lexer.currentToken() == namecolon)) 
+        while (parseok && (currentToken() == namecolon)) 
         {
-            strcat(selector, m_lexer.strToken().c_str());
-            m_lexer.nextToken();
-            if (m_lexer.currentToken() != nameconst)
+            strcat(selector, strToken().c_str());
+            nextToken();
+            if (currentToken() != nameconst)
                 compilError(selector,"keyword message pattern",
                         "not followed by a name");
             if (++argumentTop > argumentLimit)
                 compilError(selector,"too many arguments in method","");
-            argsym = newSymbol(m_lexer.strToken().c_str());
+            argsym = newSymbol(strToken().c_str());
             argumentName[argumentTop] = argsym->charPtr();
-            m_lexer.nextToken();
+            nextToken();
         }
     }
     else
-        compilError(selector,"illegal message selector", m_lexer.strToken().c_str());
+        compilError(selector,"illegal message selector", strToken().c_str());
 }
 
 bool Parser::parseCode(object method, bool savetext)
@@ -927,7 +927,7 @@ bool Parser::recordMethodBytecode(object method, bool savetext)
                 newInteger(1 + maxTemporary));
         if (savetext) 
         {
-            method->basicAtPut(textInMethod, newStString(m_lexer.source()));
+            method->basicAtPut(textInMethod, newStString(source()));
         }
         return(true);
     }

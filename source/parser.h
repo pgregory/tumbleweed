@@ -25,18 +25,12 @@ class Parser
 {
     public:
         Parser() {}
-        Parser(const Lexer& lex) : m_lexer(lex)
-        {}
         ~Parser() {}
 
         bool parseMessageHandler(object method, bool savetext);
         bool parseCode(object method, bool savetext);
 
         void setInstanceVariables(object aClass);
-        void setLexer(const Lexer& lex)
-        {
-            m_lexer = lex;
-        }
 
     private:
         enum blockstatus 
@@ -85,6 +79,4 @@ class Parser
 
         int maxTemporary;      /* highest temporary see so far */
         char selector[80];     /* message selector */
-
-        Lexer  m_lexer;
 };

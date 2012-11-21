@@ -686,7 +686,8 @@ void runCode(const char * text)
 
     method = newMethod();
     lock_method = new_SObjectHandle_from_object(method);
-    Parser pp = Parser(Lexer(text));
+    Parser pp = Parser();
+    resetLexer(text);
     pp.setInstanceVariables(nilobj);
     bool result = pp.parseCode(method, false);
 
