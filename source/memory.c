@@ -772,3 +772,10 @@ void* cPointerValue(object _this)
     return l;
 }
 
+int hashObject(object o)
+{
+    uintptr_t intval = (uintptr_t)o;
+    // \todo: do this properly, although it seems to work ok
+    // which is weird.
+    return 55;
+}

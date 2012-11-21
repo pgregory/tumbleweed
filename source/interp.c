@@ -144,6 +144,7 @@ int execute(object aProcess, int maxsteps)
   int high;
   byte *bp;
   object intClass = globalSymbol("Integer");
+  object args, temp, temp2;
 
   /* unpack the instance variables from the process */
   processStack    = basicAt(aProcess,stackInProcess);
@@ -234,15 +235,15 @@ readMethodInfo:
               {
                 /* not yet, do it now - first get real return point */
                 returnPoint = getInteger(processStackAt(linkPointer+2));
-                object args(copyFrom(processStack, returnPoint, linkPointer - returnPoint));
+                args = copyFrom(processStack, returnPoint, linkPointer - returnPoint);
                 SObjectHandle* lock_args = new_SObjectHandle_from_object(args);
-                object temp(copyFrom(processStack, linkPointer + 6, methodTempSize(method)));
+                temp = copyFrom(processStack, linkPointer + 6, methodTempSize(method));
                 SObjectHandle* lock_temp = new_SObjectHandle_from_object(temp);
                 contextObject = newContext(linkPointer, method, args, temp);
                 basicAtPut(processStack,linkPointer+1, contextObject);
                 ipush(contextObject);
                 /* save byte pointer then restore things properly */
-                object temp2 = newInteger(byteOffset);
+                temp2 = newInteger(byteOffset);
                 basicAtPut(processStack,linkPointer+4, temp2);
                 free_SObjectHandle(lock_args);
                 free_SObjectHandle(lock_temp);
@@ -629,15 +630,16 @@ doReturn:
 object sendMessageToObject(object receiver, const char* message, object* args, int cargs)
 {
   object methodClass = getClass(receiver);
+  int i;
+  int linkOffset = 2 + cargs;
+  int stackTop = 10 + cargs;
+
 
   messageToSend = newSymbol(message);
   if (! findMethod(&methodClass)) 
   {
     return nilobj;
   }
-
-  int linkOffset = 2 + cargs;
-  int stackTop = 10 + cargs;
 
   // Create a new process
   object process = allocObject(processSize);
@@ -660,7 +662,7 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
   // Fill in the first argument, as the receiver.
   basicAtPut(stack,1, receiver);
   // And add the remainder of the arguments
-  for(int i = 0; i < cargs; ++i)
+  for(i = 0; i < cargs; ++i)
     basicAtPut(stack,2 + i, args[i]);
 
   object saveProcessStack = processStack;

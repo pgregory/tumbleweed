@@ -17,16 +17,16 @@ endif(TW_SMALLINTEGER_AS_OBJECT)
 #endif()
 
 set(shared_srcs 
-  source/filein.cpp
-  source/interp.cpp
-  source/lex.cpp
-  source/memory.cpp
-  source/names.cpp
-  source/parser.cpp
-  source/parser.cpp
-  source/primitive.cpp
-  source/sysprimitive.cpp
-  source/unixio.cpp
+  source/filein.c
+  source/interp.c
+  source/lex.c
+  source/memory.c
+  source/names.c
+  source/parser.c
+  source/parser.c
+  source/primitive.c
+  source/sysprimitive.c
+  source/unixio.c
 )
 
 set(headers
@@ -38,11 +38,11 @@ set(headers
 )
   
 set(tw_srcs 
-  source/st.cpp
+  source/st.c
 )
 
 set(init_srcs 
-  source/initial.cpp
+  source/initial.c
 )
 
 set(common_image_srcs
@@ -67,7 +67,7 @@ set(common_image_srcs
 
 if(TW_ENABLE_FFI)
   find_package(LibFFI REQUIRED)
-  set(shared_srcs ${shared_srcs} source/ffiprimitive.cpp)
+  set(shared_srcs ${shared_srcs} source/ffiprimitive.c)
   set(ffi_image_srcs
       bootstrap/ffi.st
       bootstrap/iup.st

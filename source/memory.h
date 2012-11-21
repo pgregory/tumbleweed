@@ -13,10 +13,23 @@
 #include "gtest/gtest_prod.h"
 #endif
 
-struct ObjectStruct;
+/*! \brief Object structure
+ *
+ * The default structure that represents all objects int he system.
+ */
+typedef struct _ObjectStruct 
+{
+    //! ID of the object that defines the class of this object.
+    struct _ObjectStruct* _class;
+    //! A reference counter, used only during mark/sweep GC.
+    long referenceCount;
+    //! The size of the data area, in object ID's
+    long size;
+    //! A pointer to the data area of the object.
+    struct _ObjectStruct** memory;
+} ObjectStruct;
 
 typedef ObjectStruct* object;
-
 
 typedef struct _SObjectHandle
 {
@@ -36,28 +49,9 @@ SObjectHandle* new_SObjectHandle_from_object(object from);
 void free_SObjectHandle(SObjectHandle* h);
 int hash_SObjectHandle(SObjectHandle* h);
 
-inline int hashObject(object o)
-{
-    uintptr_t intval = (uintptr_t)o;
-    return 55;
-}
+int hashObject(object o);
 
 
-/*! \brief Object structure
- *
- * The default structure that represents all objects int he system.
- */
-struct ObjectStruct 
-{
-    //! ID of the object that defines the class of this object.
-    object _class;
-    //! A reference counter, used only during mark/sweep GC.
-    long referenceCount;
-    //! The size of the data area, in object ID's
-    long size;
-    //! A pointer to the data area of the object.
-    object*memory;
-};
 
 //! Data pointer getter
 object* sysMemPtr(object _this);

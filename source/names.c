@@ -160,7 +160,7 @@ const char *unStrs[] = {
 };
 
 const int num_unSyms = sizeof(unStrs)/sizeof(unStrs[0]);
-object unSyms[num_unSyms];
+object unSyms[sizeof(unStrs)/sizeof(unStrs[0])];
 
 const char *binStrs[] = {
     "+", 
@@ -194,7 +194,7 @@ const char *binStrs[] = {
 };
 
 const int num_binSyms = sizeof(binStrs)/sizeof(binStrs[0]);
-object binSyms[num_binSyms];
+object binSyms[sizeof(binStrs)/sizeof(binStrs[0])];
 
 const struct { 
     const char* name; 
@@ -218,7 +218,7 @@ const struct {
 };
 
 const int num_classSyms = sizeof(classStrs)/sizeof(classStrs[0]);
-object classSyms[num_classSyms];
+object classSyms[sizeof(classStrs)/sizeof(classStrs[0])];
 
 object booleanSyms[2];
 
