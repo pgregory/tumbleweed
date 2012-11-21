@@ -10,7 +10,6 @@
 #define LEX_H_INCLUDED
 
 #include <string>
-#include <deque>
 
 typedef enum tokensyms 
 { 
@@ -35,7 +34,7 @@ tokentype nextToken();
 char peek();
 
 tokentype currentToken();
-const std::string& strToken();
+const char* strToken();
 int intToken();
 double floatToken();
 const char* source();

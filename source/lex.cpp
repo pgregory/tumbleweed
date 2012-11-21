@@ -12,11 +12,12 @@
 # include "env.h"
 # include "memory.h"
 # include "lex.h"
+# include <deque>
 
 static tokentype   _currentToken;
 static int _tokenInteger;
 static double _tokenFloat;
-static std::string _tokenString;
+static char _tokenString[80];
 static const char* _source;
 static const char *_cp;
 static char _cc;
@@ -111,7 +112,7 @@ static bool binarySecond(char c)
 tokentype nextToken()
 {   
     bool sign;
-    std::string strToken;
+    char* tp;
 
     /* skip over blanks and comments */
     while(nextChar() && (isspace(_cc) || (_cc == '"')))
@@ -123,18 +124,18 @@ tokentype nextToken()
         }
     }
 
-    strToken.clear();
-    strToken.push_back(_cc);
+    tp = _tokenString;
+    *tp++ = _cc;
 
     if (! _cc)           /* end of input */
         _currentToken = inputend;
     else if (isalpha(_cc)) 
     {     /* identifier */
         while (nextChar() && isalnum(_cc))
-            strToken.push_back(_cc);
+            *tp++ = _cc;
         if (_cc == ':') 
         {
-            strToken.push_back(_cc);
+            *tp++ = _cc;
             _currentToken = namecolon;
         }
         else 
@@ -148,7 +149,7 @@ tokentype nextToken()
         long longresult = _cc - '0';
         while (nextChar() && isdigit(_cc)) 
         {
-            strToken.push_back(_cc);
+            *tp++ = _cc;
             longresult = (longresult * 10) + (_cc - '0');
         }
         if (longCanBeInt(longresult)) 
@@ -165,14 +166,15 @@ tokentype nextToken()
         {    /* possible float */
             if (nextChar() && isdigit(_cc)) 
             {
-                strToken.push_back('.');
+                *tp++ = '.';
                 do
-                    strToken.push_back(_cc);
+                    *tp++ = _cc;
                 while (nextChar() && isdigit(_cc));
-                if (_cc) pushBack(_cc);
+                if (_cc) 
+                    pushBack(_cc);
                 _currentToken = floatconst;
-                strToken.push_back('\0');
-                _tokenFloat = atof(_tokenString.c_str());
+                *tp = '\0';
+                _tokenFloat = atof(_tokenString);
             }
             else 
             {
@@ -195,18 +197,18 @@ tokentype nextToken()
                 sign = false;
             if (_cc && isdigit(_cc)) 
             { /* yep, its a float */
-                strToken.push_back('e');
+                *tp++ = 'e';
                 if (sign) 
-                    strToken.push_back('-');
+                    *tp++ = '-';
                 while (_cc && isdigit(_cc)) 
                 {
-                    strToken.push_back(_cc);
+                    *tp++ = _cc;
                     nextChar();
                 }
                 if (_cc) 
                     pushBack(_cc);
                 _currentToken = floatconst;
-                _tokenFloat = atof(_tokenString.c_str());
+                _tokenFloat = atof(_tokenString);
             }
             else 
             {  /* nope, wrong again */
@@ -225,28 +227,28 @@ tokentype nextToken()
     }
     else if (_cc == '#') 
     {       /* symbol */
-        strToken.resize(strToken.size()-1); // erase pound sign
+        tp--;
         if (nextChar() == '(')
             _currentToken = arraybegin;
         else 
         {
             pushBack(_cc);
             while (nextChar() && isSymbolChar(_cc))
-                strToken.push_back(_cc);
+                *tp++ = _cc;
             pushBack(_cc);
             _currentToken = symconst;
         }
     }
     else if (_cc == '\'') 
     {      /* string constant */
-        strToken.resize(strToken.size()-1);
+        tp--;
 strloop:
         while (nextChar() && (_cc != '\''))
-            strToken.push_back(_cc);
+            *tp++ = _cc;
         /* check for nested quote marks */
         if (_cc && nextChar() && (_cc == '\'')) 
         {
-            strToken.push_back(_cc);
+            *tp++ = _cc;
             goto strloop;
         }
         pushBack(_cc);
@@ -261,13 +263,13 @@ strloop:
     else 
     {              /* anything else is binary */
         if (nextChar() && binarySecond(_cc))
-            strToken.push_back(_cc);
+            *tp++ = _cc;
         else
             pushBack(_cc);
         _currentToken = binary;
     }
 
-    _tokenString = strToken;
+    *tp++ = '\0';
     return(_currentToken);
 }
 
@@ -277,7 +279,7 @@ tokentype currentToken()
     return _currentToken;
 }
 
-const std::string& strToken()
+const char* strToken()
 {
     return _tokenString;
 }

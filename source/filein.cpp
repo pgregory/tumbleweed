@@ -156,7 +156,7 @@ static void readRawClassDeclaration()
         instanceTop = 0;
         while (currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop] = newSymbol(strToken().c_str());
+            instanceVariables[instanceTop] = newSymbol(strToken());
             lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
             size++;
             nextToken();
@@ -224,7 +224,7 @@ static void readClassDeclaration()
         instanceTop = 0;
         while (currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop] = newSymbol(strToken().c_str());
+            instanceVariables[instanceTop] = newSymbol(strToken());
             lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
             size++;
             nextToken();
@@ -263,7 +263,7 @@ static void readMethods(FILE* fd, bool printit)
     protocol = nilobj;
     if (nextToken() != nameconst)
         sysError("missing name","following Method keyword");
-    classObj = findClass(strToken().c_str());
+    classObj = findClass(strToken());
     lock_classObj = new_SObjectHandle_from_object(classObj);
 
     setInstanceVariables(classObj);
@@ -281,7 +281,7 @@ static void readMethods(FILE* fd, bool printit)
 
     if(nextToken() == strconst) 
     {
-        protocol = newStString(strToken().c_str());
+        protocol = newStString(strToken());
         lock_protocol = new_SObjectHandle_from_object(protocol);
     }
 
@@ -340,13 +340,13 @@ void fileIn(FILE* fd, bool printit)
         resetLexer(textBuffer);
         if (currentToken() == inputend)
             ; /* do nothing, get next line */
-        else if ((currentToken() == binary) && strToken().compare("*") == 0)
+        else if ((currentToken() == binary) && strcmp(strToken(), "*") == 0)
             ; /* do nothing, its a comment */
-        else if ((currentToken() == nameconst) && strToken().compare("RawClass") == 0)
+        else if ((currentToken() == nameconst) && strcmp(strToken(), "RawClass") == 0)
             readRawClassDeclaration();
-        else if ((currentToken() == nameconst) && strToken().compare("Class") == 0)
+        else if ((currentToken() == nameconst) && strcmp(strToken(), "Class") == 0)
             readClassDeclaration();
-        else if ((currentToken() == nameconst) && strToken().compare("Methods") == 0)
+        else if ((currentToken() == nameconst) && strcmp(strToken(), "Methods") == 0)
             readMethods(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);

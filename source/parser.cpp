@@ -233,17 +233,17 @@ int parseArray()
                 break;
 
             case nameconst: case namecolon: case symconst:
-                genLiteral(newSymbol(strToken().c_str()));
+                genLiteral(newSymbol(strToken()));
                 nextToken();
                 break;
 
             case binary:
-                if (strToken().compare("(") == 0) 
+                if (strcmp(strToken(), "(") == 0) 
                 {
                     parseArray();
                     break;
                 }
-                if (strToken().compare("-") == 0 && isdigit(peek())) 
+                if (strcmp(strToken(), "-") == 0 && isdigit(peek())) 
                 {
                     nextToken();
                     if (currentToken() == intconst)
@@ -257,7 +257,7 @@ int parseArray()
                     nextToken();
                     break;
                 }
-                genLiteral(newSymbol(strToken().c_str()));
+                genLiteral(newSymbol(strToken()));
                 nextToken();
                 break;
 
@@ -267,13 +267,13 @@ int parseArray()
                 break;
 
             case strconst:
-                genLiteral(newStString(strToken().c_str()));
+                genLiteral(newStString(strToken()));
                 nextToken();
                 break;
 
             default:
                 compilError(_selector,"illegal text in literal array",
-                        strToken().c_str());
+                        strToken());
                 nextToken();
                 break;
         }
@@ -281,9 +281,9 @@ int parseArray()
 
     if (_parseok)
     {
-        if (strToken().compare(")"))
+        if (strcmp(strToken(), ")"))
             compilError(_selector,"array not terminated by right parenthesis",
-                    strToken().c_str());
+                    strToken());
         else
             nextToken();
     }
@@ -306,7 +306,7 @@ bool term()
 
     if (token == nameconst) 
     {
-        superTerm = nameTerm(strToken().c_str());
+        superTerm = nameTerm(strToken());
         nextToken();
     }
     else if (token == intconst) 
@@ -319,7 +319,7 @@ bool term()
         genInstruction(PushLiteral, genLiteral(newFloat(floatToken())));
         nextToken();
     }
-    else if ((token == binary) && strToken().compare("-") == 0) 
+    else if ((token == binary) && strcmp(strToken(), "-") == 0) 
     {
         token = nextToken();
         if (token == intconst)
@@ -343,35 +343,35 @@ bool term()
     else if (token == symconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(newSymbol(strToken().c_str())));
+                genLiteral(newSymbol(strToken())));
         nextToken();
     }
     else if (token == strconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(newStString(strToken().c_str())));
+                genLiteral(newStString(strToken())));
         nextToken();
     }
     else if (token == arraybegin) 
     {
         genInstruction(PushLiteral, parseArray());
     }
-    else if ((token == binary) && strToken().compare("(") == 0) 
+    else if ((token == binary) && strcmp(strToken(), "(") == 0) 
     {
         nextToken();
         expression();
         if (_parseok)
-            if ((currentToken() != closing) || strToken().compare(")"))
+            if ((currentToken() != closing) || strcmp(strToken(), ")"))
                 compilError(_selector,"Missing Right Parenthesis","");
             else
                 nextToken();
     }
-    else if ((token == binary) && strToken().compare("<") == 0)
+    else if ((token == binary) && strcmp(strToken(), "<") == 0)
         parsePrimitive();
-    else if ((token == binary) && strToken().compare("[") == 0)
+    else if ((token == binary) && strcmp(strToken(), "[") == 0)
         block();
     else
-        compilError(_selector,"invalid expression start", strToken().c_str());
+        compilError(_selector,"invalid expression start", strToken());
 
     return(superTerm);
 }
@@ -385,7 +385,7 @@ void parsePrimitive()
     primitiveNumber = intToken();
     nextToken();
     argumentCount = 0;
-    while (_parseok && ! ((currentToken() == binary) && strToken().compare(">") == 0)) 
+    while (_parseok && ! ((currentToken() == binary) && strcmp(strToken(), ">") == 0)) 
     {
         term();
         argumentCount++;
@@ -446,15 +446,15 @@ bool unaryContinuation(bool superReceiver)
         /* first check to see if it could be a temp by mistake */
         for (i=1; i < _temporaryTop; i++)
         {
-            if (strToken().compare(_temporaryName[i]) == 0)
+            if (strcmp(strToken(), _temporaryName[i]) == 0)
                 compilWarn(_selector,"message same as temporary:",
-                        strToken().c_str());
+                        strToken());
         }
         for (i=1; i < _argumentTop; i++)
         {
-            if (strToken().compare(_argumentName[i]) == 0)
+            if (strcmp(strToken(), _argumentName[i]) == 0)
                 compilWarn(_selector,"message same as argument:",
-                        strToken().c_str());
+                        strToken());
         }
         /* the next generates too many spurious messages */
         /* for (i=1; i < _instanceTop; i++)
@@ -466,7 +466,7 @@ bool unaryContinuation(bool superReceiver)
 
         if (! sent) 
         {
-            genMessage(superReceiver, 0, newSymbol(strToken().c_str()));
+            genMessage(superReceiver, 0, newSymbol(strToken()));
         }
         /* once a message is sent to super, reciever is not super */
         superReceiver = false;
@@ -484,7 +484,7 @@ bool binaryContinuation(bool superReceiver)
     superReceiver = unaryContinuation(superReceiver);
     while (_parseok && (currentToken() == binary)) 
     {
-        messagesym = newSymbol(strToken().c_str());
+        messagesym = newSymbol(strToken());
         lock_messageSym = new_SObjectHandle_from_object(messagesym);
         nextToken();
         superTerm = term();
@@ -508,13 +508,13 @@ int optimizeBlock(int instruction, bool dopop)
     if (dopop)
         genInstruction(DoSpecial, PopTop);
     nextToken();
-    if (strToken().compare("[") == 0) 
+    if (strcmp(strToken(), "[") == 0) 
     {
         nextToken();
         if (_blocksat == NotInBlock)
             _blocksat = OptimizedBlock;
         body();
-        if (strToken().compare("]"))
+        if (strcmp(strToken(), "]"))
             compilError(_selector,"missing close","after block");
         nextToken();
     }
@@ -538,25 +538,25 @@ bool keyContinuation(bool superReceiver)
     superReceiver = binaryContinuation(superReceiver);
     if (currentToken() == namecolon) 
     {
-        if (strToken().compare("ifTrue:") == 0) 
+        if (strcmp(strToken(), "ifTrue:") == 0) 
         {
             i = optimizeBlock(BranchIfFalse, false);
-            if (strToken().compare("ifFalse:") == 0) 
+            if (strcmp(strToken(), "ifFalse:") == 0) 
             {
                 _codeArray[i] = _codeTop + 3;
                 optimizeBlock(Branch, true);
             }
         }
-        else if (strToken().compare("ifFalse:") == 0) 
+        else if (strcmp(strToken(), "ifFalse:") == 0) 
         {
             i = optimizeBlock(BranchIfTrue, false);
-            if (strToken().compare("ifTrue:") == 0) 
+            if (strcmp(strToken(), "ifTrue:") == 0) 
             {
                 _codeArray[i] = _codeTop + 3;
                 optimizeBlock(Branch, true);
             }
         }
-        else if (strToken().compare("whileTrue:") == 0) 
+        else if (strcmp(strToken(), "whileTrue:") == 0) 
         {
             j = _codeTop;
             genInstruction(DoSpecial, Duplicate);
@@ -568,9 +568,9 @@ bool keyContinuation(bool superReceiver)
             _codeArray[i] = _codeTop+1;
             genInstruction(DoSpecial, PopTop);
         }
-        else if (strToken().compare("and:") == 0)
+        else if (strcmp(strToken(), "and:") == 0)
             optimizeBlock(AndBranch, false);
-        else if (strToken().compare("or:") == 0)
+        else if (strcmp(strToken(), "or:") == 0)
             optimizeBlock(OrBranch, false);
         else 
         {
@@ -578,7 +578,7 @@ bool keyContinuation(bool superReceiver)
             argumentCount = 0;
             while (_parseok && (currentToken() == namecolon)) 
             {
-                strcat(pattern, strToken().c_str());
+                strcat(pattern, strToken());
                 argumentCount++;
                 nextToken();
                 superTerm = term();
@@ -603,7 +603,7 @@ void continuation(bool superReceiver)
 {
     superReceiver = keyContinuation(superReceiver);
 
-    while (_parseok && (currentToken() == closing) && strToken().compare(";") == 0) 
+    while (_parseok && (currentToken() == closing) && strcmp(strToken(), ";") == 0) 
     {
         genInstruction(DoSpecial, Duplicate);
         nextToken();
@@ -619,9 +619,9 @@ void expression()
 
     if (currentToken() == nameconst) 
     {   /* possible assignment */
-        strcpy(assignname, strToken().c_str());
+        strcpy(assignname, strToken());
         nextToken();
-        if ((currentToken() == binary) && strToken().compare("<-") == 0) 
+        if ((currentToken() == binary) && strcmp(strToken(), "<-") == 0) 
         {
             nextToken();
             assignment(assignname);
@@ -681,7 +681,7 @@ void assignment(char* name)
 void statement()
 {
 
-    if ((currentToken() == binary) && strToken().compare("^") == 0) 
+    if ((currentToken() == binary) && strcmp(strToken(), "^") == 0) 
     {
         nextToken();
         expression();
@@ -705,7 +705,7 @@ void body()
     /* empty blocks are same as nil */
     if ((_blocksat == InBlock) || (_blocksat == OptimizedBlock))
     {
-        if ((currentToken() == closing) && strToken().compare("]") == 0) 
+        if ((currentToken() == closing) && strcmp(strToken(), "]") == 0) 
         {
             genInstruction(PushConstant, nilConst);
             return;
@@ -717,7 +717,7 @@ void body()
         statement();
         if (currentToken() == closing)
         {
-            if (strToken().compare(".") == 0) 
+            if (strcmp(strToken(), ".") == 0) 
             {
                 if (nextToken() == inputend)
                     break;
@@ -734,7 +734,7 @@ void body()
             else 
             {
                 compilError(_selector,"invalid statement ending; token is ",
-                        strToken().c_str());
+                        strToken());
             }
         }
     }
@@ -751,9 +751,9 @@ void block()
     saveTemporary = _temporaryTop;
     savebstat = _blocksat;
     argumentCount = 0;
-    if ((nextToken() == binary) && strToken().compare(":") == 0) 
+    if ((nextToken() == binary) && strcmp(strToken(), ":") == 0) 
     {
-        while (_parseok && (currentToken() == binary) && strToken().compare(":") == 0) 
+        while (_parseok && (currentToken() == binary) && strcmp(strToken(), ":") == 0) 
         {
             if (nextToken() != nameconst)
                 compilError(_selector,"name must follow colon",
@@ -765,12 +765,12 @@ void block()
                 compilError(_selector,"too many temporaries in method","");
             else 
             {
-                tempsym = newSymbol(strToken().c_str());
+                tempsym = newSymbol(strToken());
                 _temporaryName[_temporaryTop] = tempsym->charPtr();
             }
             nextToken();
         }
-        if ((currentToken() != binary) || strToken().compare("|"))
+        if ((currentToken() != binary) || strcmp(strToken(), "|"))
             compilError(_selector,"block argument list must be terminated",
                     "by |");
         nextToken();
@@ -791,7 +791,7 @@ void block()
     newBlk->basicAtPut(bytecountPositionInBlock, newInteger(_codeTop+1));
     _blocksat = InBlock;
     body();
-    if ((currentToken() == closing) && strToken().compare("]") == 0)
+    if ((currentToken() == closing) && strcmp(strToken(), "]") == 0)
         nextToken();
     else
         compilError(_selector,"block not terminated by ]","");
@@ -808,7 +808,7 @@ void temporaries()
     object tempsym;
 
     _temporaryTop = 0;
-    if ((currentToken() == binary) && strToken().compare("|") == 0) 
+    if ((currentToken() == binary) && strcmp(strToken(), "|") == 0) 
     {
         nextToken();
         while (currentToken() == nameconst) 
@@ -819,12 +819,12 @@ void temporaries()
                 compilError(_selector,"too many temporaries in method","");
             else 
             {
-                tempsym = newSymbol(strToken().c_str());
+                tempsym = newSymbol(strToken());
                 _temporaryName[_temporaryTop] = tempsym->charPtr();
             }
             nextToken();
         }
-        if ((currentToken() != binary) || strToken().compare("|"))
+        if ((currentToken() != binary) || strcmp(strToken(), "|"))
             compilError(_selector,"temporary list not terminated by bar","");
         else
             nextToken();
@@ -836,7 +836,7 @@ void messagePattern()
     object argsym;
 
     _argumentTop = 0;
-    strcpy(_selector, strToken().c_str());
+    strcpy(_selector, strToken());
     if (currentToken() == nameconst)     /* unary message pattern */
         nextToken();
     else if (currentToken() == binary) 
@@ -844,7 +844,7 @@ void messagePattern()
         nextToken();
         if (currentToken() != nameconst) 
             compilError(_selector,"binary message pattern not followed by name",_selector);
-        argsym = newSymbol(strToken().c_str());
+        argsym = newSymbol(strToken());
         _argumentName[++_argumentTop] = argsym->charPtr();
         nextToken();
     }
@@ -853,20 +853,20 @@ void messagePattern()
         _selector[0] = '\0';
         while (_parseok && (currentToken() == namecolon)) 
         {
-            strcat(_selector, strToken().c_str());
+            strcat(_selector, strToken());
             nextToken();
             if (currentToken() != nameconst)
                 compilError(_selector,"keyword message pattern",
                         "not followed by a name");
             if (++_argumentTop > argumentLimit)
                 compilError(_selector,"too many arguments in method","");
-            argsym = newSymbol(strToken().c_str());
+            argsym = newSymbol(strToken());
             _argumentName[_argumentTop] = argsym->charPtr();
             nextToken();
         }
     }
     else
-        compilError(_selector,"illegal message _selector", strToken().c_str());
+        compilError(_selector,"illegal message _selector", strToken());
 }
 
 bool parseCode(object method, bool savetext)
