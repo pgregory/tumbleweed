@@ -85,7 +85,7 @@ object allocByte(size_t size)
 
     newObj = allocObject((size + 1) / 2);
     /* negative size fields indicate bit objects */
-    newObj->size = -size;
+    newObj->size = -(long)size;
     return newObj;
 }
 
@@ -310,7 +310,7 @@ static struct
 {
     object ref;
     object _classRef;
-    short size;
+    long size;
 } dummyObject;
 
 
@@ -399,7 +399,7 @@ static void fw(FILE* fp, char* p, int s)
 
 void saveObject(Visitor* _this)
 {
-  long i, j, size;
+  long size;
 
   FileVisitor* fcb = (FileVisitor*)_this;
 
@@ -416,6 +416,9 @@ void saveObject(Visitor* _this)
 
 void imageWrite(FILE* fp)
 {
+  Visitor v;
+  FileVisitor fv;
+
   // Write the symbols object to use during fixup.
   fw(fp, (char *) &symbols, sizeof(object));
 
@@ -423,7 +426,6 @@ void imageWrite(FILE* fp)
   fw(fp, (char *) &nilobj, sizeof(object));
 
 
-  Visitor v;
   v.preFunc = &setFlag;
   v.postFunc = 0;
   v.test = &testFlagZero;
@@ -434,7 +436,6 @@ void imageWrite(FILE* fp)
   fw(fp, (char *) &v.count, sizeof(v.count));
   printf("Number of objects to save: %ld\n", v.count);
 
-  FileVisitor fv;
   fv.super.o = symbols;
   fv.super.count = v.count;
   fv.fp = fp;
@@ -501,7 +502,7 @@ int fixupLink(mapEntry* map, long count, object* ref)
 
 void relinkObject(Visitor* _this)
 {
-  long i, j;
+  long i;
 
   LinkVisitor* lv = (LinkVisitor*)_this;
 
@@ -528,6 +529,7 @@ void imageRead(FILE* fp)
   long i, count, size;
   object oldRef, newRef, nilAtStore;
   mapEntry* map;
+  LinkVisitor lv;
 
   fr(fp, (char *) &symbols, sizeof(object));
   fr(fp, (char *) &nilAtStore, sizeof(object));
@@ -578,7 +580,6 @@ void imageRead(FILE* fp)
     printf("Failed to fixup symbols!\n");
 
 
-  LinkVisitor lv;
   lv.super.o = symbols;
   lv.super.test = &testFlagZero;
   lv.super.preFunc = &relinkObject;
@@ -762,12 +763,13 @@ int intValue(object _this)
 
 void* cPointerValue(object _this)
 {   
+    void* l;
+    int s;
+
     if(NULL == charPtr(_this))
         sysError("invalid cPointer","cPointerValue");
 
-    void* l;
-
-    int s = sizeof(void*);
+    s = sizeof(void*);
     ncopy((char *) &l, charPtr(_this), (int) sizeof(void*));
     return l;
 }

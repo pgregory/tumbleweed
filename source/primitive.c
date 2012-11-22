@@ -57,6 +57,7 @@ static object zeroaryPrims(int number)
 {   
   long i;
   object returnedObject;
+  long ms_now;
 
   returnedObject = nilobj;
   switch(number) {
@@ -82,12 +83,14 @@ static object zeroaryPrims(int number)
       i = (short) time((long *) 0);
 #else
       {
+#if 0
         FILETIME ft_now;
         GetSystemTimeAsFileTime(&ft_now);
         LONGLONG unix_time = ((LONGLONG) ft_now.dwHighDateTime << 32LL) + ft_now.dwLowDateTime;
         unix_time /= 10000000LL; // Convert to seconds
         unix_time += SECS_BETWEEN_EPOCHS; // Convert between win32 epoch (Jan 1 1601) and Unix epoch (Jan 1 1970)
         i = static_cast<unsigned long>(unix_time);
+#endif
       }
 #endif
       returnedObject = newInteger(i);
@@ -118,7 +121,7 @@ static object zeroaryPrims(int number)
 #else
         SYSTEMTIME st_now;
         GetSystemTime(&st_now);
-        long ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
+        ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
         returnedObject = newInteger(ms_now);
 #endif
       }

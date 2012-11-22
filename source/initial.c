@@ -64,6 +64,7 @@ void makeInitialImage()
   SObjectHandle *lock_hashTable = 0;
   SObjectHandle *lock_integerClass = 0;
   SObjectHandle *lock_symbolObj = 0, *lock_symbolClass = 0, *lock_classClass = 0, *lock_metaClassClass = 0;
+  object trueobj, falseobj;
 
   /* first create the table, without class links */
   symbols = allocObject(dictionarySize);
@@ -106,9 +107,9 @@ void makeInitialImage()
   basicAtPut(metaClassClass,methodsInClass, newDictionary(39));
 
   /* finally at least make true and false to be distinct */
-  object trueobj = newSymbol("true");
+  trueobj = newSymbol("true");
   nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-  object falseobj = newSymbol("false");
+  falseobj = newSymbol("false");
   nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
 
   free_SObjectHandle(lock_hashTable);

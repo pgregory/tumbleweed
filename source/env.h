@@ -51,3 +51,7 @@ void sysWarn(const char* s1, const char* s2);
 
 #define TRUE 1
 #define FALSE 0
+
+#if defined(WIN32)
+#define snprintf _snprintf
+#endif

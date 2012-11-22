@@ -136,6 +136,7 @@ int execute(object aProcess, int maxsteps)
   object contextObject; 
   object argarray;
   SObjectHandle* lock_argarray;
+  SObjectHandle* lock_args, *lock_temp;
   object *primargs;
   int byteOffset;
   object methodClass; 
@@ -145,6 +146,7 @@ int execute(object aProcess, int maxsteps)
   byte *bp;
   object intClass = globalSymbol("Integer");
   object args, temp, temp2;
+  int unwindto;
 
   /* unpack the instance variables from the process */
   processStack    = basicAt(aProcess,stackInProcess);
@@ -236,9 +238,9 @@ readMethodInfo:
                 /* not yet, do it now - first get real return point */
                 returnPoint = getInteger(processStackAt(linkPointer+2));
                 args = copyFrom(processStack, returnPoint, linkPointer - returnPoint);
-                SObjectHandle* lock_args = new_SObjectHandle_from_object(args);
+                lock_args = new_SObjectHandle_from_object(args);
                 temp = copyFrom(processStack, linkPointer + 6, methodTempSize(method));
-                SObjectHandle* lock_temp = new_SObjectHandle_from_object(temp);
+                lock_temp = new_SObjectHandle_from_object(temp);
                 contextObject = newContext(linkPointer, method, args, temp);
                 basicAtPut(processStack,linkPointer+1, contextObject);
                 ipush(contextObject);
@@ -472,7 +474,7 @@ doFindMessage:
           case 56: /* Unroll to specific return point */
             {
               returnedObject = nilobj;
-              int unwindto = getInteger(*primargs);
+              unwindto = getInteger(*primargs);
               returnPoint = getInteger(basicAt(processStack,linkPointer + 2));
               linkPointer = getInteger(basicAt(processStack,linkPointer));
               while (returnPoint > unwindto)
@@ -633,7 +635,9 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
   int i;
   int linkOffset = 2 + cargs;
   int stackTop = 10 + cargs;
-
+  object process, stack, saveProcessStack, ro;
+  SObjectHandle* lock_process, *lock_stack;
+  int saveLinkPointer;
 
   messageToSend = newSymbol(message);
   if (! findMethod(&methodClass)) 
@@ -642,11 +646,11 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
   }
 
   // Create a new process
-  object process = allocObject(processSize);
-  SObjectHandle* lock_process = new_SObjectHandle_from_object(process);
+  process = allocObject(processSize);
+  lock_process = new_SObjectHandle_from_object(process);
   // Create a stack for it
-  object stack = newArray(50);
-  SObjectHandle* lock_stack = new_SObjectHandle_from_object(stack);
+  stack = newArray(50);
+  lock_stack = new_SObjectHandle_from_object(stack);
   basicAtPut(process,stackInProcess, stack);
   // Set the stack top to past the arguments, link and context data
   basicAtPut(process,stackTopInProcess, newInteger(stackTop));
@@ -665,13 +669,13 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
   for(i = 0; i < cargs; ++i)
     basicAtPut(stack,2 + i, args[i]);
 
-  object saveProcessStack = processStack;
-  int saveLinkPointer = linkPointer;
+  saveProcessStack = processStack;
+  saveLinkPointer = linkPointer;
   while(execute(process, 15000));
   // Re-read the stack object, in case it had to grow during execution and 
   // was replaced.
   stack = basicAt(process,stackInProcess);
-  object ro = basicAt(stack,1);
+  ro = basicAt(stack,1);
   processStack = saveProcessStack;
   linkPointer = saveLinkPointer;
 
@@ -684,14 +688,15 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
 
 void runCode(const char * text)
 {   
-    object stack, method, firstProcess;
-    SObjectHandle *lock_stack, *lock_method, *lock_firstProcess;
+    object stack, method, firstProcess, saveProcessStack;
+    SObjectHandle *lock_stack, *lock_method, *lock_firstProcess, *lock_saveProcessStack;
+    int result, saveLinkPointer;
 
     method = newMethod();
     lock_method = new_SObjectHandle_from_object(method);
     resetLexer(text);
     setInstanceVariables(nilobj);
-    int result = parseCode(method, FALSE);
+    result = parseCode(method, FALSE);
 
     firstProcess = allocObject(processSize);
     lock_firstProcess = new_SObjectHandle_from_object(firstProcess);
@@ -713,9 +718,9 @@ void runCode(const char * text)
     basicAtPut(stack,bytepointerInStack, newInteger(1));    /* byte offset */
 
     /* now go execute it */
-    object saveProcessStack = processStack;
-    SObjectHandle* lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
-    int saveLinkPointer = linkPointer;
+    saveProcessStack = processStack;
+    lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
+    saveLinkPointer = linkPointer;
     while (execute(firstProcess, 15000)) fprintf(stderr,"..");
     // Re-read the stack object, in case it had to grow during execution and 
     // was replaced.
