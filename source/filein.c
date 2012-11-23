@@ -54,6 +54,7 @@ static object findClass(const char* name)
     return newobj;
 }
 
+
 static object findClassWithMeta(const char* name, object metaObj)
 {   
     object newObj, nameObj, methTable;
@@ -127,6 +128,12 @@ static void readRawClassDeclaration()
     object instanceVariables[15];
     SObjectHandle* lock_instanceVariables[15];
 
+    for(i = 0; i < 15; ++i)
+    {
+      instanceVariables[i] = nilobj;
+      lock_instanceVariables[i] = 0;
+    }
+
     if (nextToken() != nameconst)
         sysError("bad file format","no name in declaration");
     strncpy(className, strToken(), 100);
@@ -155,7 +162,8 @@ static void readRawClassDeclaration()
         while (currentToken() == nameconst) 
         {
             instanceVariables[instanceTop] = newSymbol(strToken());
-            lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
+            lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop]);
+            instanceTop++;
             size++;
             nextToken();
         }
@@ -225,7 +233,8 @@ static void readClassDeclaration()
         while (currentToken() == nameconst) 
         {
             instanceVariables[instanceTop] = newSymbol(strToken());
-            lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop++]);
+            lock_instanceVariables[instanceTop] = new_SObjectHandle_from_object(instanceVariables[instanceTop]);
+            instanceTop++;
             size++;
             nextToken();
         }
