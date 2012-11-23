@@ -57,7 +57,7 @@ void ncopy(register char* p, register char* q, register int n)
 static object* mBlockAlloc(int size)
 {
     int i;
-    object* result = (object *) calloc((unsigned) size, sizeof(object));
+    object* result = (object *) malloc((unsigned) size * sizeof(object));
 
     for(i = 0; i < size; ++i)
       result[i] = nilobj;
