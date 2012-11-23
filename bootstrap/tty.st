@@ -140,6 +140,7 @@ Methods UndefinedObject 'initial image'
     initialize
         " initialize the initial object image "
         self createGlobals.
+        Object dependencies: Dictionary new.
         classes binaryDo: [:x :y |
             (y isKindOf: Class) ifTrue: [
                 (y respondsTo: #doInit) ifTrue: [

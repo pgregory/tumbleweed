@@ -27,9 +27,6 @@ Methods MetaObject 'all'
 |
     dependencies: anObject
         Dependencies <- anObject
-|
-    doInit
-        Dependencies <- Dictionary new
 ]
 *
 Methods Object 'aspect'
