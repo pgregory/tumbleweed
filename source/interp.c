@@ -197,9 +197,10 @@ readMethodInfo:
     if (debugging) {
       fprintf(stdout,"method %s %d ", charPtr(basicAt(method,messageInMethod)), byteOffset);
       if(NULL != rcv)
-        fprintf(stdout,"on %s ", charPtr(getClass(basicAt((argumentsAt(0)), nameInClass))));
+        fprintf(stdout,"on %s ", charPtr(basicAt(getClass(argumentsAt(0)), nameInClass)));
       fprintf(stdout,"stack %p %p ",pst, *pst);
-      fprintf(stdout,"executing %d %d\n", high, low);
+      fprintf(stdout,"executing %d %d", high, low);
+      fprintf(stdout, "\n");
       fflush(stdout);
     }
     switch(high) {
@@ -338,6 +339,11 @@ doFindMessage:
           methodCache[i].cacheMethod->m_handle = method;
           methodCache[i].cacheClass->m_handle = methodClass;
         }
+
+    if (debugging) {
+      fprintf(stdout,"method %s\n", charPtr(basicAt(method,messageInMethod)));
+      fflush(stdout);
+    }
 
         if (watching && (basicAt(method,watchInMethod) != nilobj)) 
         {
