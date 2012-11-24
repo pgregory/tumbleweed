@@ -69,7 +69,8 @@ static int findMethod(object* methodClassLocation)
 
 //  printf("Looking for %s starting at %d\n", charPtr(messageToSend), methodClass);
   for (; methodClass != nilobj; methodClass = 
-      basicAt(methodClass,superClassInClass)) {
+      basicAt(methodClass,superClassInClass)) 
+  {
 //    printf("Looking for %s on %s\n", charPtr(messageToSend), charPtr(basicAt(methodClass,nameInClass)));
     methodTable = basicAt(methodClass,methodsInClass);
     if(methodTable == nilobj)
@@ -82,7 +83,8 @@ static int findMethod(object* methodClassLocation)
     }
   }
 
-  if (method == nilobj) {       /* it wasn't found */
+  if (method == nilobj) 
+  {       /* it wasn't found */
     methodClass = *methodClassLocation;
     return FALSE;
   }
@@ -96,7 +98,6 @@ static int findMethod(object* methodClassLocation)
 # define stackTop() *pst
 # define stackTopPut(x) (*pst = x)
 # define stackTopFree() *pst-- = nilobj
-/* note that ipop leaves x with excess reference count */
 # define ipop(x) x = stackTop(); *pst-- = nilobj
 # define processStackTop() ((pst-psb)+1)
 # define receiverAt(n) *(rcv+n)
@@ -140,7 +141,7 @@ int execute(object aProcess, int maxsteps)
   object *primargs;
   int byteOffset;
   object methodClass; 
-  int i, j;
+  int i, j, stackTop;
   register int low;
   int high;
   byte *bp;
@@ -150,10 +151,12 @@ int execute(object aProcess, int maxsteps)
 
   /* unpack the instance variables from the process */
   processStack    = basicAt(aProcess,stackInProcess);
-  psb = sysMemPtr(processStack);
-  j = getInteger(basicAt(aProcess,stackTopInProcess));
-  pst = psb + (j-1);
   linkPointer     = getInteger(basicAt(aProcess,linkPtrInProcess));
+  stackTop = getInteger(basicAt(aProcess,stackTopInProcess));
+
+  /* record pointer to the base and top of the process stack */
+  psb = sysMemPtr(processStack);
+  pst = psb + (stackTop-1);
 
   /* set the process time-slice counter before entering loop */
   timeSliceCounter = maxsteps;
@@ -163,38 +166,50 @@ readLinkageBlock:
   contextObject  = processStackAt(linkPointer+1);
   returnPoint = getInteger(processStackAt(linkPointer+2));
   byteOffset  = getInteger(processStackAt(linkPointer+4));
-  if (contextObject == nilobj) {
+  if (contextObject == nilobj) 
+  {
     contextObject = processStack;
     cntx = psb;
     arg = cntx + (returnPoint-1);
     method      = processStackAt(linkPointer+3);
     temps = cntx + linkPointer + 5;
   }
-  else {    /* read from context object */
+  else 
+  {    /* read from context object */
     cntx = sysMemPtr(contextObject);
     method = basicAt(contextObject,methodInContext);
     arg = sysMemPtr(basicAt(contextObject,argumentsInContext));
     temps = sysMemPtr(basicAt(contextObject,temporariesInContext));
   }
 
+  /* Get a pointer to the reciever object's data */
 #if !defined TW_SMALLINTEGER_AS_OBJECT
+  /* If using special small integers, don't try
+   * to get the pointer, rcv can't ever be 
+   * used in this case anyway, as integers have no
+   * local data */
   if((argumentsAt(0) & 1) == 0)
 #endif
     rcv = sysMemPtr((argumentsAt(0)));
 
+  /* Get the relevant information from the method */
 readMethodInfo:
   lits           = sysMemPtr(basicAt(method,literalsInMethod));
   bp             = bytePtr(basicAt(method,bytecodesInMethod)) - 1;
 
-  while ( --timeSliceCounter > 0 ) {
+  /* Now repeatedly read the bytecodes and execute them */
+  while ( --timeSliceCounter > 0 ) 
+  {
     low = (high = nextByte()) & 0x0F;
     high >>= 4;
-    if (high == 0) {
+    if (high == 0) 
+    {
       high = low;
       low = nextByte();
     }
 
-    if (debugging) {
+    if (debugging) 
+    {
       fprintf(stdout,"method %s %d ", charPtr(basicAt(method,messageInMethod)), byteOffset);
       if(NULL != rcv)
         fprintf(stdout,"on %s ", charPtr(basicAt(getClass(argumentsAt(0)), nameInClass)));
@@ -203,34 +218,47 @@ readMethodInfo:
       fprintf(stdout, "\n");
       fflush(stdout);
     }
-    switch(high) {
 
+    switch(high) 
+    {
+
+      /* Push an instance variable from the reveiver. */
       case PushInstance:
         ipush(receiverAt(low));
         break;
 
+      /* Push one of the arguments from the context. */
       case PushArgument:
         ipush(argumentsAt(low));
         break;
 
+      /* Push one of the temporaries from the context. */
       case PushTemporary:
         ipush(temporaryAt(low));
         break;
 
+      /* Push one of the stored literal values on the method. */
       case PushLiteral:
         ipush(literalsAt(low));
         break;
 
+      /* Push a constant value */
       case PushConstant:
-        switch(low) {
-          case 0: case 1: case 2:
+        switch(low) 
+        {
+          /* Special case for very small/common integer values */
+          case 0: 
+          case 1: 
+          case 2:
             ipush(newInteger(low));
             break;
 
+          /* Special case for -1, often used */
           case minusOne:
             ipush(newInteger(-1));
             break;
 
+          /* Push a new context */
           case contextConst:
             {
               /* check to see if we have made a block context yet */
@@ -273,10 +301,16 @@ readMethodInfo:
         }
         break;
 
+      /* Assign the value on the top of the stack to an instance 
+       * variable on the receiever.
+       */
       case AssignInstance:
         receiverAtPut(low, stackTop());
         break;
 
+      /* Assign the value on the top of the stack to a temporary
+       * variable on the context
+       */
       case AssignTemporary:
         temporaryAtPut(low, stackTop());
         break;
@@ -291,6 +325,7 @@ readMethodInfo:
 
 doSendMessage:
         arg = psb + (returnPoint-1);
+
 #if !defined TW_SMALLINTEGER_AS_OBJECT
         if((argumentsAt(0) & 1) == 0)
 #endif
@@ -301,7 +336,8 @@ doFindMessage:
         /* look up method in cache */
         i = ((hashObject(messageToSend)) + (hashObject(methodClass))) % cacheSize;
         if ((methodCache[i].cacheMessage->m_handle == messageToSend) &&
-            (methodCache[i].lookupClass->m_handle == methodClass)) {
+            (methodCache[i].lookupClass->m_handle == methodClass)) 
+        {
           method = methodCache[i].cacheMethod->m_handle;
           methodClass = methodCache[i].cacheClass->m_handle;
 //          printf("Cached method for %s on %s\n", charPtr(messageToSend), charPtr(basicAt(methodClass,nameInClass)));
@@ -340,10 +376,11 @@ doFindMessage:
           methodCache[i].cacheClass->m_handle = methodClass;
         }
 
-    if (debugging) {
-      fprintf(stdout,"method %s\n", charPtr(basicAt(method,messageInMethod)));
-      fflush(stdout);
-    }
+        if (debugging) 
+        {
+          fprintf(stdout,"method %s\n", charPtr(basicAt(method,messageInMethod)));
+          fflush(stdout);
+        }
 
         if (watching && (basicAt(method,watchInMethod) != nilobj)) 
         {
@@ -351,7 +388,8 @@ doFindMessage:
           j = processStackTop() - returnPoint;
           argarray = newArray(j+1);
           lock_argarray = new_SObjectHandle_from_object(argarray);
-          for (; j >= 0; j--) {
+          for (; j >= 0; j--) 
+          {
             ipop(returnedObject);
             basicAtPut(argarray,j+1, returnedObject);
           }
@@ -360,7 +398,8 @@ doFindMessage:
           messageToSend = newSymbol("watchWith:");
           /* try again - if fail really give up */
           methodClass = getClass(method);
-          if (! findMethod(&methodClass)) {
+          if (! findMethod(&methodClass)) 
+          {
             sysWarn("can't find","watch method");
             /* just quit */
             return FALSE;
