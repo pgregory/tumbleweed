@@ -22,7 +22,10 @@ typedef struct _ObjectStruct
     //! ID of the object that defines the class of this object.
     struct _ObjectStruct* _class;
     //! A reference counter, used only during mark/sweep GC.
-    long referenceCount;
+    byte referenceCount;
+    byte _padding;
+    //! An identity hash key, used for hash tables and dictionaries.
+    unsigned short identityHash;
     //! The size of the data area, in object ID's
     long size;
     //! A pointer to the data area of the object.
@@ -49,7 +52,7 @@ SObjectHandle* new_SObjectHandle_from_object(object from);
 void free_SObjectHandle(SObjectHandle* h);
 int hash_SObjectHandle(SObjectHandle* h);
 
-int hashObject(object o);
+unsigned short hashObject(object o);
 
 
 

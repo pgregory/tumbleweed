@@ -35,6 +35,7 @@ ObjectStruct _nilobj =
 {
   NULL,
   0,
+  0, 
   0,
   NULL
 };
@@ -42,6 +43,8 @@ object nilobj = &_nilobj;
 
 extern object firstProcess;
 object symbols;     /* table of all symbols created */
+
+static unsigned short NextHashValue = 0;
 
 
 //
@@ -76,6 +79,7 @@ object allocObject(size_t memorySize)
     ob->size = memorySize;
     ob->_class = nilobj;
     ob->referenceCount = 0;
+    ob->identityHash = NextHashValue++;
     return ob;
 }
 
@@ -311,6 +315,7 @@ static struct
     object ref;
     object _classRef;
     long size;
+    unsigned short identityHash;
 } dummyObject;
 
 
@@ -406,6 +411,7 @@ void saveObject(Visitor* _this)
   dummyObject.ref = _this->o;
   dummyObject._classRef = _this->o->_class;
   dummyObject.size = size = _this->o->size;
+  dummyObject.identityHash = _this->o->identityHash;
   fw(fcb->fp, (char *) &dummyObject, sizeof(dummyObject));
   if (size < 0) 
     size = ((- size) + 1) / 2;
@@ -425,6 +431,9 @@ void imageWrite(FILE* fp)
   // Write the nil object to use during fixup.
   fw(fp, (char *) &nilobj, sizeof(object));
 
+  // Write the next hash value, so that they hashing continues
+  // from the same place when the image is loaded.
+  fw(fp, (char *) &NextHashValue, sizeof(short));
 
   v.preFunc = &setFlag;
   v.postFunc = 0;
@@ -527,12 +536,22 @@ void relinkObject(Visitor* _this)
 void imageRead(FILE* fp)
 {   
   long i, count, size;
+  unsigned short identityHashHold;
   object oldRef, newRef, nilAtStore;
   mapEntry* map;
   LinkVisitor lv;
 
   fr(fp, (char *) &symbols, sizeof(object));
   fr(fp, (char *) &nilAtStore, sizeof(object));
+
+  // Read the stored hash value, so that identity 
+  // hash values for objects continue from the same
+  // index.
+  fr(fp, (char *) &NextHashValue, sizeof(short));
+  // Hold the next hash value, as we don't want the
+  // re-building of the snapshot to alter the starting
+  // point.
+  identityHashHold = NextHashValue;
 
   fr(fp, (char *) &count, sizeof(long));
   // Add one for nil.
@@ -568,6 +587,7 @@ void imageRead(FILE* fp)
     ++i;
 
     newRef->_class = dummyObject._classRef;
+    newRef->identityHash = dummyObject.identityHash;
     if (size != 0) 
       fr(fp, (char *) newRef->memory, sizeof(object) * (int) size);
     else
@@ -590,6 +610,10 @@ void imageRead(FILE* fp)
 
   // Fixup the class of the single nil object
   _nilobj._class = globalSymbol("UndefinedObject");
+
+  // Now reset the identityHash counter, to ensure we're
+  // exactly like we were at the time of snapshot.
+  NextHashValue = identityHashHold;
 
   free(map);
 }
@@ -774,7 +798,7 @@ void* cPointerValue(object _this)
     return l;
 }
 
-int hashObject(object o)
+unsigned short hashObject(object o)
 {
-    return (int)(long)o;
+    return o->identityHash;
 }
