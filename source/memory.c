@@ -665,14 +665,6 @@ SObjectHandle* new_SObjectHandle()
 }
 
 
-SObjectHandle* copy_SObjectHandle(const SObjectHandle* from)
-{
-    SObjectHandle* h = new_SObjectHandle();
-    h->m_handle = from->m_handle;
-
-    return h;
-}
-
 SObjectHandle* new_SObjectHandle_from_object(object from)
 {
     SObjectHandle* h = new_SObjectHandle();
@@ -690,12 +682,6 @@ void free_SObjectHandle(SObjectHandle* h)
     free(h);
   }
 }
-
-int hash_SObjectHandle(SObjectHandle* h)
-{
-    return hashObject(h->m_handle);
-}
-
 
 
 

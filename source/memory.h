@@ -47,10 +47,8 @@ extern SObjectHandle* tail;
 void appendToList(SObjectHandle* h);
 void removeFromList(SObjectHandle* h);
 SObjectHandle* new_SObjectHandle();
-SObjectHandle* copy_SObjectHandle(const SObjectHandle* from);
 SObjectHandle* new_SObjectHandle_from_object(object from);
 void free_SObjectHandle(SObjectHandle* h);
-int hash_SObjectHandle(SObjectHandle* h);
 
 unsigned short hashObject(object o);
 
