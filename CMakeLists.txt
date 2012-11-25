@@ -5,16 +5,12 @@ project (Tumbleweed)
 
 option(TW_BUILD_TESTS "Build all of Tumbleweeds's unit tests." OFF)
 option(TW_ENABLE_FFI "Enable FFI for native module support." ON)
+option(TW_BUILD_SFML "Build the SFML external module (requires FFI)." OFF)
 option(TW_SMALLINTEGER_AS_OBJECT "Disable the special handling of small integers, use objects instead." OFF)
 
 if(TW_SMALLINTEGER_AS_OBJECT)
   add_definitions(-DTW_SMALLINTEGER_AS_OBJECT)
 endif(TW_SMALLINTEGER_AS_OBJECT)
-
-#find_package( Boost 1.36.0 )
-#if(Boost_FOUND)
-#   include_directories(${Boost_INCLUDE_DIRS})
-#endif()
 
 set(shared_srcs 
   source/filein.c
@@ -78,19 +74,19 @@ if(TW_ENABLE_FFI)
   if(WIN32)
     add_definitions(-DFFI_BUILDING)
   endif(WIN32)
+  include_directories(${LIBFFI_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
+  if(WIN32)
+      add_definitions(-DSO_EXT="dll")
+  else(WIN32)
+    add_definitions(-DSO_EXT="so")
+  endif(WIN32)
 endif(TW_ENABLE_FFI)
 
 set(image_srcs ${common_image_srcs} ${ffi_image_srcs}
   bootstrap/tty.st
 )
 
-#set(server_image_srcs ${common_image_srcs} ${ffi_image_srcs}
-#  bootstrap/server.st
-#)
-
-
-include_directories(${LIBFFI_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
 
 if(WIN32)
     add_definitions(-DSO_EXT="dll" -D_CRT_SECURE_NO_WARNINGS)
@@ -98,6 +94,7 @@ else(WIN32)
   add_definitions(-DSO_EXT="so")
   find_library(TW_EDITLINE_LIBRARY "edit")
   find_path(TW_EDITLINE_INCLUDE_DIR "editline/readline.h")
+  set(LIBS ${LIBS} m)
   include_directories(${TW_EDITLINE_INCLUDE_DIR})
 endif(WIN32)
 
@@ -168,13 +165,14 @@ if(TW_BUILD_TESTS)
 endif(TW_BUILD_TESTS)
 
 # Modules.
-add_subdirectory(ffi_test)
-add_subdirectory(sockets)
-add_subdirectory(sfml)
-#add_subdirectory(linenoise)
-#add_subdirectory(trex)
-if(NOT WIN32)
-  add_subdirectory(events)
-endif(NOT WIN32)
-
+if(TW_ENABLE_FFI)
+  add_subdirectory(ffi_test)
+  add_subdirectory(sockets)
+  if(TW_ENABLE_SFML)
+    add_subdirectory(sfml)
+  endif(TW_ENABLE_SFML)
+  if(NOT WIN32)
+    add_subdirectory(events)
+  endif(NOT WIN32)
+endif(TW_ENABLE_FFI)
 
