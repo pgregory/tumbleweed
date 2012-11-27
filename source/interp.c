@@ -20,6 +20,7 @@
 # include "names.h"
 # include "interp.h"
 # include "parser.h"
+# include "primitive.h"
 
 int watching = 0;
 extern object primitive( int, object* );
@@ -791,6 +792,8 @@ void initialiseInterpreter()
     methodCache[i].cacheClass = new_SObjectHandle();
     methodCache[i].cacheMethod = new_SObjectHandle();
   }
+
+  initialiseDebugPrims();
 }
 
 

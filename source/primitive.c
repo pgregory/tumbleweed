@@ -41,6 +41,7 @@
 #include "names.h"
 #include "interp.h"
 #include "parser.h"
+#include "primitive.h"
 
 extern object processStack;
 extern int linkPointer;
@@ -53,6 +54,7 @@ extern object ffiPrimitive(int, object*);
 #endif
 
 
+/* 0 - 9 */
 static object zeroaryPrims(int number)
 {   
   long i;
@@ -137,6 +139,7 @@ static object zeroaryPrims(int number)
   return(returnedObject);
 }
 
+/* 10 - 19 */
 static object unaryPrims(int number, object firstarg)
 {   
   int i, j, saveLinkPointer;
@@ -238,6 +241,7 @@ static object unaryPrims(int number, object firstarg)
   return(returnedObject);
 }
 
+/* 20 - 29 */
 static object binaryPrims(int number, object firstarg, object secondarg)
 {   
   char buffer[2000];
@@ -308,6 +312,7 @@ static object binaryPrims(int number, object firstarg, object secondarg)
   return(returnedObject);
 }
 
+/* 30 - 39 */
 static object trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
 {   
   // todo: Fixed length buffer
@@ -360,6 +365,7 @@ static object trinaryPrims(int number, object firstarg, object secondarg, object
   return(returnedObject);
 }
 
+/* 50 - 59 */
 static object intUnary(int number, object firstarg)
 {   
   object returnedObject;
@@ -396,6 +402,7 @@ static object intUnary(int number, object firstarg)
   return(returnedObject);
 }
 
+/* 60 - 79 */
 static object intBinary(register int number, register int firstarg, int secondarg)
 {   
   int binresult;
@@ -480,6 +487,7 @@ overflow:
   return(returnedObject);
 }
 
+/* 80 - 89 */
 static object strUnary(int number, char* firstargument)
 {   
   object returnedObject;
@@ -520,6 +528,7 @@ static object strUnary(int number, char* firstargument)
   return(returnedObject);
 }
 
+/* 100 - 109 */
 static object floatUnary(int number, double firstarg)
 {   
   char buffer[20];
@@ -576,6 +585,7 @@ static object floatUnary(int number, double firstarg)
   return(returnedObject);
 }
 
+/* 110 - 119 */
 static object floatBinary(int number, double first, double second)
 {    
   int binResult;
@@ -610,6 +620,7 @@ static object floatBinary(int number, double first, double second)
 }
 
 
+/* 140 - 149 */
 static object cPointerUnary(int number, void* firstarg)
 {   
   object returnedObject;
@@ -631,6 +642,7 @@ static object cPointerUnary(int number, void* firstarg)
   return(returnedObject);
 }
 
+/* 200 - 209 */
 static object exceptionPrimitive(int number, object* arguments)
 {
   object returnedObject;
@@ -732,5 +744,109 @@ object primitive(register int primitiveNumber, object* arguments)
   }
 
   return (returnedObject);
+}
+
+
+/*! New primitive mechanism
+ */
+
+object PRIM_debugPrint(int primitiveNumber, object* args, int argc)
+{
+  fprintf(stdout, "Hello from debugPrint\n");
+
+  return nilobj;
+}
+
+object PRIM_testFunc(int primitiveNumber, object* args, int argc)
+{
+  fprintf(stdout, "Hello from testFunc\n");
+
+  return nilobj;
+}
+
+PrimitiveTableEntry debugPrims[] =
+{
+  { "debugPrint", PRIM_debugPrint },
+  { NULL, NULL }
+};
+
+PrimitiveTableEntry testPrims[] =
+{
+  { "testFunc", PRIM_testFunc },
+  { NULL, NULL }
+};
+
+PrimitiveTable* PrimitiveTableRoot = NULL;
+PrimitiveTable* PrimitiveTableAddresses = NULL;
+int PrimitiveTableCount = 0;
+
+void addPrimitiveTable(PrimitiveTableEntry* primitives)
+{
+  PrimitiveTable* table;
+
+  table = (PrimitiveTable*)calloc(sizeof(PrimitiveTable), 1);
+  table->next = NULL;
+  table->primitives = primitives;
+
+  if(NULL == PrimitiveTableRoot)
+  {
+    PrimitiveTableRoot = table;
+  }
+  else
+  {
+    table->next = PrimitiveTableRoot;
+    PrimitiveTableRoot = table;
+  }
+}
+
+int findPrimitiveByName(const char* name, int* tableIndex)
+{
+  int index;
+  *tableIndex = 0;
+  PrimitiveTable* table = PrimitiveTableRoot;
+
+  while(table)
+  {
+    index = 0;
+    while(table->primitives[index].name)
+    {
+      if(!strcmp(table->primitives[index].name, name))
+        return index;
+      index++;
+    }
+    table = table->next;
+    (*tableIndex)++;
+  }
+  return -1;
+}
+
+object executePrimitive(int tableIndex, int index, object* args, int argc)
+{
+  PrimitiveTable* table = PrimitiveTableRoot;
+
+  while(table && tableIndex > 0)
+  {
+    table = table->next;
+    tableIndex--;
+  }
+
+  if(table)
+    return table->primitives[index].fn(index, args, argc);
+  else
+    return nilobj;
+}
+
+
+void initialiseDebugPrims()
+{
+  int index, tableIndex;
+
+  addPrimitiveTable(debugPrims);
+  addPrimitiveTable(testPrims);
+
+  /* Test */
+  index = findPrimitiveByName("debugPrint", &tableIndex);
+  printf("Found: %d : %d\n", index, tableIndex);
+  executePrimitive(tableIndex, index, NULL, 0);
 }
 
