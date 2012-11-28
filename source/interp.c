@@ -557,6 +557,23 @@ doFindMessage:
         ipush(returnedObject); 
         break;
 
+      case DoPrimitive2:
+        /* low gives number of arguments */
+        /* next byte is primitive number */
+        primargs = (pst - low) + 1;
+        /* next byte gives primitive table number */
+        i = nextByte();
+        /* next byte gives index within the table */
+        j = nextByte();
+        /* Call the primitive */
+        returnedObject = executePrimitive(i, j, primargs, low);
+        /* pop off arguments */
+        while (low-- > 0) {
+          stackTopFree();
+        }
+        ipush(returnedObject); 
+        break;
+
 doReturn:
         returnPoint = getInteger(basicAt(processStack,linkPointer + 2));
         linkPointer = getInteger(basicAt(processStack,linkPointer));

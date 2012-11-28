@@ -24,6 +24,7 @@ extern int PrimitiveTableCount;
 
 void addPrimitiveTable(PrimitiveTableEntry* primitives);
 int findPrimitiveByName(const char* name, int* tableIndex);
+object executePrimitive(int tableIndex, int index, object* args, int argc);
 
 void initialiseDebugPrims();
 

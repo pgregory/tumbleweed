@@ -752,9 +752,15 @@ object primitive(register int primitiveNumber, object* arguments)
 
 object PRIM_debugPrint(int primitiveNumber, object* args, int argc)
 {
-  fprintf(stdout, "Hello from debugPrint\n");
+  object returnedObject;
+ 
+  if(argc != 1)
+    sysError("invalid number of arguments to primitive", "PRIM_debugPrint");
 
-  return nilobj;
+  fprintf(stdout, "debugPrint : %s\n", charPtr(args[0]));
+  returnedObject = newInteger(strlen(charPtr(args[0])));
+
+  return returnedObject;
 }
 
 object PRIM_testFunc(int primitiveNumber, object* args, int argc)
@@ -843,10 +849,5 @@ void initialiseDebugPrims()
 
   addPrimitiveTable(debugPrims);
   addPrimitiveTable(testPrims);
-
-  /* Test */
-  index = findPrimitiveByName("debugPrint", &tableIndex);
-  printf("Found: %d : %d\n", index, tableIndex);
-  executePrimitive(tableIndex, index, NULL, 0);
 }
 

@@ -386,20 +386,46 @@ int term()
 void parsePrimitive()
 {   
     int primitiveNumber, argumentCount;
+    int primitiveTableNumber, primitiveIndex;
 
-    if (nextToken() != intconst)
-        compilError(_selector,"primitive number missing","");
-    primitiveNumber = intToken();
-    nextToken();
-    argumentCount = 0;
-    while (_parseok && ! ((currentToken() == binary) && strcmp(strToken(), ">") == 0)) 
+    if (nextToken() == intconst)
     {
-        term();
-        argumentCount++;
+        primitiveNumber = intToken();
+        nextToken();
+        argumentCount = 0;
+        while (_parseok && ! ((currentToken() == binary) && strcmp(strToken(), ">") == 0)) 
+        {
+            term();
+            argumentCount++;
+        }
+        genInstruction(DoPrimitive, argumentCount);
+        genCode(primitiveNumber);
+        nextToken();
     }
-    genInstruction(DoPrimitive, argumentCount);
-    genCode(primitiveNumber);
-    nextToken();
+    else if(currentToken() == nameconst)
+    {
+        primitiveIndex = findPrimitiveByName(strToken(), &primitiveTableNumber);
+        if(primitiveIndex >= 0)
+        {
+            nextToken();
+            argumentCount = 0;
+            while (_parseok && ! ((currentToken() == binary) && strcmp(strToken(), ">") == 0)) 
+            {
+                term();
+                argumentCount++;
+            }
+            genInstruction(DoPrimitive2, argumentCount);
+            genCode(primitiveTableNumber);
+            genCode(primitiveIndex);
+            nextToken();
+        }
+        else
+            compilError(_selector, "primitive error", "cannot find primitive");
+    }
+    else
+    {
+        compilError(_selector,"primitive error", "malformed primitive");
+    }
 }
 
 void genMessage(int toSuper, int argumentCount, object messagesym)

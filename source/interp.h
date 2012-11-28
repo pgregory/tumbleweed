@@ -20,6 +20,7 @@
 # define SendMessage 9
 # define SendUnary 10
 # define SendBinary 11
+# define DoPrimitive2 12
 # define DoPrimitive 13
 # define DoSpecial 15
 
