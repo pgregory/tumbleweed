@@ -34,7 +34,7 @@ Methods Process 'all'
         (stack size > 1500)
             ifTrue: [ smalltalk error:
                 'process stack overflow, probable loop'].
-        <19 self> ifTrue: [] ifFalse: [ self terminate ].
+        <execute self> ifTrue: [] ifFalse: [ self terminate ].
 |
     context
         ^ stack at: 3

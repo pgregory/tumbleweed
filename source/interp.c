@@ -496,9 +496,11 @@ doFindMessage:
             returnedObject = watching?booleanSyms[booleanTrue]:booleanSyms[booleanFalse];
             break;
 
+#if 0
           case 11: /* class of object */
             returnedObject = getClass(*primargs);
             break;
+#endif
           case 21: /* object equality test */
             if (*primargs == *(primargs+1))
               returnedObject = booleanSyms[booleanTrue];
@@ -540,10 +542,12 @@ doFindMessage:
                 return FALSE /* all done */;
             }
             break;
+#if 0
           case 58: /* allocObject */
             j = getInteger(*primargs);
             returnedObject = allocObject(j);
             break;
+#endif
           case 87: /* value of symbol */
             returnedObject = globalSymbol(charPtr((*primargs)));
             break;

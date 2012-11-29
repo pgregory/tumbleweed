@@ -102,10 +102,6 @@ static object zeroaryPrims(int number)
     case 5:     /* flip watch - done in interp */
       break;
 
-    case 6:
-      returnedObject = newCPointer(NULL);
-      break;
-    
     case 7:
       {
 #if !defined WIN32
@@ -130,9 +126,6 @@ static object zeroaryPrims(int number)
       }
       break;
 
-    case 9:
-      exit(0);
-
     default:        /* unknown primitive */
       sysError("unknown primitive","zeroargPrims");
       break;
@@ -152,23 +145,6 @@ static object unaryPrims(int number, object firstarg)
   switch(number) {
     case 1:     /* class of object */
       returnedObject = firstarg->_class;
-      break;
-
-    case 2:     /* basic size of object */
-      i = firstarg->size;
-      /* byte objects have negative size */
-      if (i < 0) i = (-i);
-      returnedObject = newInteger(i);
-      break;
-
-    case 3:     /* hash value of object */
-      // \todo: Not happy about this, need to review the hashing.
-      // This specialises the hash for integers, to ensure values are used, not objects,
-      // but there are other cases where the value should be considered, like float.
-      if(firstarg->_class == globalSymbol("Integer"))
-        returnedObject = newInteger(getInteger(firstarg));
-      else
-        returnedObject = newInteger(hashObject(firstarg));
       break;
 
     case 4:     /* debugging print */
@@ -195,46 +171,6 @@ static object unaryPrims(int number, object firstarg)
       returnedObject = booleanSyms[booleanTrue];
       break;
 
-    case 9:         /* process execute */
-      /* first save the values we are about to clobber */
-      saveProcessStack = processStack;
-      // \todo: not sure if this lock is necessary.
-      lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
-      saveLinkPointer = linkPointer;
-# ifdef SIGNAL
-      /* trap control-C */
-      signal(SIGINT, brkfun);
-      if (setjmp(jb)) 
-      {
-        returnedObject = booleanSyms[booleanFalse];
-      }
-      else
-# endif
-# ifdef CRTLBRK
-        /* trap control-C using dos ctrlbrk routine */
-        ctrlbrk(brkfun);
-      if (setjmp(jb)) 
-      {
-        returnedObject = booleanSyms[booleanFalse];
-      }
-      else
-# endif
-        if (execute(firstarg, 5000))
-          returnedObject = booleanSyms[booleanTrue];
-        else
-          returnedObject = booleanSyms[booleanFalse];
-      /* then restore previous environment */
-      processStack = saveProcessStack;
-      free_SObjectHandle(lock_saveProcessStack);
-      linkPointer = saveLinkPointer;
-# ifdef SIGNAL
-      signal(SIGINT, brkignore);
-# endif
-# ifdef CTRLBRK
-      ctrlbrk(brkignore);
-# endif
-      break;
-
     default:        /* unknown primitive */
       sysError("unknown primitive","unaryPrims");
       break;
@@ -259,11 +195,6 @@ static object binaryPrims(int number, object firstarg, object secondarg)
         returnedObject = booleanSyms[booleanFalse];
       break;
 
-    case 2:     /* set class of object */
-      firstarg->_class = secondarg;
-      returnedObject = firstarg;
-      break;
-
     case 3:     /* debugging stuff */
       //fprintf(stderr,"primitive 23 %d %d\n", static_cast<int>(firstarg), static_cast<int>(secondarg));
       break;
@@ -276,33 +207,6 @@ static object binaryPrims(int number, object firstarg, object secondarg)
 
     case 5:     /* basicAt: */
       returnedObject = basicAt(firstarg,getInteger(secondarg));
-      break;
-
-    case 6:     /* byteAt: */
-      i = byteAt(firstarg, getInteger(secondarg));
-      if (i < 0) i += 256;
-      returnedObject = newInteger(i);
-      break;
-
-    case 7:     /* symbol set */
-      nameTableInsert(symbols, strHash(charPtr(firstarg)),
-          firstarg, secondarg);
-      break;
-
-    case 8:     /* block start */
-      /* first get previous link */
-      i = getInteger(basicAt(processStack,linkPointer));
-      /* change context and byte pointer */
-      basicAtPut(processStack,i+1, firstarg);
-      basicAtPut(processStack,i+4, secondarg);
-      break;
-
-    case 9:     /* duplicate a block, adding a new context to it */
-      returnedObject = newBlock();
-      basicAtPut(returnedObject,contextInBlock, secondarg);
-      basicAtPut(returnedObject,argumentCountInBlock, basicAt(firstarg,2));
-      basicAtPut(returnedObject,argumentLocationInBlock, basicAt(firstarg,3));
-      basicAtPut(returnedObject,bytecountPositionInBlock, basicAt(firstarg,4));
       break;
 
     default:        /* unknown primitive */
@@ -329,10 +233,6 @@ static object trinaryPrims(int number, object firstarg, object secondarg, object
       basicAtPut(firstarg,getInteger(secondarg), thirdarg);
       break;
 
-    case 2:         /* basicAt:Put: for bytes */
-      byteAtPut(firstarg, getInteger(secondarg), getInteger(thirdarg));
-      break;
-
     case 3:         /* string copyFrom:to: */
       bp = charPtr(firstarg);
       i = getInteger(secondarg);
@@ -343,20 +243,6 @@ static object trinaryPrims(int number, object firstarg, object secondarg, object
           *tp++ = bp[i-1];
       *tp = '\0';
       returnedObject = newStString(buffer);
-      break;
-
-    case 9:         /* compile method */
-      {
-        resetLexer(charPtr(secondarg));
-        setInstanceVariables(firstarg);
-        if (parseMessageHandler(thirdarg, FALSE)) {
-          flushCache(basicAt(thirdarg,messageInMethod), firstarg);
-          basicAtPut(thirdarg,methodClassInMethod, firstarg);
-          returnedObject = booleanSyms[booleanTrue];
-        }
-        else
-          returnedObject = booleanSyms[booleanFalse];
-      }
       break;
 
     default:        /* unknown primitive */
@@ -387,14 +273,6 @@ static object intUnary(int number, object firstarg)
     case 5:     /* set random number */
       srand((unsigned) getInteger(firstarg));
       returnedObject = nilobj;
-      break;
-
-    case 8:
-      returnedObject = allocObject(getInteger(firstarg));
-      break;
-
-    case 9:
-      returnedObject = allocByte(getInteger(firstarg));
       break;
 
     default:
@@ -517,10 +395,6 @@ static object strUnary(int number, char* firstargument)
 # endif
       break;
 
-    case 9:
-      sysError("fatal error", firstargument);
-      break;
-
     default:
       sysError("unknown primitive", "strUnary");
       break;
@@ -629,12 +503,6 @@ static object cPointerUnary(int number, void* firstarg)
 
   switch(number) 
   {
-    case 1:     /* cPointer value asString */
-      {
-        snprintf(cpointerString, 100, "%p", firstarg);
-        returnedObject = newStString(cpointerString);
-      }
-      break;
     default:
       sysError("unknown primitive","cPointerUnary");
       break;
@@ -771,6 +639,231 @@ object PRIM_testFunc(int primitiveNumber, object* args, int argc)
   return nilobj;
 }
 
+
+PrimitiveTableEntry vmPrimitiveTable[];
+#define checkArgCount(n) if(argc != (n)) sysError("invalid number of arguments to primitive", vmPrimitiveTable[primitiveNumber].name)
+object vmPrimitiveHandler(int primitiveNumber, object* args, int argc)
+{
+  object returnedObject = nilobj;
+  unsigned int i;
+  char cpointerString[100];
+
+  switch(primitiveNumber)
+  {
+    case 0:     /* exit */
+      exit(0);
+      break;
+
+    case 1:     /* error */
+      checkArgCount(1);
+      sysError("fatal error", charPtr(args[0]));
+      break;
+
+    case 2:     /* new_CPointer */
+      returnedObject = newCPointer(NULL);
+      break;
+
+    case 3:     /* new_Object */
+      checkArgCount(1);
+      returnedObject = allocObject(getInteger(args[0]));
+      break;
+
+    case 4:     /* new_ByteObject */
+      checkArgCount(1);
+      returnedObject = allocByte(getInteger(args[0]));
+      break;
+
+    case 5:     /* setClass */
+      checkArgCount(2);
+      args[0]->_class = args[1];
+      returnedObject = args[0];
+      break;
+
+    case 6:     /* basicSize */
+      checkArgCount(1);
+      i = args[0]->size;
+      /* byte objects have negative size */
+      if (i < 0) 
+        i = (-i);
+      returnedObject = newInteger(i);
+      break;
+
+    case 7:     /* identityHash */
+      checkArgCount(1);
+      // \todo: Not happy about this, need to review the hashing.
+      // This specialises the hash for integers, to ensure values are used, not objects,
+      // but there are other cases where the value should be considered, like float.
+      if(args[0]->_class == globalSymbol("Integer"))
+        returnedObject = newInteger(getInteger(args[0]));
+      else
+        returnedObject = newInteger(hashObject(args[0]));
+      break;
+
+    case 8:     /* class */
+      checkArgCount(1);
+      returnedObject = getClass(args[0]);
+      break;
+
+    case 9:     /* byteAt */
+      checkArgCount(2);
+      i = byteAt(args[0], getInteger(args[1]));
+      if (i < 0) 
+        i += 256;
+      returnedObject = newInteger(i);
+      break;
+
+    case 10:    /* byteAtPut */
+      checkArgCount(3);
+      byteAtPut(args[0], getInteger(args[1]), getInteger(args[2]));
+      break;
+
+    case 11:    /* symbolSet */
+      checkArgCount(2);
+      nameTableInsert(symbols, strHash(charPtr(args[0])),
+          args[0], args[1]);
+      break;
+
+    case 12:    /* CPointerAsString */
+      checkArgCount(1);
+      snprintf(cpointerString, 100, "%p", args[0]);
+      returnedObject = newStString(cpointerString);
+      break;
+
+    default:
+      break;
+  }
+  return returnedObject;
+}
+#undef checkArgCount
+
+PrimitiveTableEntry executePrimitiveTable[];
+#define checkArgCount(n) if(argc != (n)) sysError("invalid number of arguments to primitive", executePrimitiveTable[primitiveNumber].name)
+object executePrimitiveHandler(int primitiveNumber, object* args, int argc)
+{
+  int i,j, saveLinkPointer;
+  object saveProcessStack;
+  SObjectHandle* lock_saveProcessStack = 0;
+  object returnedObject = nilobj;
+
+  switch(primitiveNumber)
+  {
+    case 0:     /* execute */
+      checkArgCount(1);
+      /* first save the values we are about to clobber */
+      saveProcessStack = processStack;
+      // \todo: not sure if this lock is necessary.
+      lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
+      saveLinkPointer = linkPointer;
+      if (execute(args[0], 5000))
+        returnedObject = booleanSyms[booleanTrue];
+      else
+        returnedObject = booleanSyms[booleanFalse];
+      /* then restore previous environment */
+      processStack = saveProcessStack;
+      free_SObjectHandle(lock_saveProcessStack);
+      linkPointer = saveLinkPointer;
+      break;
+
+    case 1:     /* blockStart */
+      checkArgCount(2);
+      /* first get previous link */
+      i = getInteger(basicAt(processStack,linkPointer));
+      /* change context and byte pointer */
+      basicAtPut(processStack,i+1, args[0]);
+      basicAtPut(processStack,i+4, args[1]);
+      break;
+
+    case 2:     /* blockReturn */
+      checkArgCount(1);
+      /* first get previous link pointer */
+      i = getInteger(basicAt(processStack,linkPointer));
+      /* then creating context pointer */
+      j = getInteger(basicAt(args[0],1));
+      if (basicAt(processStack,j+1) != args[0]) 
+      {
+        returnedObject = booleanSyms[booleanFalse];
+        break;
+      }
+      /* first change link pointer to that of creator */
+      basicAtPut(processStack,i, basicAt(processStack,j));
+      /* then change return point to that of creator */
+      basicAtPut(processStack,i+2, basicAt(processStack,j+2));
+      returnedObject = booleanSyms[booleanTrue];
+      break;
+
+    case 3:     /* duplicate a block, adding a new context to it */
+      checkArgCount(2);
+      returnedObject = newBlock();
+      basicAtPut(returnedObject,contextInBlock, args[1]);
+      basicAtPut(returnedObject,argumentCountInBlock, basicAt(args[0],2));
+      basicAtPut(returnedObject,argumentLocationInBlock, basicAt(args[0],3));
+      basicAtPut(returnedObject,bytecountPositionInBlock, basicAt(args[0],4));
+      break;
+
+    default:
+      break;
+  }
+
+  return returnedObject;
+}
+#undef checkArgCount
+
+PrimitiveTableEntry compilePrimitiveTable[];
+#define checkArgCount(n) if(argc != (n)) sysError("invalid number of arguments to primitive", compilePrimitiveTable[primitiveNumber].name)
+object compilePrimitiveHandler(int primitiveNumber, object* args, int argc)
+{
+  object returnedObject = nilobj;
+
+  checkArgCount(3);
+
+  resetLexer(charPtr(args[1]));
+  setInstanceVariables(args[0]);
+  if (parseMessageHandler(args[2], FALSE)) {
+    flushCache(basicAt(args[2],messageInMethod), args[0]);
+    basicAtPut(args[2],methodClassInMethod, args[0]);
+    returnedObject = booleanSyms[booleanTrue];
+  }
+  else
+    returnedObject = booleanSyms[booleanFalse];
+
+  return returnedObject;
+}
+#undef checkArgCount
+
+
+PrimitiveTableEntry vmPrimitiveTable[] =
+{
+  { "exit", vmPrimitiveHandler },
+  { "error", vmPrimitiveHandler },
+  { "new_CPointer", vmPrimitiveHandler },
+  { "new_Object", vmPrimitiveHandler },
+  { "new_ByteObject", vmPrimitiveHandler },
+  { "set_Class", vmPrimitiveHandler },
+  { "basicSize", vmPrimitiveHandler },
+  { "identityHash", vmPrimitiveHandler },
+  { "class", vmPrimitiveHandler },
+  { "byteAt", vmPrimitiveHandler },
+  { "byteAtPut", vmPrimitiveHandler },
+  { "symbolSet", vmPrimitiveHandler },
+  { "CPointerAsString", vmPrimitiveHandler },
+  { NULL, NULL }
+};
+
+PrimitiveTableEntry executePrimitiveTable[] =
+{
+  { "execute", executePrimitiveHandler },
+  { "returnToBlock", executePrimitiveHandler },
+  { "blockReturn", executePrimitiveHandler },
+  { "blockCreateContext", executePrimitiveHandler },
+  { NULL, NULL }
+};
+
+PrimitiveTableEntry compilePrimitiveTable[] =
+{
+  { "compile", compilePrimitiveHandler },
+  { NULL, NULL }
+};
+
 PrimitiveTableEntry debugPrims[] =
 {
   { "debugPrint", PRIM_debugPrint },
@@ -849,5 +942,8 @@ void initialiseDebugPrims()
 {
   addPrimitiveTable(debugPrims);
   addPrimitiveTable(testPrims);
+  addPrimitiveTable(compilePrimitiveTable);
+  addPrimitiveTable(executePrimitiveTable);
+  addPrimitiveTable(vmPrimitiveTable);
 }
 

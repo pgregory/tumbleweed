@@ -166,7 +166,7 @@ Methods Boolean 'all'
 Methods Class 'creation'
     new     
     | newObj |
-        newObj <- < 22 < 58 instanceSize > self >.
+        newObj <- < set_Class < new_Object instanceSize > self >.
     (newObj isKindOf: Class) ifTrue: [
       newObj initialize ]
     ifFalse: [
@@ -291,13 +291,13 @@ Methods Context 'all'
 |
     returnToBlock: bytePtr
         " change the location we will return to, to execute a block"
-        <28 self bytePtr>
+        <returnToBlock self bytePtr>
 |
     copy
         ^ super copy temporaries: temporaries copy
 |
     blockReturn
-        <18 self>
+        <blockReturn self>
             ifFalse: [ ^ smalltalk error: 
                 'incorrect context for block return']
 ]
@@ -318,7 +318,7 @@ Methods False 'all'
 ]
 Methods Method 'all'
     compileWithClass: aClass
-        ^ <39 aClass text self>
+        ^ <compile aClass text self>
 |
     name
         ^ message
@@ -399,10 +399,10 @@ Methods Object 'all'
         ^ <31 self index value>
 |
     basicSize
-        ^ <12 self>
+        ^ <basicSize self>
 |
     class
-        ^ <11 self>
+        ^ <class self>
 |
     copy
         ^ self shallowCopy
@@ -417,7 +417,7 @@ Methods Object 'all'
         ('(Class ', self class, ') ' , self printString ) print
 |
     hash
-        ^ <13 self>
+        ^ <identityHash self>
 |
     isMemberOf: aClass
         ^ self class == aClass
@@ -504,7 +504,7 @@ Methods Symbol 'all'
         ^ smalltalk perform: self withArguments: args ifError: aBlock
 |
     assign: value
-        <27 self value>. ^ value
+        <symbolSet self value>. ^ value
 |
     asString
         " catenation makes string and copy automatically "
@@ -543,11 +543,11 @@ Methods Object 'errors'
 *
 Methods MetaCPointer 'creation'
   new
-    ^ <6>
+    ^ <new_CPointer>
 ]
 Methods CPointer 'all'
   asString
-    ^ <141 self>
+    ^ <CPointerAsString self>
 |
   printString
     ^ self asString

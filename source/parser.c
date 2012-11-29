@@ -27,6 +27,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "env.h"
+#include "interp.h"
 #include "parser.h"
 #include "primitive.h"
 
@@ -97,7 +98,7 @@ void genCode(int value)
         _codeArray[_codeTop++] = value;
 }
 
-void genInstruction(enum EOpCode high, int low)
+void genInstruction(enum EOpCodes high, int low)
 {
     if (low >= 16) 
     {
@@ -781,6 +782,7 @@ void block()
     object newBlk;
     SObjectHandle* lock_newBlk = 0;
     enum blockstatus savebstat;
+    int primitiveTableNumber, primitiveIndex;
 
     saveTemporary = _temporaryTop;
     savebstat = _blocksat;
@@ -816,8 +818,10 @@ void block()
             newInteger(saveTemporary + 1));
     genInstruction(Op_PushLiteral, genLiteral(newBlk));
     genInstruction(Op_PushConstant, contextConst);
-    genInstruction(Op_DoPrimitive, 2);
-    genCode(29);
+    genInstruction(Op_DoPrimitive2, 2);
+    primitiveIndex = findPrimitiveByName("blockCreateContext", &primitiveTableNumber);
+    genCode(primitiveTableNumber);
+    genCode(primitiveIndex);
     genInstruction(Op_DoSpecial, Branch);
     fixLocation = _codeTop;
     genCode(0);

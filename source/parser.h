@@ -22,7 +22,7 @@ void setInstanceVariables(object aClass);
 
 
 void genMessage(int toSuper, int argumentCount, object messagesym);
-void genInstruction(int high, int low);
+void genInstruction(enum EOpCodes high, int low);
 void genCode(int value);
 int genLiteral(object aLiteral);
 void genInteger(int val);

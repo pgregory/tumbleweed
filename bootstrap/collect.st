@@ -18,11 +18,11 @@ Class       Set List
 Methods MetaArray 'all'
     new: size   " hack out block the right size and class "
         "create a new block, set its class"
-        ^ < 22 < 58 size > self >
+        ^ < set_Class < new_Object size > self >
 ]
 Methods MetaByteArray 'all'
   new: size
-        ^ < 22 < 59 size > self >
+        ^ < set_Class < new_ByteObject size > self >
 ]
 Methods Array 'all'
     < coll
@@ -164,19 +164,19 @@ Methods Array 'all'
 *
 Methods ByteArray 'all'
     asString
-        <22 self String>
+        <set_Class self String>
 |
     basicAt: index put: value
         ^ ((value isMemberOf: Integer) and: [value between: 0 and: 255])
-            ifTrue: [ <32 self index value > ]
+            ifTrue: [ <byteAtPut self index value > ]
             ifFalse: [ value print. smalltalk error: 
                 ('assign illegal value to ByteArray: ', (value class))]
 |
     basicAt: index
-        ^ <26 self index>
+        ^ <byteAt self index>
 |
     size: value
-        ^ <22 <59 value> ByteArray>
+        ^ <set_Class <new_ByteObject value> ByteArray>
 ]
 Methods Collection 'all'
     < coll

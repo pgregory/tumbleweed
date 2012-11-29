@@ -128,7 +128,7 @@ tokentype nextToken()
         _currentToken = inputend;
     else if (isalpha(_cc)) 
     {     /* identifier */
-        while (nextChar() && isalnum(_cc))
+        while (nextChar() && (isalnum(_cc) || _cc == '_'))
             *tp++ = _cc;
         if (_cc == ':') 
         {
