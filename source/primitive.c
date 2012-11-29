@@ -46,7 +46,7 @@
 extern object processStack;
 extern int linkPointer;
 
-extern double frexp(), ldexp();
+//extern double frexp(), ldexp();
 extern object ioPrimitive(int, object*);
 extern object sysPrimitive(int, object*);
 #if defined TW_ENABLE_FFI
@@ -85,6 +85,7 @@ static object zeroaryPrims(int number)
       i = (short) time((long *) 0);
 #else
       {
+        i = 0;
 #if 0
         FILETIME ft_now;
         GetSystemTimeAsFileTime(&ft_now);
@@ -317,7 +318,7 @@ static object trinaryPrims(int number, object firstarg, object secondarg, object
 {   
   // todo: Fixed length buffer
   char *bp, *tp, buffer[4096];
-  int i, j;
+  unsigned int i, j;
   object returnedObject;
 
   returnedObject = firstarg;
@@ -808,8 +809,9 @@ void addPrimitiveTable(PrimitiveTableEntry* primitives)
 int findPrimitiveByName(const char* name, int* tableIndex)
 {
   int index;
-  *tableIndex = 0;
   PrimitiveTable* table = PrimitiveTableRoot;
+
+  *tableIndex = 0;
 
   while(table)
   {
@@ -845,8 +847,6 @@ object executePrimitive(int tableIndex, int index, object* args, int argc)
 
 void initialiseDebugPrims()
 {
-  int index, tableIndex;
-
   addPrimitiveTable(debugPrims);
   addPrimitiveTable(testPrims);
 }

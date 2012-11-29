@@ -34,7 +34,7 @@ int debugging = FALSE;
 ObjectStruct _nilobj =
 {
   NULL,
-  0,
+  0,0,
   0, 
   0,
   NULL

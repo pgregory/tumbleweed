@@ -60,7 +60,6 @@ void makeInitialImage()
   object hashTable;
   object integerClass;
   object symbolObj, symbolClass, classClass, metaClassClass;
-  object objectClass, metaObjectClass;
   SObjectHandle *lock_hashTable = 0;
   SObjectHandle *lock_integerClass = 0;
   SObjectHandle *lock_symbolObj = 0, *lock_symbolClass = 0, *lock_classClass = 0, *lock_metaClassClass = 0;
