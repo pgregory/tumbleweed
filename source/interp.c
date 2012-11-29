@@ -224,27 +224,27 @@ readMethodInfo:
     {
 
       /* Push an instance variable from the reveiver. */
-      case PushInstance:
+      case Op_PushInstance:
         ipush(receiverAt(low));
         break;
 
       /* Push one of the arguments from the context. */
-      case PushArgument:
+      case Op_PushArgument:
         ipush(argumentsAt(low));
         break;
 
       /* Push one of the temporaries from the context. */
-      case PushTemporary:
+      case Op_PushTemporary:
         ipush(temporaryAt(low));
         break;
 
       /* Push one of the stored literal values on the method. */
-      case PushLiteral:
+      case Op_PushLiteral:
         ipush(literalsAt(low));
         break;
 
       /* Push a constant value */
-      case PushConstant:
+      case Op_PushConstant:
         switch(low) 
         {
           /* Special case for very small/common integer values */
@@ -305,23 +305,23 @@ readMethodInfo:
       /* Assign the value on the top of the stack to an instance 
        * variable on the receiever.
        */
-      case AssignInstance:
+      case Op_AssignInstance:
         receiverAtPut(low, stackTop());
         break;
 
       /* Assign the value on the top of the stack to a temporary
        * variable on the context
        */
-      case AssignTemporary:
+      case Op_AssignTemporary:
         temporaryAtPut(low, stackTop());
         break;
 
-      case MarkArguments:
+      case Op_MarkArguments:
         returnPoint = (processStackTop() - low) + 1;
         timeSliceCounter++; /* make sure we do send */
         break;
 
-      case SendMessage:
+      case Op_SendMessage:
         messageToSend = literalsAt(low);
 
 doSendMessage:
@@ -447,7 +447,7 @@ doFindMessage:
         if (processStack->size > 1800) timeSliceCounter = 0;
         goto readMethodInfo; 
 
-      case SendUnary:
+      case Op_SendUnary:
         /* do isNil and notNil as special cases, since */
         /* they are so common */
         if ((! watching) && (low <= 1)) {
@@ -461,7 +461,7 @@ doFindMessage:
         goto doSendMessage;
         break;
 
-      case SendBinary:
+      case Op_SendBinary:
         /* optimized as long as arguments are int */
         /* and conversions are not necessary */
         /* and overflow does not occur */
@@ -482,7 +482,7 @@ doFindMessage:
         messageToSend = binSyms[low];
         goto doSendMessage;
 
-      case DoPrimitive:
+      case Op_DoPrimitive:
         /* low gives number of arguments */
         /* next byte is primitive number */
         primargs = (pst - low) + 1;
@@ -557,7 +557,7 @@ doFindMessage:
         ipush(returnedObject); 
         break;
 
-      case DoPrimitive2:
+      case Op_DoPrimitive2:
         /* low gives number of arguments */
         /* next byte is primitive number */
         primargs = (pst - low) + 1;
@@ -587,7 +587,7 @@ doReturn:
         else
           return FALSE /* all done */;
 
-      case DoSpecial:
+      case Op_DoSpecial:
         switch(low) {
           case SelfReturn:
             returnedObject = argumentsAt(0);

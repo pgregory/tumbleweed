@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include "env.h"
 #include "parser.h"
+#include "primitive.h"
 
 int _parseok;            /* parse still ok? */
 int _codeTop;            /* top position filled in code array */
@@ -96,11 +97,11 @@ void genCode(int value)
         _codeArray[_codeTop++] = value;
 }
 
-void genInstruction(int high, int low)
+void genInstruction(enum EOpCode high, int low)
 {
     if (low >= 16) 
     {
-        genInstruction(Extended, high);
+        genInstruction(Op_Extended, high);
         genCode(low);
     }
     else
@@ -121,11 +122,11 @@ int genLiteral(object aLiteral)
 void genInteger(int val)    /* generate an integer push */
 {
     if (val == -1)
-        genInstruction(PushConstant, minusOne);
+        genInstruction(Op_PushConstant, minusOne);
     else if ((val >= 0) && (val <= 2))
-        genInstruction(PushConstant, val);
+        genInstruction(Op_PushConstant, val);
     else
-        genInstruction(PushLiteral,
+        genInstruction(Op_PushLiteral,
                 genLiteral(newInteger(val)));
 }
 
@@ -144,7 +145,7 @@ int nameTerm(const char *name)
     /* it might be self or super */
     if (streq(name, "self") || streq(name, "super")) 
     {
-        genInstruction(PushArgument, 0);
+        genInstruction(Op_PushArgument, 0);
         done = TRUE;
         if (streq(name,"super")) 
             isSuper = TRUE;
@@ -157,7 +158,7 @@ int nameTerm(const char *name)
         {
             if (streq(name, _temporaryName[i])) 
             {
-                genInstruction(PushTemporary, i-1);
+                genInstruction(Op_PushTemporary, i-1);
                 done = TRUE;
             }
         }
@@ -170,7 +171,7 @@ int nameTerm(const char *name)
         {
             if (streq(name, _argumentName[i])) 
             {
-                genInstruction(PushArgument, i);
+                genInstruction(Op_PushArgument, i);
                 done = TRUE;
             }
         }
@@ -183,7 +184,7 @@ int nameTerm(const char *name)
         {
             if (streq(name, _instanceName[i])) 
             {
-                genInstruction(PushInstance, i-1);
+                genInstruction(Op_PushInstance, i-1);
                 done = TRUE;
             }
         }
@@ -196,7 +197,7 @@ int nameTerm(const char *name)
         {
             if (streq(name, glbsyms[i])) 
             {
-                genInstruction(PushConstant, i+4);
+                genInstruction(Op_PushConstant, i+4);
                 done = TRUE;
             }
         }
@@ -206,7 +207,7 @@ int nameTerm(const char *name)
     /* must look it up at run time */
     if (! done) 
     {
-        genInstruction(PushLiteral, genLiteral(newSymbol(name)));
+        genInstruction(Op_PushLiteral, genLiteral(newSymbol(name)));
         genMessage(0, 0, newSymbol("value"));
     }
 
@@ -323,7 +324,7 @@ int term()
     }
     else if (token == floatconst) 
     {
-        genInstruction(PushLiteral, genLiteral(newFloat(floatToken())));
+        genInstruction(Op_PushLiteral, genLiteral(newFloat(floatToken())));
         nextToken();
     }
     else if ((token == binary) && strcmp(strToken(), "-") == 0) 
@@ -333,7 +334,7 @@ int term()
             genInteger(- intToken());
         else if (token == floatconst) 
         {
-            genInstruction(PushLiteral,
+            genInstruction(Op_PushLiteral,
                     genLiteral(newFloat(-floatToken())));
         }
         else
@@ -343,25 +344,25 @@ int term()
     }
     else if (token == charconst) 
     {
-        genInstruction(PushLiteral,
+        genInstruction(Op_PushLiteral,
                 genLiteral(newChar(intToken())));
         nextToken();
     }
     else if (token == symconst) 
     {
-        genInstruction(PushLiteral,
+        genInstruction(Op_PushLiteral,
                 genLiteral(newSymbol(strToken())));
         nextToken();
     }
     else if (token == strconst) 
     {
-        genInstruction(PushLiteral,
+        genInstruction(Op_PushLiteral,
                 genLiteral(newStString(strToken())));
         nextToken();
     }
     else if (token == arraybegin) 
     {
-        genInstruction(PushLiteral, parseArray());
+        genInstruction(Op_PushLiteral, parseArray());
     }
     else if ((token == binary) && strcmp(strToken(), "(") == 0) 
     {
@@ -398,7 +399,7 @@ void parsePrimitive()
             term();
             argumentCount++;
         }
-        genInstruction(DoPrimitive, argumentCount);
+        genInstruction(Op_DoPrimitive, argumentCount);
         genCode(primitiveNumber);
         nextToken();
     }
@@ -414,7 +415,7 @@ void parsePrimitive()
                 term();
                 argumentCount++;
             }
-            genInstruction(DoPrimitive2, argumentCount);
+            genInstruction(Op_DoPrimitive2, argumentCount);
             genCode(primitiveTableNumber);
             genCode(primitiveIndex);
             nextToken();
@@ -438,7 +439,7 @@ void genMessage(int toSuper, int argumentCount, object messagesym)
         for (i = 0; (! sent) && i < num_unSyms ; i++)
         {
             if (messagesym == unSyms[i]) {
-                genInstruction(SendUnary, i);
+                genInstruction(Op_SendUnary, i);
                 sent = TRUE;
             }
         }
@@ -450,7 +451,7 @@ void genMessage(int toSuper, int argumentCount, object messagesym)
         {
             if (messagesym == binSyms[i]) 
             {
-                genInstruction(SendBinary, i);
+                genInstruction(Op_SendBinary, i);
                 sent = TRUE;
             }
         }
@@ -458,14 +459,14 @@ void genMessage(int toSuper, int argumentCount, object messagesym)
 
     if (! sent) 
     {
-        genInstruction(MarkArguments, 1 + argumentCount);
+        genInstruction(Op_MarkArguments, 1 + argumentCount);
         if (toSuper) 
         {
-            genInstruction(DoSpecial, SendToSuper);
+            genInstruction(Op_DoSpecial, SendToSuper);
             genCode(genLiteral(messagesym));
         }
         else
-            genInstruction(SendMessage, genLiteral(messagesym));
+            genInstruction(Op_SendMessage, genLiteral(messagesym));
     }
 }
 
@@ -535,11 +536,11 @@ int optimizeBlock(int instruction, int dopop)
     enum blockstatus savebstat;
 
     savebstat = _blocksat;
-    genInstruction(DoSpecial, instruction);
+    genInstruction(Op_DoSpecial, instruction);
     location = _codeTop;
     genCode(0);
     if (dopop)
-        genInstruction(DoSpecial, PopTop);
+        genInstruction(Op_DoSpecial, PopTop);
     nextToken();
     if (strcmp(strToken(), "[") == 0) 
     {
@@ -592,14 +593,14 @@ int keyContinuation(int superReceiver)
         else if (strcmp(strToken(), "whileTrue:") == 0) 
         {
             j = _codeTop;
-            genInstruction(DoSpecial, Duplicate);
+            genInstruction(Op_DoSpecial, Duplicate);
             genMessage(0, 0, newSymbol("value"));
             i = optimizeBlock(BranchIfFalse, 0);
-            genInstruction(DoSpecial, PopTop);
-            genInstruction(DoSpecial, Branch);
+            genInstruction(Op_DoSpecial, PopTop);
+            genInstruction(Op_DoSpecial, Branch);
             genCode(j+1);
             _codeArray[i] = _codeTop+1;
-            genInstruction(DoSpecial, PopTop);
+            genInstruction(Op_DoSpecial, PopTop);
         }
         else if (strcmp(strToken(), "and:") == 0)
             optimizeBlock(AndBranch, 0);
@@ -638,10 +639,10 @@ void continuation(int superReceiver)
 
     while (_parseok && (currentToken() == closing) && strcmp(strToken(), ";") == 0) 
     {
-        genInstruction(DoSpecial, Duplicate);
+        genInstruction(Op_DoSpecial, Duplicate);
         nextToken();
         keyContinuation(superReceiver);
-        genInstruction(DoSpecial, PopTop);
+        genInstruction(Op_DoSpecial, PopTop);
     }
 }
 
@@ -686,7 +687,7 @@ void assignment(char* name)
         if (streq(name, _temporaryName[i])) 
         {
             expression();
-            genInstruction(AssignTemporary, i-1);
+            genInstruction(Op_AssignTemporary, i-1);
             done = 1;
         }
     }
@@ -697,15 +698,15 @@ void assignment(char* name)
         if (streq(name, _instanceName[i])) 
         {
             expression();
-            genInstruction(AssignInstance, i-1);
+            genInstruction(Op_AssignInstance, i-1);
             done = 1;
         }
     }
 
     if (! done) 
     {   /* not known, handle at run time */
-        genInstruction(PushArgument, 0);
-        genInstruction(PushLiteral, genLiteral(newSymbol(name)));
+        genInstruction(Op_PushArgument, 0);
+        genInstruction(Op_PushLiteral, genLiteral(newSymbol(name)));
         expression();
         genMessage(0, 2, newSymbol("assign:value:"));
     }
@@ -721,11 +722,11 @@ void statement()
         if (_blocksat == InBlock) 
         {
             /* change return point before returning */
-            genInstruction(PushConstant, contextConst);
+            genInstruction(Op_PushConstant, contextConst);
             genMessage(0, 0, newSymbol("blockReturn"));
-            genInstruction(DoSpecial, PopTop);
+            genInstruction(Op_DoSpecial, PopTop);
         }
-        genInstruction(DoSpecial, StackReturn);
+        genInstruction(Op_DoSpecial, StackReturn);
     }
     else 
     {
@@ -740,7 +741,7 @@ void body()
     {
         if ((currentToken() == closing) && strcmp(strToken(), "]") == 0) 
         {
-            genInstruction(PushConstant, nilConst);
+            genInstruction(Op_PushConstant, nilConst);
             return;
         }
     }
@@ -755,7 +756,7 @@ void body()
                 if (nextToken() == inputend)
                     break;
                 else  /* pop result, go to next statement */
-                    genInstruction(DoSpecial, PopTop);
+                    genInstruction(Op_DoSpecial, PopTop);
             }
             else
                 break;  /* leaving result on stack */
@@ -813,11 +814,11 @@ void block()
     basicAtPut(newBlk,argumentCountInBlock, newInteger(argumentCount));
     basicAtPut(newBlk,argumentLocationInBlock, 
             newInteger(saveTemporary + 1));
-    genInstruction(PushLiteral, genLiteral(newBlk));
-    genInstruction(PushConstant, contextConst);
-    genInstruction(DoPrimitive, 2);
+    genInstruction(Op_PushLiteral, genLiteral(newBlk));
+    genInstruction(Op_PushConstant, contextConst);
+    genInstruction(Op_DoPrimitive, 2);
     genCode(29);
-    genInstruction(DoSpecial, Branch);
+    genInstruction(Op_DoSpecial, Branch);
     fixLocation = _codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
@@ -828,7 +829,7 @@ void block()
         nextToken();
     else
         compilError(_selector,"block not terminated by ]","");
-    genInstruction(DoSpecial, StackReturn);
+    genInstruction(Op_DoSpecial, StackReturn);
     _codeArray[fixLocation] = _codeTop+1;
     _temporaryTop = saveTemporary;
     _blocksat = savebstat;
@@ -943,8 +944,8 @@ int recordMethodBytecode(object method, int savetext)
 
     if (_parseok) 
     {
-        genInstruction(DoSpecial, PopTop);
-        genInstruction(DoSpecial, SelfReturn);
+        genInstruction(Op_DoSpecial, PopTop);
+        genInstruction(Op_DoSpecial, SelfReturn);
     }
 
     if (! _parseok) 
