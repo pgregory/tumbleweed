@@ -8,8 +8,11 @@ RawClass MetaTime Class MetaMagnitude ClockAtStartup
 Class Time Magnitude
 *
 Methods MetaTime 'clocks'
+  seconds
+    ^ <seconds>
+|
   millisecondClock
-    ^ <7>
+    ^ <milliseconds>
 |
   millisecondsToRun: timedBlock
     | startTime |
@@ -22,7 +25,7 @@ Methods MetaTime 'clocks'
 |
   update: aspect
     (aspect == #returnFromSnapshot) ifTrue: [
-      ClockAtStartup <- <7>
+      ClockAtStartup <- <seconds>
     ]
 |
   clockAtStartup

@@ -149,10 +149,10 @@ Methods TestResult 'creation'
 
 Methods TestResult 'run'
         start
-            startTime <- <4>
+            startTime <- Time seconds
 |
         stop
-            stopTime <- <4>
+            stopTime <- Time seconds
 |
         run: aTestResult
             testCases do: [:each | each run: aTestResult]

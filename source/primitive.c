@@ -64,66 +64,12 @@ static object zeroaryPrims(int number)
   returnedObject = nilobj;
   switch(number) {
 
-    case 1:
-      fprintf(stderr,"did primitive 1\n");
-      break;
-
-    case 2:
-      //fprintf(stderr, "%s", statsString().c_str());
-      break;
-
     case 3:         /* return a random number */
       /* this is hacked because of the representation */
       /* of integers as shorts */
       i = rand() >> 8;  /* strip off lower bits */
       if (i < 0) i = - i;
       returnedObject = newInteger(i>>1);
-      break;
-
-    case 4:     /* return time in seconds */
-#if !defined(WIN32)
-      i = (short) time((long *) 0);
-#else
-      {
-        i = 0;
-#if 0
-        FILETIME ft_now;
-        GetSystemTimeAsFileTime(&ft_now);
-        LONGLONG unix_time = ((LONGLONG) ft_now.dwHighDateTime << 32LL) + ft_now.dwLowDateTime;
-        unix_time /= 10000000LL; // Convert to seconds
-        unix_time += SECS_BETWEEN_EPOCHS; // Convert between win32 epoch (Jan 1 1601) and Unix epoch (Jan 1 1970)
-        i = static_cast<unsigned long>(unix_time);
-#endif
-      }
-#endif
-      returnedObject = newInteger(i);
-      break;
-
-    case 5:     /* flip watch - done in interp */
-      break;
-
-    case 7:
-      {
-#if !defined WIN32
-        struct timeval time;
-
-        long mtime, seconds, useconds;    
-
-        gettimeofday(&time, NULL);
-
-        seconds  = time.tv_sec;
-        useconds = time.tv_usec;
-
-        mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
-
-        returnedObject = newInteger(seconds%86400);
-#else
-        SYSTEMTIME st_now;
-        GetSystemTime(&st_now);
-        ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
-        returnedObject = newInteger(ms_now);
-#endif
-      }
       break;
 
     default:        /* unknown primitive */
@@ -830,6 +776,49 @@ object compilePrimitiveHandler(int primitiveNumber, object* args, int argc)
 }
 #undef checkArgCount
 
+PrimitiveTableEntry timePrimitiveTable[];
+#define checkArgCount(n) if(argc != (n)) sysError("invalid number of arguments to primitive", timePrimitiveTable[primitiveNumber].name)
+object timePrimitiveHandler(int primitiveNumber, object* args, int argc)
+{
+  long i;
+  long ms_now;
+  object returnedObject = nilobj;
+
+  switch(primitiveNumber)
+  {
+    case 0:     /* seconds */
+      i = 0;
+      returnedObject = newInteger(i);
+      break;
+
+    case 1:   /* milliseconds */
+      {
+#if !defined WIN32
+        struct timeval time;
+
+        long mtime, seconds, useconds;    
+
+        gettimeofday(&time, NULL);
+
+        seconds  = time.tv_sec;
+        useconds = time.tv_usec;
+
+        mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+
+        returnedObject = newInteger(seconds%86400);
+#else
+        SYSTEMTIME st_now;
+        GetSystemTime(&st_now);
+        ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
+        returnedObject = newInteger(ms_now);
+#endif
+      }
+      break;
+  }
+  return returnedObject;
+}
+#undef checkArgCount
+
 
 PrimitiveTableEntry vmPrimitiveTable[] =
 {
@@ -861,6 +850,13 @@ PrimitiveTableEntry executePrimitiveTable[] =
 PrimitiveTableEntry compilePrimitiveTable[] =
 {
   { "compile", compilePrimitiveHandler },
+  { NULL, NULL }
+};
+
+PrimitiveTableEntry timePrimitiveTable[] =
+{
+  { "seconds", timePrimitiveHandler },
+  { "milliseconds", timePrimitiveHandler },
   { NULL, NULL }
 };
 
@@ -945,5 +941,6 @@ void initialiseDebugPrims()
   addPrimitiveTable(compilePrimitiveTable);
   addPrimitiveTable(executePrimitiveTable);
   addPrimitiveTable(vmPrimitiveTable);
+  addPrimitiveTable(timePrimitiveTable);
 }
 
