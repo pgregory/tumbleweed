@@ -6,12 +6,10 @@
 #ifndef MEMORY_H_INCLUDED
 #define MEMORY_H_INCLUDED
 
+#include <stdio.h>
+
 #include "env.h"
 #include "stdint.h"
-
-#if defined TW_UNIT_TESTS
-#include "gtest/gtest_prod.h"
-#endif
 
 /*! \brief Object structure
  *

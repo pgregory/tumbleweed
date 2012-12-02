@@ -154,14 +154,19 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
 # Testing
 if(TW_BUILD_TESTS)
   enable_testing()
-  find_package(GTest REQUIRED)
-  include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/source)
+  include_directories(${CMAKE_SOURCE_DIR}/thirdparty/cmockery/cmockery/src/google ${CMAKE_SOURCE_DIR}/source)
   add_definitions(-DTW_UNIT_TESTS)
+  set(test_srcs 
+    thirdparty/cmockery/cmockery/src/cmockery.c
+  )
+  set(test_hdrs 
+    thirdparty/cmockery/cmockery/src/google/cmockery.c
+  )
   add_executable(memory_manager_test
-    test/memory_test.cpp)
-  target_link_libraries(memory_manager_test libtw ${GTEST_BOTH_LIBRARIES} ${LIBS})
-  set(memory_manager_test_args "")
-  GTEST_ADD_TESTS(memory_manager_test "${memory_manager_test_args}" test/memory_test.cpp)
+    test/memory_manager_test.c
+    source/memory.c
+    ${test_srcs})
+  ADD_TEST(memory_manager_test ${CMAKE_CURRENT_BINARY_DIR}/memory_manager_test)
 endif(TW_BUILD_TESTS)
 
 # Modules.

@@ -84,7 +84,7 @@ enum ClassSymbols {
     k__lastClass,
 };
 
-#if defined TW_IS_INITIAL
+#if defined TW_IS_INITIAL || defined TW_UNIT_TESTS
 # define CLASSOBJECT(cname) (globalSymbol(#cname))
 #else
 # define CLASSOBJECT(cname) (classSyms[k##cname])
