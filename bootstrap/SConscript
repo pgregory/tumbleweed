@@ -1,0 +1,27 @@
+Import('env', 'initial')
+
+bootstrap_sources = Split("""
+  basic.st
+  collect.st
+  file.st
+  mag.st
+  mult.st
+  module.st
+  exception.st
+  test.st
+  time.st
+  test_collect.st
+  tty.st
+""")
+
+imageBuilder = Builder(action=[
+    str(initial[0]) + ' $SOURCES',
+    Move("$TARGET", "systemImage")
+  ],
+  suffix='', src_suffix='.st')
+env.Append(BUILDERS = {'Image' : imageBuilder})
+
+systemImage = env.Image('systemImage', bootstrap_sources)
+Depends(systemImage, initial)
+
+# ex: set filetype=python tabstop=2 shiftwidth=2 expandtab: 

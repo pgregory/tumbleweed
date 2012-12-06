@@ -1,0 +1,24 @@
+Import('env')
+
+common_source = Split("""
+  filein.c
+  interp.c
+  lex.c
+  memory.c
+  names.c
+  parser.c
+  primitive.c
+  sysprimitive.c
+  unixio.c
+""")
+
+common_obj = env.Object(common_source)
+tw_obj = env.Object(['st.c'])
+initial_obj = env.Object(['initial.c'])
+
+env.Program('tw', common_obj + tw_obj)
+initial = env.Program('initial', common_obj + initial_obj)
+
+Export('initial')
+
+# ex: set filetype=python tabstop=2 shiftwidth=2 expandtab: 
