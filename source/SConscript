@@ -12,12 +12,18 @@ common_source = Split("""
   unixio.c
 """)
 
-common_obj = env.Object(common_source)
-tw_obj = env.Object(['st.c'])
-initial_obj = env.Object(['initial.c'])
+env.Append(LIBS = env['TW_LIBS'])
 
-env.Program('tw', common_obj + tw_obj)
-initial = env.Program('initial', common_obj + initial_obj)
+main_env = env.Clone();
+main_env.VariantDir('main', '.')
+main_env.Append(CPPDEFINES = ['TW_NO_COMPILER'])
+
+tw_source = [ 'main/st.c' ]
+initial_source = [ 'initial.c' ]
+
+tw_source += [ 'main/%s' % x for x in common_source ] 
+main_env.Program('tw', tw_source)
+initial = env.Program('initial', common_source + initial_source)
 
 Export('initial')
 

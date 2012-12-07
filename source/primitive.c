@@ -93,11 +93,6 @@ static object unaryPrims(int number, object firstarg)
       returnedObject = firstarg->_class;
       break;
 
-    case 4:     /* debugging print */
-      //fprintf(stderr,"primitive 14 %d\n", static_cast<int>(firstarg));
-      break;
-
-
     case 8:     /* change return point - block return */
       /* first get previous link pointer */
       i = getInteger(basicAt(processStack,linkPointer));
@@ -141,10 +136,6 @@ static object binaryPrims(int number, object firstarg, object secondarg)
         returnedObject = booleanSyms[booleanFalse];
       break;
 
-    case 3:     /* debugging stuff */
-      //fprintf(stderr,"primitive 23 %d %d\n", static_cast<int>(firstarg), static_cast<int>(secondarg));
-      break;
-
     case 4:     /* string cat */
       strcpy(buffer, charPtr(firstarg));
       strcat(buffer, charPtr(secondarg));
@@ -175,7 +166,6 @@ static object trinaryPrims(int number, object firstarg, object secondarg, object
   switch(number) 
   {
     case 1:         /* basicAt:Put: */
-      //fprintf(stderr,"IN BASICATPUT %d %d %d\n", static_cast<int>(firstarg), static_cast<int>(getInteger(secondarg)), static_cast<int>(thirdarg));
       basicAtPut(firstarg,getInteger(secondarg), thirdarg);
       break;
 
@@ -207,10 +197,6 @@ static object intUnary(int number, object firstarg)
   {
     case 1:     /* float equiv of integer */
       returnedObject = newFloat((double)getInteger(firstarg));
-      break;
-
-    case 2:     /* print - for debugging purposes */
-      //fprintf(stderr,"debugging print %d\n", static_cast<int>(firstarg));
       break;
 
     case 3: /* set time slice - done in interpreter */
@@ -819,7 +805,7 @@ object timePrimitiveHandler(int primitiveNumber, object* args, int argc)
 }
 #undef checkArgCount
 
-
+const char* vmPrimId = "30e2b312-7f0f-4151-9f79-b44155f16231";
 PrimitiveTableEntry vmPrimitiveTable[] =
 {
   { "exit", vmPrimitiveHandler },
@@ -838,6 +824,7 @@ PrimitiveTableEntry vmPrimitiveTable[] =
   { NULL, NULL }
 };
 
+const char* executePrimId = "4b24f7c5-8c07-4b66-9731-bda0e2037b07";
 PrimitiveTableEntry executePrimitiveTable[] =
 {
   { "execute", executePrimitiveHandler },
@@ -847,12 +834,14 @@ PrimitiveTableEntry executePrimitiveTable[] =
   { NULL, NULL }
 };
 
+const char* compilePrimId = "ac23be20-4b32-421e-844e-d3dce6c2fc46";
 PrimitiveTableEntry compilePrimitiveTable[] =
 {
   { "compile", compilePrimitiveHandler },
   { NULL, NULL }
 };
 
+const char* timePrimId = "bf74a739-5fa1-4a82-8aec-725cf462545f";
 PrimitiveTableEntry timePrimitiveTable[] =
 {
   { "seconds", timePrimitiveHandler },
@@ -860,12 +849,14 @@ PrimitiveTableEntry timePrimitiveTable[] =
   { NULL, NULL }
 };
 
+const char* debugPrimId = "5b667e1c-a22d-4974-b969-d1058632a1c5";
 PrimitiveTableEntry debugPrims[] =
 {
   { "debugPrint", PRIM_debugPrint },
   { NULL, NULL }
 };
 
+const char* testPrimId = "3f70b9df-4d19-476a-8f33-df1b841def61";
 PrimitiveTableEntry testPrims[] =
 {
   { "testFunc", PRIM_testFunc },
@@ -873,14 +864,18 @@ PrimitiveTableEntry testPrims[] =
 };
 
 PrimitiveTable* PrimitiveTableRoot = NULL;
-PrimitiveTable* PrimitiveTableAddresses = NULL;
+PrimitiveTable** PrimitiveTableAddresses = NULL;
 int PrimitiveTableCount = 0;
+int PrimitiveTableAddressCount = 0;
+#define PRIM_TABLE_ADDRESS_SIZE_INCR 10
 
-void addPrimitiveTable(PrimitiveTableEntry* primitives)
+void addPrimitiveTable(const char* name, UUID id, PrimitiveTableEntry* primitives)
 {
   PrimitiveTable* table;
 
   table = (PrimitiveTable*)calloc(sizeof(PrimitiveTable), 1);
+  memcpy((char*)&table->id, (char*)&id, sizeof(UUID));
+  table->name = strdup(name);
   table->next = NULL;
   table->primitives = primitives;
 
@@ -893,17 +888,29 @@ void addPrimitiveTable(PrimitiveTableEntry* primitives)
     table->next = PrimitiveTableRoot;
     PrimitiveTableRoot = table;
   }
+
+  /* Add the table to the indexing list, creating
+   * it if it doesn't already exist */
+  if(NULL == PrimitiveTableAddresses || PrimitiveTableCount >= PrimitiveTableAddressCount)
+  {
+    PrimitiveTableAddressCount += PRIM_TABLE_ADDRESS_SIZE_INCR;
+    PrimitiveTableAddresses = (PrimitiveTable**)realloc(PrimitiveTableAddresses, sizeof(PrimitiveTable*)*PrimitiveTableAddressCount);
+  }
+  PrimitiveTableAddresses[PrimitiveTableCount] = table;
+
+  PrimitiveTableCount++;
 }
 
 int findPrimitiveByName(const char* name, int* tableIndex)
 {
   int index;
-  PrimitiveTable* table = PrimitiveTableRoot;
+  PrimitiveTable* table;
 
   *tableIndex = 0;
 
-  while(table)
+  for(*tableIndex = 0; *tableIndex < PrimitiveTableCount; ++(*tableIndex))
   {
+    table = PrimitiveTableAddresses[*tableIndex];
     index = 0;
     while(table->primitives[index].name)
     {
@@ -911,21 +918,13 @@ int findPrimitiveByName(const char* name, int* tableIndex)
         return index;
       index++;
     }
-    table = table->next;
-    (*tableIndex)++;
   }
   return -1;
 }
 
 object executePrimitive(int tableIndex, int index, object* args, int argc)
 {
-  PrimitiveTable* table = PrimitiveTableRoot;
-
-  while(table && tableIndex > 0)
-  {
-    table = table->next;
-    tableIndex--;
-  }
+  PrimitiveTable* table = PrimitiveTableAddresses[tableIndex];
 
   if(table)
     return table->primitives[index].fn(index, args, argc);
@@ -934,13 +933,108 @@ object executePrimitive(int tableIndex, int index, object* args, int argc)
 }
 
 
+static UUID stringToUUID(const char* strUUID)
+{
+  UUID id;
+  char* end;
+  char lvalue[9];
+  char svalue[5];
+  char bvalue[3];
+  int i;
+
+  lvalue[8] = svalue[4] = bvalue[2] = '\0'; 
+
+  /* \todo: Check format there */
+
+  /* Format example: 5b667e1c-a22d-4974-b969-d1058632a1c5 */
+  strncpy(lvalue, &strUUID[0], 8);
+  id.data1 = strtol(lvalue, NULL, 16);
+  strncpy(svalue, &strUUID[9], 4);
+  id.data2 = strtol(svalue, NULL, 16);
+  strncpy(svalue, &strUUID[14], 4);
+  id.data3 = strtol(svalue, NULL, 16);
+  strncpy(svalue, &strUUID[19], 4);
+  id.data4 = strtol(svalue, NULL, 16);
+  for(i = 0; i < 6; ++i)
+  {
+    strncpy(bvalue, &strUUID[24 + (2*i)], 2);
+    id.data5[i] = strtol(bvalue, NULL, 16);
+  }
+
+  return id;
+} 
+
+
+static char* UUIDToString(UUID id)
+{
+  char* result = (char*)calloc(UUID_STRING_LENGTH, sizeof(char));
+
+  snprintf(result, UUID_STRING_LENGTH, "%8.8lx-%4.4hx-%4.4hx-%4.4hx-%2.2x%2.2x%2.2x%2.2x%2.2x%2.2x",
+      id.data1,
+      id.data2,
+      id.data3,
+      id.data4,
+      id.data5[0], id.data5[1], id.data5[2], id.data5[3], id.data5[4], id.data5[5]);
+
+  return result;
+}
+
+/* \todo: this is duplicated in memory.c */
+static void fw(FILE* fp, char* p, int s)
+{
+    if (fwrite(p, s, 1, fp) != 1) 
+    {
+        sysError("imageWrite size error","");
+    }
+}
+static int fr(FILE* fp, char* p, int s)
+{   
+  int r;
+
+  r = fread(p, s, 1, fp);
+  if (r && (r != 1))
+    sysError("imageRead count error","");
+  return r;
+}
+
+void writePrimitiveTables(FILE* fp)
+{
+  int i;
+
+  /* Write the table count */
+  fw(fp, (char*)&PrimitiveTableCount, sizeof(int));
+
+  for(i = 0; i < PrimitiveTableCount; ++i)
+    fw(fp, (char*)&(PrimitiveTableAddresses[i]->id), sizeof(UUID));
+}
+  
+void readPrimitiveTables(FILE* fp)
+{
+  int i;
+  int count;
+  UUID* ids;
+
+  /* Read the table count */
+  fr(fp, (char*)&count, sizeof(int));
+
+  ids = (UUID*)calloc(count, sizeof(UUID));
+
+  for(i = 0; i < count; ++i)
+  {
+    fr(fp, (char*)&id[i], sizeof(UUID));
+    /* printf("%s\n", UUIDToString(id)); */
+  }
+}
+
 void initialiseDebugPrims()
 {
-  addPrimitiveTable(debugPrims);
-  addPrimitiveTable(testPrims);
-  addPrimitiveTable(compilePrimitiveTable);
-  addPrimitiveTable(executePrimitiveTable);
-  addPrimitiveTable(vmPrimitiveTable);
-  addPrimitiveTable(timePrimitiveTable);
+  addPrimitiveTable("debug", stringToUUID(debugPrimId), debugPrims);
+  addPrimitiveTable("test", stringToUUID(testPrimId), testPrims);
+  addPrimitiveTable("execute", stringToUUID(executePrimId), executePrimitiveTable);
+  addPrimitiveTable("vm", stringToUUID(vmPrimId), vmPrimitiveTable);
+  addPrimitiveTable("time", stringToUUID(timePrimId), timePrimitiveTable);
+//#ifndef TW_NO_COMPILER
+  addPrimitiveTable("compile", stringToUUID(compilePrimId), compilePrimitiveTable);
+//#endif
 }
 

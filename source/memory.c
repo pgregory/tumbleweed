@@ -28,6 +28,7 @@
 #include "memory.h"
 #include "interp.h"
 #include "names.h"
+#include "primitive.h"
 
 
 int debugging = FALSE;
@@ -435,6 +436,9 @@ void imageWrite(FILE* fp)
   // from the same place when the image is loaded.
   fw(fp, (char *) &NextHashValue, sizeof(short));
 
+  /* Write the primitive table id's */
+  writePrimitiveTables(fp);
+
   v.preFunc = &setFlag;
   v.postFunc = 0;
   v.test = &testFlagZero;
@@ -544,6 +548,7 @@ void imageRead(FILE* fp)
   fr(fp, (char *) &symbols, sizeof(object));
   fr(fp, (char *) &nilAtStore, sizeof(object));
 
+
   // Read the stored hash value, so that identity 
   // hash values for objects continue from the same
   // index.
@@ -552,6 +557,9 @@ void imageRead(FILE* fp)
   // re-building of the snapshot to alter the starting
   // point.
   identityHashHold = NextHashValue;
+
+  /* Read the primitive table id's */
+  readPrimitiveTables(fp);
 
   fr(fp, (char *) &count, sizeof(long));
   // Add one for nil.
