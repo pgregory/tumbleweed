@@ -1021,7 +1021,7 @@ void readPrimitiveTables(FILE* fp)
 
   for(i = 0; i < count; ++i)
   {
-    fr(fp, (char*)&id[i], sizeof(UUID));
+    fr(fp, (char*)&ids[i], sizeof(UUID));
     /* printf("%s\n", UUIDToString(id)); */
   }
 }

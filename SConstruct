@@ -4,7 +4,7 @@ from build_config import *
 
 vars = Variables('custom.py')
 
-env = Environment(variables = vars)
+env = Environment(variables = vars, TW_LIBS = [])
 env.Append(CPPDEFINES=['TW_SMALLINTEGER_AS_OBJECT', 'TW_IS_INITIAL'])
 opt = env.Clone()
 
