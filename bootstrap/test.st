@@ -14,7 +14,7 @@
 RawClass MetaTestCase Class MetaObject failedCheckSignal
 Class TestCase Object selector
 Class TestSuite Object name testCases
-Class TestResult Object startTime stopTime Time testName failures errors
+Class TestResult Object startTime stopTime testName failures errors
 Class TestRunner Object
 Class FailedCheckSignal Exception
 
