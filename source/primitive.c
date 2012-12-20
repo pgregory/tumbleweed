@@ -911,12 +911,15 @@ int findPrimitiveByName(const char* name, int* tableIndex)
   for(*tableIndex = 0; *tableIndex < PrimitiveTableCount; ++(*tableIndex))
   {
     table = PrimitiveTableAddresses[*tableIndex];
-    index = 0;
-    while(table->primitives[index].name)
+    if(NULL != table)
     {
-      if(!strcmp(table->primitives[index].name, name))
-        return index;
-      index++;
+      index = 0;
+      while(table->primitives[index].name)
+      {
+        if(!strcmp(table->primitives[index].name, name))
+          return index;
+        index++;
+      }
     }
   }
   return -1;
@@ -929,7 +932,10 @@ object executePrimitive(int tableIndex, int index, object* args, int argc)
   if(table)
     return table->primitives[index].fn(index, args, argc);
   else
+  {
+    sysWarn("missing primitive table","");
     return nilobj;
+  }
 }
 
 
@@ -979,6 +985,23 @@ static char* UUIDToString(UUID id)
   return result;
 }
 
+int UUIDCompare(UUID a, UUID b)
+{
+  if(a.data1 == b.data1 &&
+     a.data2 == b.data2 &&
+     a.data3 == b.data3 &&
+     a.data4 == b.data4 &&
+     a.data5[0] == b.data5[0] &&
+     a.data5[1] == b.data5[1] &&
+     a.data5[2] == b.data5[2] &&
+     a.data5[3] == b.data5[3] &&
+     a.data5[4] == b.data5[4] &&
+     a.data5[5] == b.data5[5])
+    return TRUE;
+  else
+    return FALSE;
+} 
+
 /* \todo: this is duplicated in memory.c */
 static void fw(FILE* fp, char* p, int s)
 {
@@ -1010,20 +1033,49 @@ void writePrimitiveTables(FILE* fp)
   
 void readPrimitiveTables(FILE* fp)
 {
-  int i;
+  int i, j;
   int count;
-  UUID* ids;
+  UUID id;
 
   /* Read the table count */
   fr(fp, (char*)&count, sizeof(int));
 
-  ids = (UUID*)calloc(count, sizeof(UUID));
-
+  /* Remap the tables to the same order 
+   * as the time of the snapshot
+   */
+  PrimitiveTable** oldAddresses = (PrimitiveTable**)calloc(PrimitiveTableCount, sizeof(PrimitiveTable*));
+  memcpy((char*)oldAddresses, PrimitiveTableAddresses, sizeof(PrimitiveTable*)*PrimitiveTableCount);
+  free(PrimitiveTableAddresses);
+  PrimitiveTableAddresses = (PrimitiveTable**)calloc(count, sizeof(PrimitiveTable*));
   for(i = 0; i < count; ++i)
   {
-    fr(fp, (char*)&ids[i], sizeof(UUID));
+    fr(fp, (char*)&id, sizeof(UUID));
     /* printf("%s\n", UUIDToString(id)); */
+    /* Find it in the current VM table list */
+    int found = FALSE;
+    for(j = 0; j < PrimitiveTableCount; ++j)
+    {
+      if(TRUE == UUIDCompare(id, oldAddresses[j]->id))
+      {
+        found = TRUE;
+        PrimitiveTableAddresses[i] = oldAddresses[j];
+        break;
+      }
+    }
+    if(found != TRUE)
+      printf("Missing primitive table [%s]\n", UUIDToString(id));
   }
+#if defined TW_DEBUG
+  for(i = 0; i < count; ++i)
+  {
+    printf("%p : ", PrimitiveTableAddresses[i]);
+    if(PrimitiveTableAddresses[i] != NULL)
+      printf("%s", UUIDToString(PrimitiveTableAddresses[i]->id));
+    printf("\n");
+  }
+#endif
+  PrimitiveTableCount = count;
+  free(oldAddresses);
 }
 
 void initialiseDebugPrims()
@@ -1037,4 +1089,3 @@ void initialiseDebugPrims()
   addPrimitiveTable("compile", stringToUUID(compilePrimId), compilePrimitiveTable);
 //#endif
 }
-
