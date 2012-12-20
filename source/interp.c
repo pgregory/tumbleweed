@@ -189,7 +189,7 @@ readLinkageBlock:
    * to get the pointer, rcv can't ever be 
    * used in this case anyway, as integers have no
    * local data */
-  if((argumentsAt(0) & 1) == 0)
+  if(!isInteger(argumentsAt(0)))
 #endif
     rcv = sysMemPtr((argumentsAt(0)));
 
@@ -328,7 +328,7 @@ doSendMessage:
         arg = psb + (returnPoint-1);
 
 #if !defined TW_SMALLINTEGER_AS_OBJECT
-        if((argumentsAt(0) & 1) == 0)
+        if(!isInteger(argumentsAt(0)))
 #endif
           rcv = sysMemPtr((argumentsAt(0)));
         methodClass = getClass(argumentsAt(0));
@@ -659,7 +659,7 @@ doReturn:
             i = nextByte();
             messageToSend = literalsAt(i);
 #if !defined TW_SMALLINTEGER_AS_OBJECT
-            if((argumentsAt(0) & 1) == 0)
+            if(!isInteger(argumentsAt(0)))
 #endif
               rcv = sysMemPtr((argumentsAt(0)));
             methodClass = basicAt(method,methodClassInMethod);

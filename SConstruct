@@ -5,7 +5,8 @@ from build_config import *
 vars = Variables('custom.py')
 
 env = Environment(variables = vars, TW_LIBS = [])
-env.Append(CPPDEFINES=['TW_SMALLINTEGER_AS_OBJECT', 'TW_IS_INITIAL'])
+env.Append(CPPDEFINES=['TW_IS_INITIAL'])
+env.Append(CPPPATH = ['.', '#thirdparty/uthash/src'])
 opt = env.Clone()
 
 target_dir = '#' + SelectBuildDir(build_base_dir)

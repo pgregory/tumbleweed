@@ -90,7 +90,7 @@ static object unaryPrims(int number, object firstarg)
   returnedObject = firstarg;
   switch(number) {
     case 1:     /* class of object */
-      returnedObject = firstarg->_class;
+      returnedObject = getClass(firstarg);
       break;
 
     case 8:     /* change return point - block return */
@@ -455,7 +455,7 @@ static object exceptionPrimitive(int number, object* arguments)
       break;
 
     case 2:     // signal
-      fprintf(stderr, "signal from: %s\n", charPtr(basicAt(arguments[0]->_class, nameInClass)));
+      fprintf(stderr, "signal from: %s\n", charPtr(basicAt(getClass(arguments[0]), nameInClass)));
       break;
 
     default:
@@ -625,7 +625,7 @@ object vmPrimitiveHandler(int primitiveNumber, object* args, int argc)
       // \todo: Not happy about this, need to review the hashing.
       // This specialises the hash for integers, to ensure values are used, not objects,
       // but there are other cases where the value should be considered, like float.
-      if(args[0]->_class == globalSymbol("Integer"))
+      if(getClass(args[0]) == globalSymbol("Integer"))
         returnedObject = newInteger(getInteger(args[0]));
       else
         returnedObject = newInteger(hashObject(args[0]));

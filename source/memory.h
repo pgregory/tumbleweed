@@ -20,8 +20,8 @@ typedef struct _ObjectStruct
     //! ID of the object that defines the class of this object.
     struct _ObjectStruct* _class;
     //! A reference counter, used only during mark/sweep GC.
-    byte referenceCount;
-    byte _padding;
+    //byte referenceCount;
+    //byte _padding;
     //! An identity hash key, used for hash tables and dictionaries.
     unsigned short identityHash;
     //! The size of the data area, in object ID's
@@ -372,14 +372,20 @@ void imageWrite(FILE* fp);
 // TODO: Need to deal with SmallIntegers here
 #if defined TW_SMALLINTEGER_AS_OBJECT
 
+#define isInteger(x) ((x)->_class == CLASSOBJECT("Integer"))
 #define getInteger(x) (intValue((x)))
 #define getClass(x) ((x)->_class)
+#define getSize(x) ((x)->size)
+#define getIdentityHash(x) ((x)->identityHash)
 
 #else
 
 extern object g_intClass;
-#define getInteger(x) ((x) >> 1)
-#define getClass(x) (((x)&1)? ((classSyms[kInteger] == 0)? (globalSymbol("Integer")) : classSyms[kInteger].handle()) : (objectRef((x))._class))
+#define isInteger(x) (((intptr_t)(x) & 1) != 0)
+#define getInteger(x) (isInteger((x))? (intptr_t)(x) >> 1 : 0)
+#define getClass(x) ((isInteger((x)))? ((classSyms[kInteger] == 0)? (globalSymbol("Integer")) : classSyms[kInteger]) : ((x)->_class))
+#define getSize(x) ((isInteger((x)))? 0 : (x)->size)
+#define getIdentityHash(x) ((isInteger(x))? getInteger((x)) : (x)->identityHash)
 
 #endif
 
