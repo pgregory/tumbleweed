@@ -1,4 +1,4 @@
-Import('env')
+Import('env', 'install_dir')
 
 common_source = Split("""
   filein.c
@@ -22,8 +22,10 @@ tw_source = [ 'main/st.c' ]
 initial_source = [ 'initial.c' ]
 
 tw_source += [ 'main/%s' % x for x in common_source ] 
-main_env.Program('tw', tw_source)
+tw = main_env.Program('tw', tw_source)
 initial = env.Program('initial', common_source + initial_source)
+
+main_env.Install(install_dir, tw)
 
 Export('initial')
 

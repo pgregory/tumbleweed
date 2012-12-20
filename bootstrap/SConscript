@@ -1,4 +1,4 @@
-Import('env', 'initial')
+Import('env', 'initial', 'install_dir')
 
 bootstrap_sources = Split("""
   basic.st
@@ -23,5 +23,7 @@ env.Append(BUILDERS = {'Image' : imageBuilder})
 
 systemImage = env.Image('systemImage', bootstrap_sources)
 Depends(systemImage, initial)
+
+env.Install(install_dir, systemImage)
 
 # ex: set filetype=python tabstop=2 shiftwidth=2 expandtab: 
