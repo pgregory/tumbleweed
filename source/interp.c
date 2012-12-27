@@ -22,6 +22,8 @@
 # include "parser.h"
 # include "primitive.h"
 
+extern void initialiseSocketsPrims();
+
 int watching = 0;
 extern object primitive( int, object* );
 
@@ -815,6 +817,7 @@ void initialiseInterpreter()
   }
 
   initialiseDebugPrims();
+  initialiseSocketsPrims();
 }
 
 

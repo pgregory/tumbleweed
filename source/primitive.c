@@ -939,7 +939,7 @@ object executePrimitive(int tableIndex, int index, object* args, int argc)
 }
 
 
-static UUID stringToUUID(const char* strUUID)
+UUID stringToUUID(const char* strUUID)
 {
   UUID id;
   char* end;

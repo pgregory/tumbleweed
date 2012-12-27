@@ -14,6 +14,8 @@ typedef struct _UUID
 } UUID;
 #define UUID_STRING_LENGTH 8+1+4+1+4+1+4+1+12+1
 
+UUID stringToUUID(const char* strUUID);
+
 typedef object(*PrimFunction)(int primitiveNumber, object* args, int argc);
 
 typedef struct _PrimitiveTableEntry
