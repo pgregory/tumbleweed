@@ -102,13 +102,11 @@ Methods Smalltalk 'doit'
 Methods Scheduler 'get commands'
     initialize  | string |
         [ string <- smalltalk getPrompt: '> '.
-        string isNil
-            ifTrue: [ notdone <- false ]
-            ifFalse: [ (string size > 0)
+            (string size > 0)
                 ifTrue: [ 
                     echoInput ifTrue:
                         [ string print ].
-                    [ string value print ] fork ] ] ] fork
+                    [ string value print ] fork ] ] fork
 ]
 Methods UndefinedObject 'initial image'
     createGlobals   | aBlock |
