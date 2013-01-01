@@ -1,5 +1,5 @@
 RawClass MetaSocket Class MetaObject eagain
-Class Socket Object socketID
+Class Socket Object socketID lastError
 
 Methods MetaSocket 'creation'
   new: id
@@ -27,7 +27,7 @@ Methods MetaSocket 'testing'
     self test: 'www.google.com' on: 80 service: 'http' protocol: 'tcp'
 |
   testserver
-    | sock result data term clientsock |
+    | sock result data readData response clientsock |
     'Creating socket: ' print.
     sock <- Socket new.
     'Binding socket: ' print.
@@ -37,26 +37,37 @@ Methods MetaSocket 'testing'
       ifFalse: [ ('Could not bind to socket: (', result, ')') print. ^ false ].
     sock listen.
     'Accepting: ' print.
-    result <- sock accept.
-    clientsock <- Socket new: result.
-    result <- false.
-    [ result ] whileFalse:
-      [ 
-        data <- clientsock read: 255.
-        ( data isNil ) 
-          ifTrue: [ result <- true ]
-          ifFalse: [ 
-            data printNoReturn.
-            term <- data copyFrom: (data size - 3) to: data size.
-            ( term = ('', Char cr, Char lf, Char cr, Char lf) )
-              ifTrue: [ result <- true ]
-          ]
-      ].
-    clientsock send: '<html><body><h1>Hello from Tumbleweed</h1></body></html>'.
-    clientsock close.
+    [ true ] whileTrue: [
+      result <- sock accept.
+      ((result at: 1) < 0) ifFalse: [
+        clientsock <- Socket new: (result at: 1).
+        [ self handleConnection: clientsock ] fork
+      ]
+    ].
     'Shutting down server' print.
     sock close.
     'Done: ' print
+|
+  handleConnection: clientsock
+    | data result readData response | 
+    result <- false.
+    data <- ''.
+    [ result ] whileFalse: [ 
+      readData <- clientsock read: 255.
+      ( ( readData at: 2 ) isNil ) ifTrue: [ 
+        ( ( readData at: 1 ) == 0 ) ifTrue: [
+          result <- true.
+          clientsock close
+        ]
+      ] ifFalse: [ 
+        data <- (data, (readData at: 2)).
+        ( ( data findSubstring: ('', Char cr, Char lf, Char cr, Char lf) ) > 0 ) ifTrue: [ 
+          response <- data value.
+          clientsock send: ((response asString), Char cr, Char lf).
+          data <- ''
+        ]
+      ]
+    ]
 ]
 *
 Methods MetaSocket 'constants'
@@ -76,12 +87,16 @@ Methods Socket 'initialization'
     self init: <socketsNew 'tcp'>
 |
   init: id
-    socketID <- id
+    socketID <- id.
+    lastError <- 0
 ]
 *
 Methods Socket 'all'
   socketID
     ^ socketID
+|
+  lastError
+    ^ lastError
 |
   shutdown
     ^ <socketsShutdown socketID>

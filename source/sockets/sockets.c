@@ -23,6 +23,7 @@ object PRIM_socketNew(int primitiveNumber, object* args, int argc)
   struct protoent *protocol;
   int yes=1;
   //char yes='1'; // Solaris people use this
+  int flags;
 
   if(argc != 1)
     sysError("invalid number of arguments to primitive", "PRIM_socketNew");
@@ -39,10 +40,11 @@ object PRIM_socketNew(int primitiveNumber, object* args, int argc)
   //  *errcode = errno;
 
 #ifndef WIN32
-//  fcntl(sockfd, F_SETFL, O_NONBLOCK);
+  flags = fcntl(sockfd, F_GETFL, 0);
+  fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
 #else
-//  u_long iMode = 1;
-//  ioctlsocket(sockfd, FIONBIO, &iMode);
+  u_long iMode = 1;
+  ioctlsocket(sockfd, FIONBIO, &iMode);
 #endif
 
   return newInteger(sockfd);
@@ -220,8 +222,13 @@ object PRIM_socketAccept(int primitiveNumber, object* args, int argc)
 {
   struct sockaddr_in socketaddr;
   int newsockfd;
+  object result;
+  SObjectHandle* result_lock;
 
   int sockfd;
+
+  /* Clear errno before we start */
+  errno = 0;
 
   if(argc != 1)
     sysError("invalid number of arguments to primitive", "PRIM_sockectAccept");
@@ -239,10 +246,15 @@ object PRIM_socketAccept(int primitiveNumber, object* args, int argc)
 
   newsockfd = accept(sockfd, (struct sockaddr*)&socketaddr, &client_len);
 
-  //if(newsockfd < 0)
-  //  *errcode = errno;
+  result = newArray(2);
+  result_lock = new_SObjectHandle_from_object(result);
 
-  return newInteger(newsockfd);
+  basicAtPut(result, 1, newInteger(newsockfd));
+  basicAtPut(result, 2, newInteger(errno));
+
+  free_SObjectHandle(result_lock);
+
+  return result;
 }
 
 
@@ -273,24 +285,38 @@ object PRIM_socketRead(int primitiveNumber, object* args, int argc)
   size_t res;
   int sockfd, len;
   char* buffer;
-  object data;
+  object data, result;
+  SObjectHandle *data_lock, *result_lock;
 
   if(argc != 2)
     sysError("invalid number of arguments to primitive", "PRIM_sockectRead");
+
+  errno = 0;
 
   sockfd = getInteger(args[0]);
   len = getInteger(args[1]);
 
   buffer = calloc(len + 1, sizeof(char));
 
-  if((res = read(sockfd, buffer, len)) <= 0)
-    return nilobj;
+  res = read(sockfd, buffer, len);
 
-  data = newStString(buffer);
+  data = nilobj;
+  if(res > 0)
+    data = newStString(buffer);
 
+  data_lock = new_SObjectHandle_from_object(data);
+  result = newArray(2);
+  result_lock = new_SObjectHandle_from_object(result);
+  
+  basicAtPut(result, 1, newInteger(errno));
+  basicAtPut(result, 2, data);
+
+
+  free_SObjectHandle(result_lock);
+  free_SObjectHandle(data_lock);
   free(buffer);
 
-  return data;
+  return result;
 }
 
 int eagain()
