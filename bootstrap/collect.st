@@ -669,3 +669,20 @@ Methods String 'all'
         (1 to: self size) do: [ :x | ret at: x put: (self at: x) uppercase asInteger ].
         ^ ret asString
 ]
+*
+Methods String 'search and replace'
+    findSubstring: key
+        ^ self findSubstring: key startingAt: 1
+|
+    findSubstring: key startingAt: start
+    | index |
+        key size = 0 ifTrue: [^ 0].
+        (start to: self size - key size + 1) do:
+            [:startIndex |
+            index <- 1.
+                [(self at: startIndex+index-1) = (key at: index)]
+                    whileTrue:
+                    [index = key size ifTrue: [^ startIndex].
+                    index <- index+1]].
+        ^ 0
+]
