@@ -98,10 +98,13 @@ static object findClassWithMeta(const char* name, object metaObj)
 static object createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
     object classObj, superObj, metaObj;
+    SObjectHandle *classObj_lock, *metaObj_lock;
     int size;
 
     metaObj = findClass(metaclass);
+    metaObj_lock = new_SObjectHandle_from_object(metaObj);
     classObj = findClassWithMeta(_class, metaObj);
+    classObj_lock = new_SObjectHandle_from_object(classObj);
     classObj->_class = metaObj;
 
     size = 0;
@@ -112,6 +115,9 @@ static object createRawClass(const char* _class, const char* metaclass, const ch
         basicAtPut(classObj,superClassInClass, superObj);
         size = getInteger(basicAt(superObj,sizeInClass));
     }
+
+    free_SObjectHandle(classObj_lock);
+    free_SObjectHandle(metaObj_lock);
     return classObj;
 }
 

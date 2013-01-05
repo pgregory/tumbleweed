@@ -909,7 +909,10 @@ void messagePattern()
 
 int parseCode(object method, int savetext)
 {   
+    int result;
+
     _parseok = 1;
+    g_DisableGC = 1;
 
     _blocksat = NotInBlock;
     _codeTop = 0;
@@ -919,12 +922,19 @@ int parseCode(object method, int savetext)
     temporaries();
     if (_parseok)
         body();
-    return(recordMethodBytecode(method, savetext));
+    
+    result = recordMethodBytecode(method, savetext);
+    g_DisableGC = 0;
+
+    return result;
 }
 
 int parseMessageHandler(object method, int savetext)
 {   
+    int result;
+
     _parseok = 1;
+    g_DisableGC = 1;
 
     _blocksat = NotInBlock;
     _codeTop = 0;
@@ -936,7 +946,11 @@ int parseMessageHandler(object method, int savetext)
         temporaries();
     if (_parseok)
         body();
-    return(recordMethodBytecode(method, savetext));
+    
+    result = recordMethodBytecode(method, savetext);
+    g_DisableGC = 0;
+
+    return result;
 }
 
 

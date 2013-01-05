@@ -42,6 +42,23 @@ typedef struct _SObjectHandle
 extern SObjectHandle* head;
 extern SObjectHandle* tail;
 
+/* Use enum, because standard C doesn't allow static int
+ * for array size declarations */
+enum { g_DefaultObjectPoolSize = 1024 };
+
+typedef struct _ObjectPool
+{
+    struct _ObjectPool* prev;
+    struct _ObjectPool* next;
+    int top;
+    ObjectStruct pool[g_DefaultObjectPoolSize];
+} ObjectPool;
+
+extern ObjectPool* g_HeadPool;
+extern ObjectPool* g_CurrentPool;
+extern int g_DisableGC;
+    
+ 
 void appendToList(SObjectHandle* h);
 void removeFromList(SObjectHandle* h);
 SObjectHandle* new_SObjectHandle();
@@ -50,6 +67,8 @@ void free_SObjectHandle(SObjectHandle* h);
 
 unsigned short hashObject(object o);
 
+unsigned long allocatedObjectCount();
+unsigned long referencedObjects();
 
 
 //! Data pointer getter

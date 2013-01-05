@@ -64,10 +64,11 @@ object sysPrimitive(int number, object* arguments)
       {
 #if defined WIN32
         char command[256];
-        printf("%s", charPtr(arguments[0]));
+        printf("(%d/%d) %s", allocatedObjectCount(), referencedObject(), charPtr(arguments[0]));
         gets(command);
         returnedObject = newStString(command);
 #else
+        printf("(%d/%d)\n", allocatedObjectCount(), referencedObjects());
         char* command = readline(charPtr(arguments[0]));
         returnedObject = newStString(command);
         add_history(command);

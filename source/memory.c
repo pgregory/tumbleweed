@@ -49,6 +49,47 @@ object symbols;     /* table of all symbols created */
 static unsigned short NextHashValue = 0;
 
 
+ObjectPool* g_HeadPool = 0;
+ObjectPool* g_CurrentPool = 0;
+int g_DisableGC = 0;
+
+typedef struct _visitedObject
+{
+    object obj;
+    UT_hash_handle hh;
+} visitedObject;
+
+static struct 
+{
+    object ref;
+    object _classRef;
+    long size;
+    unsigned short identityHash;
+} dummyObject;
+
+
+
+typedef struct _visitor
+{
+    int(*test)(struct _visitor* env);
+    void(*preFunc)(struct _visitor* env);
+    void(*postFunc)(struct _visitor* env);
+
+    visitedObject* visitedObjects;
+    unsigned long count;
+    object o;
+} Visitor;
+
+typedef struct _fileVisitor
+{
+    Visitor super;
+
+    FILE* fp;
+} FileVisitor;
+
+
+void visit(Visitor* cb);
+
 //
 // ncopy - copy exactly n bytes from place to place 
 // 
@@ -70,18 +111,193 @@ static object* mBlockAlloc(int size)
     return result;
 }
 
+enum { g_FreeListBufferSize = 128 };
+/* Opaque buffer element type.  This would be defined by the application. */
+typedef struct { object value; } FreeListType;
+ 
+/* Circular buffer object */
+typedef struct 
+{
+    int         size;   /* maximum number of elements           */
+    int         start;  /* index of oldest element              */
+    int         end;    /* index at which to write new element  */
+    FreeListType    elems[g_FreeListBufferSize + 1];  /* vector of elements                   */
+} FreeListBuffer;
+
+FreeListBuffer g_FreeListBuffer = 
+{
+    g_FreeListBufferSize + 1,
+    0,
+    0
+};
+
+int freeListIsFull(FreeListBuffer *cb) 
+{
+    return (cb->end + 1) % cb->size == cb->start; 
+}
+ 
+int freeListIsEmpty(FreeListBuffer *cb) 
+{
+    return cb->end == cb->start; 
+}
+ 
+/* Write an element, overwriting oldest element if buffer is full. App can
+   choose to avoid the overwrite by checking freeListIsFull(). */
+void freeListAdd(FreeListBuffer *cb, FreeListType *elem) 
+{
+    cb->elems[cb->end] = *elem;
+    cb->end = (cb->end + 1) % cb->size;
+    if (cb->end == cb->start)
+        cb->start = (cb->start + 1) % cb->size; /* full, overwrite */
+}
+ 
+/* Read oldest element. App must ensure !freeListIsEmpty() first. */
+void freeListRead(FreeListBuffer *cb, FreeListType *elem) 
+{
+    *elem = cb->elems[cb->start];
+    cb->start = (cb->start + 1) % cb->size;
+}
+
+extern object processStack;
+
+void garbageCollect()
+{
+    Visitor v;
+    ObjectPool* pool;
+    visitedObject* vo, *tmp;
+    int i, freed = 0, held = 0;
+    FreeListType elem;
+    SObjectHandle* handle;
+    object search;
+
+    if(g_DisableGC || freeListIsFull(&g_FreeListBuffer))
+        return;
+
+    v.preFunc = NULL;
+    v.postFunc = NULL;
+    v.test = NULL;
+    v.count = 0;
+    v.visitedObjects = NULL;
+
+    // Visit the root objects
+    v.o = symbols;
+    visit(&v);
+    v.o = processStack;
+    visit(&v);
+    v.o = firstProcess;
+    visit(&v);
+
+    // Visit all the locked objects
+    handle = head;
+    while(handle)
+    {
+        v.o = handle->m_handle;
+        visit(&v);
+        handle = handle->m_next;
+    }
+
+    pool = g_HeadPool;
+    while(NULL != pool)
+    {
+        for(i = 0; i < pool->top; ++i)
+        {
+            search = &pool->pool[i];
+            HASH_FIND_PTR(v.visitedObjects, &search, vo);
+            if((search != nilobj) && (vo == NULL))
+            {
+                elem.value = &(pool->pool[i]);
+                freeListAdd(&g_FreeListBuffer, &elem);
+                freed++;
+                if(freeListIsFull(&g_FreeListBuffer))
+                    break;
+            }
+        }
+        pool = pool->next;
+        if(freeListIsFull(&g_FreeListBuffer))
+            break;
+    }
+
+    HASH_ITER(hh, v.visitedObjects, vo, tmp) 
+    {
+        HASH_DEL(v.visitedObjects, vo);
+        free(vo);
+    }
+}
+
+#if defined TW_DEBUG
+static void checkNotReferenced(object o)
+{
+    Visitor v;
+    visitedObject* vo, *tmp;
+
+    v.preFunc = NULL;
+    v.postFunc = NULL;
+    v.test = NULL;
+    v.o = symbols;
+    v.count = 0;
+    v.visitedObjects = NULL;
+    visit(&v);
+
+    HASH_FIND_PTR(v.visitedObjects, &o, vo);
+    if(vo != NULL)
+        printf("Object is referenced unexpectedly!\n");
+
+    HASH_ITER(hh, v.visitedObjects, vo, tmp) 
+    {
+        HASH_DEL(v.visitedObjects, vo);
+        free(vo);
+    }
+}
+#endif
+
+static object reserveObject()
+{
+    FreeListType elem;
+
+    if(NULL == g_HeadPool || NULL == g_CurrentPool)
+    {
+        g_HeadPool = g_CurrentPool = (ObjectPool*)malloc(sizeof(ObjectPool));
+        g_HeadPool->next = NULL;
+        g_HeadPool->prev = NULL;
+        g_HeadPool->top = 0;
+    }
+
+    if(g_CurrentPool->top >= g_DefaultObjectPoolSize)
+    {
+        if(freeListIsEmpty(&g_FreeListBuffer))
+            garbageCollect();
+        if(freeListIsEmpty(&g_FreeListBuffer))
+        {
+            // Check if we can do a GC to release some objects.
+            g_CurrentPool->next = (ObjectPool*)malloc(sizeof(ObjectPool));
+            g_CurrentPool->next->next = NULL;
+            g_CurrentPool->next->prev = g_CurrentPool;
+            g_CurrentPool->next->top = 0;
+            g_CurrentPool = g_CurrentPool->next;
+        }
+        else
+        {
+            freeListRead(&g_FreeListBuffer, &elem);
+            //checkNotReferenced(elem.value);
+            return elem.value;
+        }
+    }
+
+    return &g_CurrentPool->pool[g_CurrentPool->top++];
+}
+
 
 object allocObject(size_t memorySize)
 {
-    object ob = (object)calloc(1, sizeof(ObjectStruct));
+    object ob = reserveObject();
     if(memorySize)
         ob->memory = mBlockAlloc(memorySize);
     else
         ob->memory = NULL;
     ob->size = memorySize;
     ob->_class = nilobj;
-    //ob->referenceCount = 0;
     ob->identityHash = NextHashValue++;
+
     return ob;
 }
 
@@ -168,28 +384,41 @@ object newByteArray(int size)
 object newChar(int value)
 {   
     object newobj;
+    SObjectHandle* newobj_handle;
 
     newobj = allocObject(1);
+    newobj_handle = new_SObjectHandle_from_object(newobj);
     basicAtPut(newobj,1, newInteger(value));
     newobj->_class = CLASSOBJECT(Char);
+    free_SObjectHandle(newobj_handle);
+
     return(newobj);
 }
 
 object newClass(const char* name)
 {   
     object newObj, nameObj, methTable;
+    SObjectHandle *newObj_handle, *nameObj_handle, *methTable_handle;
 
     newObj = allocObject(classSize);
+    newObj_handle = new_SObjectHandle_from_object(newObj);
     newObj->_class = CLASSOBJECT(Class);
 
     /* now make name */
     nameObj = newSymbol(name);
-    basicAtPut(newObj,nameInClass, nameObj); methTable = newDictionary(39);
+    nameObj_handle = new_SObjectHandle_from_object(nameObj);
+    basicAtPut(newObj,nameInClass, nameObj); 
+    methTable = newDictionary(39);
+    methTable_handle = new_SObjectHandle_from_object(methTable);
     basicAtPut(newObj,methodsInClass, methTable);
     basicAtPut(newObj,sizeInClass, newInteger(classSize));
 
     /* now put in global symbols table */
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
+
+    free_SObjectHandle(methTable_handle);
+    free_SObjectHandle(nameObj_handle);
+    free_SObjectHandle(newObj_handle);
 
     return newObj;
 }
@@ -197,23 +426,31 @@ object newClass(const char* name)
 object newContext(int link, object method, object args, object temp)
 {   
     object newObj;
+    SObjectHandle* newObj_handle;
 
     newObj = allocObject(contextSize);
+    newObj_handle = new_SObjectHandle_from_object(newObj);
     newObj->_class = CLASSOBJECT(Context);
     basicAtPut(newObj,linkPtrInContext, newInteger(link));
     basicAtPut(newObj,methodInContext, method);
     basicAtPut(newObj,argumentsInContext, args);
     basicAtPut(newObj,temporariesInContext, temp);
+    free_SObjectHandle(newObj_handle);
+
     return newObj;
 }
 
 object newDictionary(int size)
 {   
     object newObj;
+    SObjectHandle* newObj_handle;
 
     newObj = allocObject(dictionarySize);
+    newObj_handle = new_SObjectHandle_from_object(newObj);
     newObj->_class = CLASSOBJECT(Dictionary);
     basicAtPut(newObj,tableInDictionary, newArray(size));
+    free_SObjectHandle(newObj_handle);
+
     return newObj;
 }
 
@@ -283,6 +520,7 @@ object newStString(const char* value)
 object newSymbol(const char* str)
 {    
     object newObj;
+    SObjectHandle* newObj_lock;
 
     /* first see if it is already there */
     newObj = globalKey(str);
@@ -291,8 +529,10 @@ object newSymbol(const char* str)
 
     /* not found, must make */
     newObj = allocStr(str);
+    newObj_lock = new_SObjectHandle_from_object(newObj);
     newObj->_class = CLASSOBJECT(Symbol);
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
+    free_SObjectHandle(newObj_lock);
     return newObj;
 }
 
@@ -311,46 +551,15 @@ object copyFrom(object obj, int start, int size)
     return newObj;
 }
 
-typedef struct _visitedObject
-{
-    object obj;
-    UT_hash_handle hh;
-} visitedObject;
-
-static struct 
-{
-    object ref;
-    object _classRef;
-    long size;
-    unsigned short identityHash;
-} dummyObject;
-
-
-
-typedef struct _visitor
-{
-    int(*test)(struct _visitor* env);
-    void(*preFunc)(struct _visitor* env);
-    void(*postFunc)(struct _visitor* env);
-
-    visitedObject* visitedObjects;
-    long count;
-    object o;
-} Visitor;
-
-typedef struct _fileVisitor
-{
-    Visitor super;
-
-    FILE* fp;
-} FileVisitor;
-
 
 void visit(Visitor* cb)
 {
     int i, s;
     object *p;
     visitedObject* vo;
+
+    if(NULL == cb->o)
+        return;
 
 #if !defined TW_SMALLINTEGER_AS_OBJECT
     if(!isInteger(cb->o))
@@ -560,6 +769,8 @@ void imageRead(FILE* fp)
     mapEntry* map;
     LinkVisitor lv;
 
+    g_DisableGC = 1;
+
     fr(fp, (char *) &symbols, sizeof(object));
     fr(fp, (char *) &nilAtStore, sizeof(object));
 
@@ -638,6 +849,8 @@ void imageRead(FILE* fp)
     NextHashValue = identityHashHold;
 
     free(map);
+
+    g_DisableGC = 0;
 }
 
 
@@ -645,6 +858,7 @@ void imageRead(FILE* fp)
 
 SObjectHandle* head = 0;
 SObjectHandle* tail = 0;
+
 
 
 void appendToList(SObjectHandle* h)
@@ -812,4 +1026,33 @@ void* cPointerValue(object _this)
 unsigned short hashObject(object o)
 {
     return o->identityHash;
+}
+
+unsigned long allocatedObjectCount()
+{
+    ObjectPool* pool;
+    long count = 0;
+
+    pool = g_HeadPool;
+    while(pool)
+    {
+        count += pool->top;
+        pool = pool->next;
+    }
+    return count;
+}
+
+unsigned long referencedObjects()
+{
+    Visitor v;
+
+    v.preFunc = NULL;
+    v.postFunc = NULL;
+    v.test = NULL;
+    v.o = symbols;
+    v.count = 0;
+    v.visitedObjects = NULL;
+    visit(&v);
+
+    return v.count;
 }
