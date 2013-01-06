@@ -11,6 +11,8 @@
 #include "env.h"
 #include "stdint.h"
 
+typedef unsigned short hash_type;
+
 /*! \brief Object structure
  *
  * The default structure that represents all objects int he system.
@@ -23,7 +25,7 @@ typedef struct _ObjectStruct
     //byte referenceCount;
     //byte _padding;
     //! An identity hash key, used for hash tables and dictionaries.
-    unsigned short identityHash;
+    hash_type identityHash;
     //! The size of the data area, in object ID's
     long size;
     //! A pointer to the data area of the object.
@@ -57,7 +59,8 @@ typedef struct _ObjectPool
 extern ObjectPool* g_HeadPool;
 extern ObjectPool* g_CurrentPool;
 extern int g_DisableGC;
-    
+
+
  
 void appendToList(SObjectHandle* h);
 void removeFromList(SObjectHandle* h);
@@ -65,7 +68,7 @@ SObjectHandle* new_SObjectHandle();
 SObjectHandle* new_SObjectHandle_from_object(object from);
 void free_SObjectHandle(SObjectHandle* h);
 
-unsigned short hashObject(object o);
+hash_type hashObject(object o);
 
 unsigned long allocatedObjectCount();
 unsigned long referencedObjects();
@@ -386,6 +389,14 @@ void imageRead(FILE* fp);
 void imageWrite(FILE* fp);
 
 
+#define HASH_MASK 0x3FFF
+#define HASH_LIMIT 0x3FFF
+#define FLAGS_MASK 0xC000 
+#define GET_HASH(x) (((x)->identityHash) & HASH_MASK)
+#define SET_HASH(x,y) (((x)->identityHash) = ((((x)->identityHash) & FLAGS_MASK) | ((y) & HASH_MASK)))
+#define GET_FLAGS(x) ((((x)->identityHash) & FLAGS_MASK) >> 14)
+#define SET_FLAGS(x,y) (((x)->identityHash) = ((((x)->identityHash) & HASH_MASK) | (((y) << 14) & FLAGS_MASK)))
+#define FLAG_VISITED 0x0001
 
 //#define TW_SMALLINTEGER_AS_OBJECT
 // TODO: Need to deal with SmallIntegers here
@@ -395,7 +406,7 @@ void imageWrite(FILE* fp);
 #define getInteger(x) (intValue((x)))
 #define getClass(x) ((x)->_class)
 #define getSize(x) ((x)->size)
-#define getIdentityHash(x) ((x)->identityHash)
+#define getIdentityHash(x) (GET_HASH((x)))
 
 #else
 
@@ -404,7 +415,7 @@ extern object g_intClass;
 #define getInteger(x) (isInteger((x))? (intptr_t)(x) >> 1 : 0)
 #define getClass(x) ((isInteger((x)))? ((classSyms[kInteger] == 0)? (globalSymbol("Integer")) : classSyms[kInteger]) : ((x)->_class))
 #define getSize(x) ((isInteger((x)))? 0 : (x)->size)
-#define getIdentityHash(x) ((isInteger(x))? getInteger((x)) : (x)->identityHash)
+#define getIdentityHash(x) ((isInteger(x))? (getInteger((x)) & HASH_MASK) : GET_HASH((x)))
 
 #endif
 

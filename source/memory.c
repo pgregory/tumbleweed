@@ -29,7 +29,6 @@
 #include "interp.h"
 #include "names.h"
 #include "primitive.h"
-#include "uthash.h"
 
 
 int debugging = FALSE;
@@ -53,18 +52,12 @@ ObjectPool* g_HeadPool = 0;
 ObjectPool* g_CurrentPool = 0;
 int g_DisableGC = 0;
 
-typedef struct _visitedObject
-{
-    object obj;
-    UT_hash_handle hh;
-} visitedObject;
-
 static struct 
 {
     object ref;
     object _classRef;
     long size;
-    unsigned short identityHash;
+    hash_type identityHash;
 } dummyObject;
 
 
@@ -75,7 +68,6 @@ typedef struct _visitor
     void(*preFunc)(struct _visitor* env);
     void(*postFunc)(struct _visitor* env);
 
-    visitedObject* visitedObjects;
     unsigned long count;
     object o;
 } Visitor;
@@ -89,6 +81,7 @@ typedef struct _fileVisitor
 
 
 void visit(Visitor* cb);
+void clearVisitedFlags();
 
 //
 // ncopy - copy exactly n bytes from place to place 
@@ -164,7 +157,6 @@ void garbageCollect()
 {
     Visitor v;
     ObjectPool* pool;
-    visitedObject* vo, *tmp;
     int i, freed = 0, held = 0;
     FreeListType elem;
     SObjectHandle* handle;
@@ -177,7 +169,7 @@ void garbageCollect()
     v.postFunc = NULL;
     v.test = NULL;
     v.count = 0;
-    v.visitedObjects = NULL;
+    clearVisitedFlags();
 
     // Visit the root objects
     v.o = symbols;
@@ -202,11 +194,11 @@ void garbageCollect()
         for(i = 0; i < pool->top; ++i)
         {
             search = &pool->pool[i];
-            HASH_FIND_PTR(v.visitedObjects, &search, vo);
-            if((search != nilobj) && (vo == NULL))
+            if((search != nilobj) && ((GET_FLAGS(search)&FLAG_VISITED)==0))
             {
                 elem.value = &(pool->pool[i]);
                 freeListAdd(&g_FreeListBuffer, &elem);
+                free(elem.value->memory);
                 freed++;
                 if(freeListIsFull(&g_FreeListBuffer))
                     break;
@@ -217,36 +209,24 @@ void garbageCollect()
             break;
     }
 
-    HASH_ITER(hh, v.visitedObjects, vo, tmp) 
-    {
-        HASH_DEL(v.visitedObjects, vo);
-        free(vo);
-    }
+    //printf("Added %d to free list\n", freed);
 }
 
 #if defined TW_DEBUG
 static void checkNotReferenced(object o)
 {
     Visitor v;
-    visitedObject* vo, *tmp;
 
     v.preFunc = NULL;
     v.postFunc = NULL;
     v.test = NULL;
     v.o = symbols;
     v.count = 0;
-    v.visitedObjects = NULL;
+    clearVisitedFlags();
     visit(&v);
 
-    HASH_FIND_PTR(v.visitedObjects, &o, vo);
-    if(vo != NULL)
+    if(((GET_FLAGS(o)&FLAG_VISITED)==0))
         printf("Object is referenced unexpectedly!\n");
-
-    HASH_ITER(hh, v.visitedObjects, vo, tmp) 
-    {
-        HASH_DEL(v.visitedObjects, vo);
-        free(vo);
-    }
 }
 #endif
 
@@ -264,11 +244,12 @@ static object reserveObject()
 
     if(g_CurrentPool->top >= g_DefaultObjectPoolSize)
     {
+        // Check if we can do a GC to release some objects.
         if(freeListIsEmpty(&g_FreeListBuffer))
             garbageCollect();
         if(freeListIsEmpty(&g_FreeListBuffer))
         {
-            // Check if we can do a GC to release some objects.
+            // Add a new block to the pool.
             g_CurrentPool->next = (ObjectPool*)malloc(sizeof(ObjectPool));
             g_CurrentPool->next->next = NULL;
             g_CurrentPool->next->prev = g_CurrentPool;
@@ -296,7 +277,10 @@ object allocObject(size_t memorySize)
         ob->memory = NULL;
     ob->size = memorySize;
     ob->_class = nilobj;
-    ob->identityHash = NextHashValue++;
+    SET_HASH(ob, NextHashValue);
+    SET_FLAGS(ob, 0);
+
+    NextHashValue = (NextHashValue++)%HASH_LIMIT;
 
     return ob;
 }
@@ -552,11 +536,25 @@ object copyFrom(object obj, int start, int size)
 }
 
 
+void clearVisitedFlags()
+{
+    ObjectPool* pool;
+    int i;
+
+    pool = g_HeadPool;
+    while(pool)
+    {
+        for(i = 0; i < pool->top; ++i)
+            SET_FLAGS(&pool->pool[i], 0);
+        pool = pool->next;
+    }
+}
+
+
 void visit(Visitor* cb)
 {
-    int i, s;
+    int i, s, visited;
     object *p;
-    visitedObject* vo;
 
     if(NULL == cb->o)
         return;
@@ -565,16 +563,13 @@ void visit(Visitor* cb)
     if(!isInteger(cb->o))
 #endif
     {
-        HASH_FIND_PTR(cb->visitedObjects, &cb->o, vo);
-        if(cb->o != nilobj && (vo == NULL) && ((cb->test == NULL) || cb->test(cb)))
+        visited = GET_FLAGS(cb->o)&FLAG_VISITED;
+        if(cb->o != nilobj && (visited == 0) && ((cb->test == NULL) || cb->test(cb)))
         {
             // Cache object name, as we're going to replace it for
             // nested calls.
             object current = cb->o;
-
-            vo = (visitedObject*)calloc(1, sizeof(visitedObject));
-            vo->obj = current;
-            HASH_ADD_PTR(cb->visitedObjects, obj, vo);
+            SET_FLAGS(current, FLAG_VISITED);
 
             if(cb->preFunc)
                 cb->preFunc(cb);
@@ -617,6 +612,7 @@ static void fw(FILE* fp, char* p, int s)
 void saveObject(Visitor* _this)
 {
     long size;
+    unsigned short temp;
 
     FileVisitor* fcb = (FileVisitor*)_this;
 
@@ -627,7 +623,8 @@ void saveObject(Visitor* _this)
         dummyObject.ref = _this->o;
         dummyObject._classRef = getClass(_this->o);
         dummyObject.size = size = getSize(_this->o);
-        dummyObject.identityHash = getIdentityHash(_this->o);
+        temp = getIdentityHash(_this->o);
+        SET_HASH(&dummyObject, temp);
         fw(fcb->fp, (char *) &dummyObject, sizeof(dummyObject));
         if (size < 0) 
             size = ((- size) + 1) / 2;
@@ -661,7 +658,7 @@ void imageWrite(FILE* fp)
     v.test = NULL;
     v.o = symbols;
     v.count = 0;
-    v.visitedObjects = NULL;
+    clearVisitedFlags();
     visit(&v);
 
     fw(fp, (char *) &v.count, sizeof(v.count));
@@ -673,7 +670,7 @@ void imageWrite(FILE* fp)
     fv.super.test = NULL;
     fv.super.preFunc = NULL;
     fv.super.postFunc = &saveObject;
-    fv.super.visitedObjects = NULL;
+    clearVisitedFlags();
     visit((Visitor*)&fv);
 }
 
@@ -764,7 +761,7 @@ void relinkObject(Visitor* _this)
 void imageRead(FILE* fp)
 {   
     long i, count, size;
-    unsigned short identityHashHold;
+    hash_type identityHashHold;
     object oldRef, newRef, nilAtStore, integerAtStore;
     mapEntry* map;
     LinkVisitor lv;
@@ -820,7 +817,7 @@ void imageRead(FILE* fp)
         ++i;
 
         newRef->_class = dummyObject._classRef;
-        newRef->identityHash = dummyObject.identityHash;
+        SET_HASH(newRef, dummyObject.identityHash);
         if (size != 0) 
             fr(fp, (char *) newRef->memory, sizeof(object) * (int) size);
         else
@@ -837,7 +834,7 @@ void imageRead(FILE* fp)
     lv.super.preFunc = &relinkObject;
     lv.super.postFunc = NULL;
     lv.super.count = count;
-    lv.super.visitedObjects = NULL;
+    clearVisitedFlags();
     lv.map = map;
     visit((Visitor*)&lv);
 
@@ -1023,9 +1020,9 @@ void* cPointerValue(object _this)
     return l;
 }
 
-unsigned short hashObject(object o)
+hash_type hashObject(object o)
 {
-    return o->identityHash;
+    return GET_HASH(o);
 }
 
 unsigned long allocatedObjectCount()
@@ -1051,7 +1048,7 @@ unsigned long referencedObjects()
     v.test = NULL;
     v.o = symbols;
     v.count = 0;
-    v.visitedObjects = NULL;
+    clearVisitedFlags();
     visit(&v);
 
     return v.count;
