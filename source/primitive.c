@@ -773,11 +773,6 @@ object timePrimitiveHandler(int primitiveNumber, object* args, int argc)
   switch(primitiveNumber)
   {
     case 0:     /* seconds */
-      i = 0;
-      returnedObject = newInteger(i);
-      break;
-
-    case 1:   /* milliseconds */
       {
 #if !defined WIN32
         struct timeval time;
@@ -799,6 +794,12 @@ object timePrimitiveHandler(int primitiveNumber, object* args, int argc)
         returnedObject = newInteger(ms_now);
 #endif
       }
+      break;
+
+    case 1:   /* milliseconds */
+      /* Not yet implemented */
+      i = 0;
+      returnedObject = newInteger(i);
       break;
   }
   return returnedObject;

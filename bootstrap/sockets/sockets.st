@@ -39,7 +39,9 @@ Methods MetaSocket 'testing'
     'Accepting: ' print.
     [ true ] whileTrue: [
       result <- sock accept.
-      ((result at: 1) < 0) ifFalse: [
+      ((result at: 1) < 0) ifTrue: [
+        scheduler yield
+      ] ifFalse: [
         clientsock <- Socket new: (result at: 1).
         [ self handleConnection: clientsock ] fork
       ]

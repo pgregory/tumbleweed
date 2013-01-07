@@ -100,13 +100,17 @@ Methods Smalltalk 'doit'
         scheduler currentProcess; trace; terminate.
 ]
 Methods Scheduler 'get commands'
-    initialize  | string |
+    initializeOld  | string |
         [ string <- smalltalk getPrompt: '> '.
             (string size > 0)
                 ifTrue: [ 
                     echoInput ifTrue:
                         [ string print ].
                     [ string value print ] fork ] ] fork
+|
+    initialize  
+        [ Socket testserver ] fork.
+        [ Time every: 5 do: ['tick' print] ] fork
 ]
 Methods UndefinedObject 'initial image'
     createGlobals   | aBlock |

@@ -31,5 +31,18 @@ Methods MetaTime 'clocks'
   clockAtStartup
     ^ ClockAtStartup
 ]
+*
+Methods MetaTime 'triggers'
+  every: seconds do: block
+  | current |
+  current <- Time millisecondClock.
+  [true] whileTrue: [
+    ((Time seconds - current) >= seconds) ifTrue: [
+      current <- Time seconds.
+      block value
+    ].
+    scheduler yield
+  ]
+]
   
 
