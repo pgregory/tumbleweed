@@ -7,6 +7,17 @@
 
 #include "memory.h"
 
+object firstProcess, processStack;
+object classSyms[1];
+
+void readPrimitiveTables(FILE *fp)
+{
+}
+
+void writePrimitiveTables(FILE *fp)
+{
+}
+
 void nameTableInsert(object dict, int hash, object key, object value)
 {
 }
