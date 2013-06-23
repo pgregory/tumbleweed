@@ -10,11 +10,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #if !defined WIN32
-extern "C" {
 #include <dlfcn.h>
 #include <memory.h>
-}
 #else
 #include <Windows.h>
 #endif
@@ -210,10 +209,10 @@ static size_t ffiLSTTypeSizes[] =
 
 void initFFISymbols()
 {
-  ffiSyms = static_cast<object*>(calloc(ffiNumStrs, sizeof(object)));
+  ffiSyms = (object*)(calloc(ffiNumStrs, sizeof(object)));
   int i;
   for(i = 0; i < ffiNumStrs; ++i)
-    ffiSyms[i] = MemoryManager::Instance()->newSymbol(ffiStrs[i]);
+    ffiSyms[i] = newSymbol(ffiStrs[i]);
 }
 
 void cleanupFFISymbols()
@@ -261,14 +260,14 @@ void valueOut(object value, FFI_DataType* data)
       break;
     case FFI_FLOAT_OUT:
       data->outFloat.pointer = &data->outFloat._float;
-      data->outFloat._float = floatValue(realValue,);
+      data->outFloat._float = floatValue(realValue);
       data->ptr = &data->outFloat.pointer;
       data->type = &ffi_type_pointer;
       break;
     case FFI_DOUBLE_OUT:
     case FFI_LONGDOUBLE_OUT:
       data->outDouble.pointer = &data->outDouble._double;
-      data->outDouble._double = floatValue(realValue,);
+      data->outDouble._double = floatValue(realValue);
       data->ptr = &data->outDouble.pointer;
       data->type = &ffi_type_pointer;
       break;
@@ -290,7 +289,7 @@ void valueOut(object value, FFI_DataType* data)
       if(getClass(realValue) == globalSymbol("Integer"))
         data->integer = getInteger(realValue);
       else if(getClass(realValue) == globalSymbol("Float"))
-        data->integer = (int)floatValue(realValue,);
+        data->integer = (int)floatValue(realValue);
       data->ptr = &data->integer;
       data->type = &ffi_type_uint32;
     case FFI_INT:
@@ -298,25 +297,25 @@ void valueOut(object value, FFI_DataType* data)
       if(getClass(realValue) == globalSymbol("Integer"))
         data->integer = getInteger(realValue);
       else if(getClass(realValue) == globalSymbol("Float"))
-        data->integer = (int)floatValue(realValue,);
+        data->integer = (int)floatValue(realValue);
       data->ptr = &data->integer;
       data->type = &ffi_type_sint32;
       break;
     case FFI_FLOAT:
       // \todo: How to check type.
-      data->_float = floatValue(realValue,);
+      data->_float = floatValue(realValue);
       data->ptr = &data->_float;
       data->type = &ffi_type_float;
       break;
     case FFI_DOUBLE:
       // \todo: How to check type.
-      data->_double = floatValue(realValue,);
+      data->_double = floatValue(realValue);
       data->ptr = &data->_double;
       data->type = &ffi_type_double;
       break;
     case FFI_LONGDOUBLE:
       // \todo: How to check type.
-      data->_float = floatValue(realValue,);
+      data->_float = floatValue(realValue);
       data->ptr = &data->_float;
       data->type = &ffi_type_longdouble;
       break;
@@ -335,7 +334,7 @@ void valueOut(object value, FFI_DataType* data)
     case FFI_COBJECT:
       {
         // \todo: How to check type.
-        void* f = cPointerValue(realValue,);
+        void* f = cPointerValue(realValue);
         int s = sizeof(f);
         data->cPointer = f;
         data->ptr = &data->cPointer;
@@ -351,7 +350,7 @@ void valueOut(object value, FFI_DataType* data)
         // Check the argument, see if it's a type of ExternalData  
         // Initially, check just for responding to 'fields'
         object args[1];
-        args[0] = MemoryManager::Instance()->newSymbol("fields");
+        args[0] = newSymbol("fields");
         SObjectHandle* lock_arg = new_SObjectHandle_from_object(args[0]);
         object result = sendMessageToObject(value, "respondsTo:", args, 1);
         free_SObjectHandle(lock_arg);
@@ -362,32 +361,33 @@ void valueOut(object value, FFI_DataType* data)
           // Now process the returned array
           int ctypes = result->size;
           // Create an ffi_type to represent this structure.
-          ffi_type* ed_type = new ffi_type;
+          ffi_type* ed_type = (ffi_type*)(calloc(1, sizeof(ffi_type)));
           // \todo: check leakage.
-          ffi_type** ed_type_elements = new ffi_type*[ctypes + 1];
-          FFI_DataType* members = new FFI_DataType[ctypes];
+          ffi_type** ed_type_elements = (ffi_type**)(calloc(ctypes + 1, sizeof(ffi_type*)));
+          FFI_DataType* members = (FFI_DataType*)(calloc(ctypes, sizeof(FFI_DataType)));
           size_t size = 0;
-          for(int i = 0; i < ctypes; ++i)
+          int i;
+          for(i = 0; i < ctypes; ++i)
           {
             // Read the types from the returned array.
             object type = basicAt(result, i+1);
             object name = basicAt(type,1);
             object basetype = basicAt(type,2);
             int argmap = mapType(basetype);
-            ed_type_elements[i] = static_cast<ffi_type*>(ffiLSTTypes[argmap]);
+            ed_type_elements[i] = (ffi_type*)(ffiLSTTypes[argmap]);
             size += ffiLSTTypeSizes[argmap];
           }
           // leak:
           void* f = calloc(1, size);
-          char* pf = static_cast<char*>(f);
-          for(int i = 0; i < ctypes; ++i)
+          char* pf = (char*)(f);
+          for(i = 0; i < ctypes; ++i)
           {
             // Read the types from the returned array.
             object type = basicAt(result,i+1);
             object name = basicAt(type,1);
             object basetype = basicAt(type,2);
             object args[1];
-            args[0] = MemoryManager::Instance()->newInteger(i+1);
+            args[0] = newInteger(i+1);
             object memberval = sendMessageToObject(value, "member:", args, 1); 
             int argmap = mapType(basetype);
             members[i].typemap = argmap;
@@ -501,34 +501,34 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_ULONG_OUT:
     case FFI_CHAR_OUT:
     case FFI_WCHAR_OUT:
-      return MemoryManager::Instance()->newInteger(data->outInteger.integer);
+      return newInteger(data->outInteger.integer);
       break;
 
     case FFI_CHAR:
-      return MemoryManager::Instance()->newChar(data->integer);
+      return newChar(data->integer);
       break;
 
     case FFI_STRING:
-      return MemoryManager::Instance()->newStString(data->charPtr);
+      return newStString(data->charPtr);
       break;
 
     case FFI_INT:
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      return MemoryManager::Instance()->newInteger(data->integer);
+      return newInteger(data->integer);
       break;
 
     case FFI_FLOAT:
-      return MemoryManager::Instance()->newFloat(data->_float);
+      return newFloat(data->_float);
       break;
 
     case FFI_DOUBLE:
-      return MemoryManager::Instance()->newFloat(data->_double);
+      return newFloat(data->_double);
       break;
 
     case FFI_COBJECT:
-      return MemoryManager::Instance()->newCPointer(data->cPointer);
+      return newCPointer(data->cPointer);
       break;
 
     case FFI_VOID:
@@ -538,17 +538,18 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_EXTERNALDATA:
       {
         object edclass = data->externalData._class;
-        int csize = basicAt(edclass,sizeInClass);
-        object ed = MemoryManager::Instance()->allocObject(csize);
+        int csize = getInteger(basicAt(edclass,sizeInClass));
+        object ed = allocObject(csize);
         SObjectHandle* lock_ed = new_SObjectHandle_from_object(ed);
-        basicAtPut(ed,1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
+        basicAtPut(ed,1, newArray(data->externalData.numMembers));
         ed->_class = edclass;
         // Now fill in the values using recursive marshalling.
         object args[2];
         SObjectHandle* lock_args[2];
-        for(int i = 0; i < data->externalData.numMembers; ++i)
+        int i;
+        for(i = 0; i < data->externalData.numMembers; ++i)
         {
-          args[0] = MemoryManager::Instance()->newInteger(i+1);
+          args[0] = newInteger(i+1);
           lock_args[0] = new_SObjectHandle_from_object(args[0]);
           args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
           lock_args[1] = new_SObjectHandle_from_object(args[1]);
@@ -564,18 +565,19 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_EXTERNALDATAOUT:
       {
         object edclass = data->externalData._class;
-        int csize = basicAt(edclass,sizeInClass);
-        object ed = MemoryManager::Instance()->allocObject(csize);
+        int csize = getInteger(basicAt(edclass,sizeInClass));
+        object ed = allocObject(csize);
         SObjectHandle* lock_ed = new_SObjectHandle_from_object(ed);
-        basicAtPut(ed,1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
+        basicAtPut(ed,1, newArray(data->externalData.numMembers));
         ed->_class = edclass;
         // Now fill in the values using recursive marshalling.
         object args[2];
         SObjectHandle* lock_args[2];
-        char* structStorage = static_cast<char*>(data->externalData.pointer);
-        for(int i = 0; i < data->externalData.numMembers; ++i)
+        char* structStorage = (char*)(data->externalData.pointer);
+        int i;
+        for(i = 0; i < data->externalData.numMembers; ++i)
         {
-          args[0] = MemoryManager::Instance()->newInteger(i+1);
+          args[0] = newInteger(i+1);
           lock_args[0] = new_SObjectHandle_from_object(args[0]);
           structStorage += readFromStorage(structStorage, &(data->externalData.members[i]));
           args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
@@ -601,9 +603,9 @@ typedef struct FFI_CallbackData_U
 
 FFI_CallbackData* newCallbackData(int numArgs)
 {
-  FFI_CallbackData* data = new FFI_CallbackData();
+  FFI_CallbackData* data = (FFI_CallbackData*)(calloc(1, sizeof(FFI_CallbackData)));
   data->block = new_SObjectHandle();
-  data->argTypeArray = static_cast<FFI_Symbols*>(calloc(numArgs, sizeof(FFI_Symbols)));
+  data->argTypeArray = (FFI_Symbols*)(calloc(numArgs, sizeof(FFI_Symbols)));
   data->numArgs = numArgs;
 
   return data;
@@ -628,15 +630,15 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
   object bytePointer = basicAt(block,bytecountPositionInBlock);
 
   object processClass = globalSymbol("Process");
-  object process = MemoryManager::Instance()->allocObject(processSize);
+  object process = allocObject(processSize);
   SObjectHandle* lock_process = new_SObjectHandle_from_object(process);
-  object stack = MemoryManager::Instance()->newArray(50);
+  object stack = newArray(50);
   SObjectHandle* lock_stack = new_SObjectHandle_from_object(stack);
   basicAtPut(process,stackInProcess, stack);
-  basicAtPut(process,stackTopInProcess, MemoryManager::Instance()->newInteger(10));
-  basicAtPut(process,linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+  basicAtPut(process,stackTopInProcess, newInteger(10));
+  basicAtPut(process,linkPtrInProcess, newInteger(2));
   basicAtPut(stack,contextInStack, context);
-  basicAtPut(stack,returnpointInStack, MemoryManager::Instance()->newInteger(1));
+  basicAtPut(stack,returnpointInStack, newInteger(1));
   basicAtPut(stack,bytepointerInStack, bytePointer);
 
   /* change context and byte pointer */
@@ -686,7 +688,7 @@ object ffiPrimitive(int number, object* arguments)
         snprintf(libName, 100, "%s.%s", p, SO_EXT);
         FFI_LibraryHandle handle = dlopen(libName, RTLD_LAZY);
         if(NULL != handle)
-          returnedObject = MemoryManager::Instance()->newCPointer(handle);
+          returnedObject = newCPointer(handle);
         else 
         {
           const char* msg = dlerror();
@@ -700,7 +702,7 @@ object ffiPrimitive(int number, object* arguments)
         snprintf(libName, 100, "%s.%s", p, SO_EXT);
         FFI_LibraryHandle handle = LoadLibrary(libName);
         if(NULL != handle)
-          returnedObject = MemoryManager::Instance()->newCPointer(handle);
+          returnedObject = newCPointer(handle);
         else 
         {
           // \todo: GetLastError() etc.
@@ -721,7 +723,7 @@ object ffiPrimitive(int number, object* arguments)
         {
           FFI_FunctionHandle func = dlsym(lib, p);
           if(NULL != func)
-            returnedObject = MemoryManager::Instance()->newCPointer(func);
+            returnedObject = newCPointer(func);
           else
           {
             snprintf(err, 100, "function %s not found in library", p);
@@ -739,7 +741,7 @@ object ffiPrimitive(int number, object* arguments)
         {
           FFI_FunctionHandle func = GetProcAddress((HINSTANCE)lib, p);
           if(NULL != func)
-            returnedObject = MemoryManager::Instance()->newCPointer(func);
+            returnedObject = newCPointer(func);
           else
           {
             snprintf(err, 100, "function %s not found in library", p);
@@ -774,11 +776,11 @@ object ffiPrimitive(int number, object* arguments)
           if(cargs > 0)
           {
             // leak:
-            args = static_cast<ffi_type**>(calloc(cargTypes, sizeof(ffi_type*)));
+            args = (ffi_type**)(calloc(cargTypes, sizeof(ffi_type*)));
             // leak:
-            values = static_cast<void**>(calloc(cargs, sizeof(void*)));
+            values = (void**)(calloc(cargs, sizeof(void*)));
             // leak:
-            dataValues = static_cast<FFI_DataType*>(calloc(cargs, sizeof(FFI_DataType)));
+            dataValues = (FFI_DataType*)(calloc(cargs, sizeof(FFI_DataType)));
 
             int i;
             for(i = 0; i < cargTypes; ++i)
@@ -792,16 +794,16 @@ object ffiPrimitive(int number, object* arguments)
           }
 
           ffi_type* ret;
-          ret = static_cast<ffi_type*>(ffiLSTTypes[retMap]); 
+          ret = (ffi_type*)(ffiLSTTypes[retMap]); 
           ffi_type retVal;
           void* retData = &retVal;
 
           ffi_cif cif;
           if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
           {
-            returnedObject = MemoryManager::Instance()->newArray(cargTypes + 1);
+            returnedObject = newArray(cargTypes + 1);
 
-            ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
+            ffi_call(&cif, (void(*)())(func), retData, values);
             FFI_DataType ret;
             ret.typemap = retMap;
             readFromStorage(retData, &ret);
@@ -840,11 +842,11 @@ object ffiPrimitive(int number, object* arguments)
         int retMap = mapType(rtype);
         int cargTypes = arguments[1]->size;
         ffi_closure* closure;
-        ffi_cif *cif = static_cast<ffi_cif*>(calloc(1, sizeof(ffi_cif)));
+        ffi_cif *cif = (ffi_cif*)(calloc(1, sizeof(ffi_cif)));
         object block = arguments[2];
 
         /* Allocate closure and bound_puts */
-        closure = static_cast<ffi_closure*>(ffi_closure_alloc(sizeof(ffi_closure), &callback));
+        closure = (ffi_closure*)(ffi_closure_alloc(sizeof(ffi_closure), &callback));
 
         if(closure)
         {
@@ -855,22 +857,22 @@ object ffiPrimitive(int number, object* arguments)
           ffi_type** args = NULL;
           if(cargTypes > 0)
           {
-            args = static_cast<ffi_type**>(calloc(cargTypes, sizeof(ffi_type)));
+            args = (ffi_type**)(calloc(cargTypes, sizeof(ffi_type)));
 
             int i;
             for(i = 0; i < cargTypes; ++i)
             {
               object argType = basicAt(arguments[1], i+1);
               int argMap = mapType(argType);
-              data->argTypeArray[i] = static_cast<FFI_Symbols_E>(argMap);
-              args[i] = static_cast<ffi_type*>(ffiLSTTypes[argMap]);
+              data->argTypeArray[i] = argMap;
+              args[i] = (ffi_type*)(ffiLSTTypes[argMap]);
             }
           }
-          data->retType = static_cast<FFI_Symbols>(retMap);
+          data->retType = (FFI_Symbols)(retMap);
           data->block = block;
 
           ffi_type* ret;
-          ret = static_cast<ffi_type*>(ffiLSTTypes[retMap]); 
+          ret = (ffi_type*)(ffiLSTTypes[retMap]); 
 
           /* Initialize the cif */
           if(ffi_prep_cif(cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
@@ -878,7 +880,7 @@ object ffiPrimitive(int number, object* arguments)
             /* Initialize the closure, setting stream to stdout */
             if(ffi_prep_closure_loc(closure, cif, callBack, data, callback) == FFI_OK)
             {
-              returnedObject = MemoryManager::Instance()->newCPointer(callback);
+              returnedObject = newCPointer(callback);
             }
           }
         }
@@ -897,7 +899,7 @@ object ffiPrimitive(int number, object* arguments)
         if(NULL != lib)
         {
           int result = dlclose(lib);
-          returnedObject = MemoryManager::Instance()->newInteger(result);
+          returnedObject = newInteger(result);
         }
       }
 #else
@@ -908,7 +910,7 @@ object ffiPrimitive(int number, object* arguments)
         if(NULL != lib)
         {
           int result = FreeLibrary((HINSTANCE)lib);
-          returnedObject = MemoryManager::Instance()->newInteger(result);
+          returnedObject = newInteger(result);
         }
       }
 #endif

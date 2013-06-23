@@ -109,7 +109,7 @@ Methods Scheduler 'get commands'
                     [ string value print ] fork ] ] fork
 |
     initialize  
-        [ Socket testserver ] fork.
+        "[ Socket testserver ] fork."
         [ Time every: 5 do: ['tick' print] ] fork
 ]
 Methods UndefinedObject 'initial image'

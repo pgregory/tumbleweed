@@ -22,7 +22,7 @@
 # include "parser.h"
 # include "primitive.h"
 
-extern void initialiseSocketsPrims();
+//extern void initialiseSocketsPrims();
 
 int watching = 0;
 extern object primitive( int, object* );
@@ -767,40 +767,43 @@ void runCode(const char * text)
     setInstanceVariables(nilobj);
     result = parseCode(method, FALSE);
 
-    firstProcess = allocObject(processSize);
-    lock_firstProcess = new_SObjectHandle_from_object(firstProcess);
-    stack = allocObject(50);
-    lock_stack = new_SObjectHandle_from_object(stack);
+    if(result)
+    {
+      firstProcess = allocObject(processSize);
+      lock_firstProcess = new_SObjectHandle_from_object(firstProcess);
+      stack = allocObject(50);
+      lock_stack = new_SObjectHandle_from_object(stack);
 
-    /* make a process */
-    basicAtPut(firstProcess,stackInProcess, stack);
-    basicAtPut(firstProcess,stackTopInProcess, newInteger(10));
-    basicAtPut(firstProcess,linkPtrInProcess, newInteger(2));
+      /* make a process */
+      basicAtPut(firstProcess,stackInProcess, stack);
+      basicAtPut(firstProcess,stackTopInProcess, newInteger(10));
+      basicAtPut(firstProcess,linkPtrInProcess, newInteger(2));
 
-    /* put argument on stack */
-    basicAtPut(stack,argumentInStack, nilobj);   /* argument */
-    /* now make a linkage area in stack */
-    basicAtPut(stack,prevlinkInStack, nilobj);   /* previous link */
-    basicAtPut(stack,contextInStack, nilobj);   /* context object (nil = stack) */
-    basicAtPut(stack,returnpointInStack, newInteger(1));    /* return point */
-    basicAtPut(stack,methodInStack, method);   /* method */
-    basicAtPut(stack,bytepointerInStack, newInteger(1));    /* byte offset */
+      /* put argument on stack */
+      basicAtPut(stack,argumentInStack, nilobj);   /* argument */
+      /* now make a linkage area in stack */
+      basicAtPut(stack,prevlinkInStack, nilobj);   /* previous link */
+      basicAtPut(stack,contextInStack, nilobj);   /* context object (nil = stack) */
+      basicAtPut(stack,returnpointInStack, newInteger(1));    /* return point */
+      basicAtPut(stack,methodInStack, method);   /* method */
+      basicAtPut(stack,bytepointerInStack, newInteger(1));    /* byte offset */
 
-    /* now go execute it */
-    saveProcessStack = processStack;
-    lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
-    saveLinkPointer = linkPointer;
-    while (execute(firstProcess, 15000)) fprintf(stderr,"..");
-    // Re-read the stack object, in case it had to grow during execution and 
-    // was replaced.
-    //stack = basicAt(firstProcess,stackInProcess);
-    //object ro = basicAt(stack,1);
-    processStack = saveProcessStack;
-    linkPointer = saveLinkPointer;
+      /* now go execute it */
+      saveProcessStack = processStack;
+      lock_saveProcessStack = new_SObjectHandle_from_object(saveProcessStack);
+      saveLinkPointer = linkPointer;
+      while (execute(firstProcess, 15000)) fprintf(stderr,"..");
+      // Re-read the stack object, in case it had to grow during execution and 
+      // was replaced.
+      //stack = basicAt(firstProcess,stackInProcess);
+      //object ro = basicAt(stack,1);
+      processStack = saveProcessStack;
+      linkPointer = saveLinkPointer;
 
-    free_SObjectHandle(lock_saveProcessStack);
-    free_SObjectHandle(lock_stack);
-    free_SObjectHandle(lock_firstProcess);
+      free_SObjectHandle(lock_saveProcessStack);
+      free_SObjectHandle(lock_stack);
+      free_SObjectHandle(lock_firstProcess);
+    }
     free_SObjectHandle(lock_method);
 }
 
@@ -817,7 +820,7 @@ void initialiseInterpreter()
   }
 
   initialiseDebugPrims();
-  initialiseSocketsPrims();
+  //initialiseSocketsPrims();
 }
 
 
