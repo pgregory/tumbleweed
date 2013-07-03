@@ -9,8 +9,8 @@
 #define EXPORT extern "C"
 #endif
 
-sf::Texture* texture;
-sf::Sprite* sprite;
+//sf::Texture* texture;
+//sf::Sprite* sprite;
 
 extern "C" EXPORT sf::RenderWindow* windowCreate(int width, int height, int bitsPerPixel, const char* name)
 {
@@ -81,6 +81,20 @@ EXPORT void spriteRotate(sf::Sprite* sprite, float angle)
 {
     sprite->rotate(angle);
 }
+
+
+EXPORT sf::RectangleShape* rectangleShapeCreate()
+{
+    sf::RectangleShape* rect = new sf::RectangleShape();
+
+    return rect;
+}
+
+EXPORT void shapeSetPosition(sf::Shape* shape, float xpos, float ypos)
+{
+    shape->setPosition(xpos, ypos);
+}
+
 
 EXPORT sf::Font* fontCreate()
 {

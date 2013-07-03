@@ -7,6 +7,8 @@ Class SFMLSprite SFMLObject
 Class SFMLFont SFMLObject
 Class SFMLText SFMLObject
 Class SFMLEvent ExternalData 
+Class SFMLShape SFMLObject
+Class SFMLRectangleShape SFMLShape
 
 Methods MetaSFML 'initialisation'
   sfmlFFI
@@ -182,4 +184,22 @@ Methods SFMLText 'modification'
   args <- Array new: 2.
   args at: 1 put: handle; at: 2 put: (aNumber floor).
   (SFML sfmlFFI) call: 'textSetCharacterSize' returning: #void taking: #(cObject int) as: args.
+]
+*
+Methods MetaSFMLRectangleShape 'creation'
+  new 
+  | newText args result |
+  newShape <- super new.
+  args <- Array new: 0.
+  result <- (SFML sfmlFFI) call: 'rectangleShapeCreate' returning: #cObject taking: #() as: args.
+  newShape handle: (result at: 1).
+  ^ newShape
+]
+*
+Methods SFMLShape 'modification'
+  setPositionX: xpos Y: ypos
+  | args |
+  args <- Array new: 3.
+  args at: 1 put: handle; at: 2 put: xpos; at: 3 put: ypos.
+  (SFML sfmlFFI) call: 'shapeSetPosition' returning: #void taking: #(cObject double double) as: args
 ]
