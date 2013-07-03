@@ -260,14 +260,28 @@ void valueOut(object value, FFI_DataType* data)
       break;
     case FFI_FLOAT_OUT:
       data->outFloat.pointer = &data->outFloat._float;
-      data->outFloat._float = floatValue(realValue);
+      if(isInteger(realValue))
+      {
+        data->outFloat._float = (float)getInteger(realValue);
+      }
+      else
+      {
+        data->outFloat._float = floatValue(realValue);
+      }
       data->ptr = &data->outFloat.pointer;
       data->type = &ffi_type_pointer;
       break;
     case FFI_DOUBLE_OUT:
     case FFI_LONGDOUBLE_OUT:
       data->outDouble.pointer = &data->outDouble._double;
-      data->outDouble._double = floatValue(realValue);
+      if(isInteger(realValue))
+      {
+        data->outDouble._double = (double)getInteger(realValue);
+      }
+      else
+      {
+        data->outDouble._double = floatValue(realValue);
+      }
       data->ptr = &data->outDouble.pointer;
       data->type = &ffi_type_pointer;
       break;
@@ -303,19 +317,40 @@ void valueOut(object value, FFI_DataType* data)
       break;
     case FFI_FLOAT:
       // \todo: How to check type.
-      data->_float = floatValue(realValue);
+      if(isInteger(realValue))
+      {
+        data->_float = floatValue(realValue);
+      }
+      else
+      {
+        data->_float = floatValue(realValue);
+      }
       data->ptr = &data->_float;
       data->type = &ffi_type_float;
       break;
     case FFI_DOUBLE:
       // \todo: How to check type.
-      data->_double = floatValue(realValue);
+      if(isInteger(realValue))
+      {
+        data->_double = (double)getInteger(realValue);
+      }
+      else
+      {
+        data->_double = floatValue(realValue);
+      }
       data->ptr = &data->_double;
       data->type = &ffi_type_double;
       break;
     case FFI_LONGDOUBLE:
       // \todo: How to check type.
-      data->_float = floatValue(realValue);
+      if(isInteger(realValue))
+      {
+        data->_float = (float)getInteger(realValue);
+      }
+      else
+      {
+        data->_float = floatValue(realValue);
+      }
       data->ptr = &data->_float;
       data->type = &ffi_type_longdouble;
       break;
