@@ -45,6 +45,10 @@ int main(int argc, char** argv)
     struct sockaddr_in newsocketaddr;
     int newsockfd;
     int res;
+    int tlen;
+    char* execstring;
+    const char* pretext = "^ [ ";
+    const char* posttext = " ] value";
 #ifndef WIN32
     socklen_t client_len;
 #else
@@ -113,6 +117,7 @@ int main(int argc, char** argv)
     listen(sockfd, 0);
 
 
+    printf("Listening for connections on port 8092\n");
 
 
 
@@ -143,7 +148,20 @@ int main(int argc, char** argv)
             {
                 buffer[res] = '\0';
                 printf("Read %s\n", buffer);
-                runCode(buffer);
+                /* Wrap the code in "^ [ ... ] value" to ensure that the 
+                 * return value from the last expression is returned */
+                tlen = strlen(buffer);
+                tlen += strlen(pretext);
+                tlen += strlen(posttext);
+                execstring = calloc(tlen + 1, sizeof(char));
+                strcpy(execstring, pretext);
+                strcat(execstring, buffer);
+                strcat(execstring, posttext);
+                printf("%s\n", execstring);
+
+                runCode(execstring);
+
+                free(execstring);
             }
             else
             {
