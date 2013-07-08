@@ -353,6 +353,9 @@ Methods IndexedCollection 'all'
         ^ self binaryInject: Set new 
             into: [:s :i :x | s add: i ]
 |
+    keysAndValuesDo: aBlock
+        self binaryDo: [:i :x | aBlock value: i value: x ]
+|
     indexOf: aBlock
         ^ self indexOf: aBlock
             ifAbsent: [ smalltalk error: 'index not found']
