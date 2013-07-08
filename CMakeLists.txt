@@ -56,6 +56,7 @@ set(common_image_srcs
   bootstrap/time.st
   bootstrap/bench.st
   bootstrap/morphic.st
+  bootstrap/json.st
 
   bootstrap/test_collect.st
   bootstrap/test_morphic.st
@@ -173,9 +174,7 @@ endif(TW_BUILD_TESTS)
 if(TW_ENABLE_FFI)
   add_subdirectory(ffi_test)
   add_subdirectory(sockets)
-  if(TW_ENABLE_SFML)
-    add_subdirectory(sfml)
-  endif(TW_ENABLE_SFML)
+  add_subdirectory(sfml)
   if(NOT WIN32)
     add_subdirectory(events)
   endif(NOT WIN32)
