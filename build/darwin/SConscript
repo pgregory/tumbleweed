@@ -1,3 +1,4 @@
 Import('env')
 
 env.Append(TW_LIBS=['edit'])
+env.Append(CCFLAGS=['-g', '-Os'])
