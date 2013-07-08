@@ -1,7 +1,7 @@
         Stack                            execute()            Process                               execute()
 
     +-----------+                                           +-----------+
-1   |   NIL     |   argument                psb             |   stack   |                            j : 10
+1   |   NIL     |   argument                psb             |   Stack   |     stack                  stackTop : 10
     +-----------+                                           +-----------+
 2   |   NIL     |   prevLink                                |    10     |     stackTop               linkPointer : 2
     +-----------+                                           +-----------+
