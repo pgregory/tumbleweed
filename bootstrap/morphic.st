@@ -68,7 +68,7 @@ Methods Morph 'initialisation'
   init: aString
     super init: aString.
     bounds <- Rectangle new.
-    self setPositionX: 0 Y: 0; setWidth: 0 height: 0
+    self setPositionX: 0 Y: 0; setWidth: 10 height: 10
 ]
 *
 Methods Morph 'geometry'
@@ -96,7 +96,7 @@ Methods Morph 'display'
   (shape isNil) ifTrue: [
     shape <- SFMLRectangleShape new
   ].
-  shape setPositionX: (bounds left) Y: (bounds top).
-  shape setSizeX: (bounds width) Y: (bounds height).
-  aSurface draw: shape
+  shape setPositionX: (bounds left) Y: (bounds top)
+  "shape setSizeX: (bounds width) Y: (bounds height)
+  aSurface draw: shape"
 ]
