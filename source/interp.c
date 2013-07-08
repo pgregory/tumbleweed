@@ -14,6 +14,7 @@
    */
 
 # include <stdio.h>
+# include <string.h>
 
 # include "env.h"
 # include "memory.h"
@@ -755,11 +756,13 @@ object sendMessageToObject(object receiver, const char* message, object* args, i
 }
 
 
-void runCode(const char * text)
+object runCode(const char * text)
 {   
-    object stack, method, firstProcess, saveProcessStack;
+    object stack, method, firstProcess, saveProcessStack, ro;
     SObjectHandle *lock_stack, *lock_method, *lock_firstProcess, *lock_saveProcessStack;
     int result, saveLinkPointer;
+
+    ro = nilobj;
 
     method = newMethod();
     lock_method = new_SObjectHandle_from_object(method);
@@ -795,8 +798,8 @@ void runCode(const char * text)
       while (execute(firstProcess, 15000)) fprintf(stderr,"..");
       // Re-read the stack object, in case it had to grow during execution and 
       // was replaced.
-      //stack = basicAt(firstProcess,stackInProcess);
-      //object ro = basicAt(stack,1);
+      stack = basicAt(firstProcess,stackInProcess);
+      ro = basicAt(stack,1);
       processStack = saveProcessStack;
       linkPointer = saveLinkPointer;
 
@@ -805,6 +808,8 @@ void runCode(const char * text)
       free_SObjectHandle(lock_firstProcess);
     }
     free_SObjectHandle(lock_method);
+
+    return ro;
 }
 
 void initialiseInterpreter()

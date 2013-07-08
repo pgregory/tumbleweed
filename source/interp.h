@@ -54,8 +54,9 @@ enum EOpCodes
 
 extern int execute(object aProcess, int maxsteps);
 extern void flushCache(object messageToSend, object _class);
-extern void runCode(const char * text);
+extern object runCode(const char * text);
 extern void initialiseInterpreter();
 extern void shutdownInterpreter();
+extern object sendMessageToObject(object receiver, const char* message, object* args, int cargs);
 
 #endif

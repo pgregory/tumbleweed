@@ -49,6 +49,7 @@ int main(int argc, char** argv)
     char* execstring;
     const char* pretext = "^ [ ";
     const char* posttext = " ] value";
+    object ro, roJSON;
 #ifndef WIN32
     socklen_t client_len;
 #else
@@ -147,7 +148,7 @@ int main(int argc, char** argv)
             if(res > 0)
             {
                 buffer[res] = '\0';
-                printf("Read %s\n", buffer);
+                /*printf("Read %s\n", buffer);*/
                 /* Wrap the code in "^ [ ... ] value" to ensure that the 
                  * return value from the last expression is returned */
                 tlen = strlen(buffer);
@@ -157,9 +158,12 @@ int main(int argc, char** argv)
                 strcpy(execstring, pretext);
                 strcat(execstring, buffer);
                 strcat(execstring, posttext);
-                printf("%s\n", execstring);
 
-                runCode(execstring);
+                ro = runCode(execstring);
+                roJSON = sendMessageToObject(ro, "toJSON", NULL, 0);
+
+                write(newsockfd, charPtr(roJSON), strlen(charPtr(roJSON)));
+                write(newsockfd, "\n", strlen("\n"));
 
                 free(execstring);
             }
