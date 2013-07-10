@@ -16,7 +16,8 @@
 static tokentype   _currentToken;
 static int _tokenInteger;
 static double _tokenFloat;
-static char _tokenString[80];
+/* \todo: This is silly, a fixed length token buffer */
+static char _tokenString[256];
 static const char* _source;
 static const char *_cp;
 static char _cc;

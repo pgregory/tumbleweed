@@ -134,7 +134,7 @@ int BindToPort(int sockfd, int port, int* errcode)
 
 int Send(int sockfd, const char* data, int len, int flags, int* errcode)
 {
-  size_t ret;
+  ssize_t ret;
   /* send our get request */
   if((ret = send(sockfd, data, len, flags)) < 0)
   {
@@ -192,7 +192,7 @@ int Close(int sockfd, int* errcode)
 
 int Read(int sockfd, char* buffer, int len, int* errcode)
 {
-  size_t res;
+  ssize_t res;
   if((res = read(sockfd, buffer, len)) < 0)
     *errcode = errno;
 

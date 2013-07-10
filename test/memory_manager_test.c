@@ -33,6 +33,7 @@ object globalKey( const char* str )
 
 object nameTableLookup ( object dict, const char* str )
 {
+  return nilobj;
 }
 
 int strHash ( const char* str)

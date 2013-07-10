@@ -577,7 +577,7 @@ PrimitiveTableEntry vmPrimitiveTable[];
 object vmPrimitiveHandler(int primitiveNumber, object* args, int argc)
 {
   object returnedObject = nilobj;
-  unsigned int i;
+  int i;
   char cpointerString[100];
 
   switch(primitiveNumber)

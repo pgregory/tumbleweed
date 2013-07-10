@@ -370,10 +370,12 @@ int term()
         nextToken();
         expression();
         if (_parseok)
+        {
             if ((currentToken() != closing) || strcmp(strToken(), ")"))
                 compilError(_selector,"Missing Right Parenthesis","");
             else
                 nextToken();
+        }
     }
     else if ((token == binary) && strcmp(strToken(), "<") == 0)
         parsePrimitive();

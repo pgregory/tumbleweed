@@ -524,6 +524,7 @@ size_t readFromStorage(void* storage, FFI_DataType* data)
       return 0;
       break;
   }
+  return 0;
 }
 
 object valueIn(int retMap, FFI_DataType* data)
@@ -626,6 +627,7 @@ object valueIn(int retMap, FFI_DataType* data)
       }
       break;
   }
+  return nilobj;
 }
 
 typedef struct FFI_CallbackData_U
@@ -904,7 +906,7 @@ object ffiPrimitive(int number, object* arguments)
             }
           }
           data->retType = (FFI_Symbols)(retMap);
-          data->block = block;
+          data->block = new_SObjectHandle_from_object(block);
 
           ffi_type* ret;
           ret = (ffi_type*)(ffiLSTTypes[retMap]); 
