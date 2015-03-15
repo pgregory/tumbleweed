@@ -25,7 +25,7 @@ typedef unsigned char byte;
 # define byteToInt(b) (b)
 
 /* this is a bit sloppy - but it works */
-# define longCanBeInt(l) ((l >= -16383) && (l <= 16383))
+# define longCanBeInt(l) ((l >= LONG_MIN) && (l <= LONG_MAX))
 
 /* ======== various defines that should work on all systems ==== */
 
