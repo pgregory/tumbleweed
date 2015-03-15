@@ -159,7 +159,7 @@ static int unaryPrims(int number, object firstarg)
       // \todo: Not happy about this, need to review the hashing.
       // This specialises the hash for integers, to ensure values are used, not objects,
       // but there are other cases where the value should be considered, like float.
-      if(objectRef(firstarg)._class == globalSymbol("Integer"))
+      if(getClass(firstarg) == globalSymbol("Integer"))
         returnedObject = MemoryManager::Instance()->newInteger(getInteger(firstarg));
       else
         returnedObject = MemoryManager::Instance()->newInteger(firstarg);
@@ -235,7 +235,7 @@ static int unaryPrims(int number, object firstarg)
 
 static int binaryPrims(int number, object firstarg, object secondarg)
 {   
-  char buffer[2000];
+  char* buffer;
   int i;
   object returnedObject;
 
@@ -259,9 +259,15 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 4:     /* string cat */
-      strcpy(buffer, objectRef(firstarg).charPtr());
-      strcat(buffer, objectRef(secondarg).charPtr());
-      returnedObject = MemoryManager::Instance()->newStString(buffer);
+      {
+        char* s1 = objectRef(firstarg).charPtr();
+        char* s2 = objectRef(secondarg).charPtr();
+        buffer = new char[strlen(s1) + strlen(s2) + 1];
+        strcpy(buffer, objectRef(firstarg).charPtr());
+        strcat(buffer, objectRef(secondarg).charPtr());
+        returnedObject = MemoryManager::Instance()->newStString(buffer);
+        delete buffer;
+      }
       break;
 
     case 5:     /* basicAt: */
@@ -305,8 +311,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
 
 static int trinaryPrims(int number, object firstarg, object secondarg, object thirdarg)
 {   
-  // todo: Fixed length buffer
-  char *bp, *tp, buffer[4096];
+  char *bp, *tp, *buffer;
   int i, j;
   object returnedObject;
 
@@ -326,12 +331,14 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
       bp = objectRef(firstarg).charPtr();
       i = getInteger(secondarg);
       j = getInteger(thirdarg);
+      buffer = new char[(j-i)+1];
       tp = buffer;
       if (i <= strlen(bp))
         for ( ; (i <= j) && bp[i-1]; i++)
           *tp++ = bp[i-1];
       *tp = '\0';
       returnedObject = MemoryManager::Instance()->newStString(buffer);
+      delete buffer;
       break;
 
     case 9:         /* compile method */
