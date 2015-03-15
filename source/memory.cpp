@@ -460,7 +460,7 @@ object MemoryManager::newFloat(double d)
     return newObj;
 }
 
-object MemoryManager::newInteger(int i)
+object MemoryManager::newInteger(long i)
 {   
 #if defined TW_SMALLINTEGER_AS_OBJECT
     object newObj;

@@ -444,7 +444,7 @@ class MemoryManager
          * \param value The integer value to assign to the object.
          * \return The ID of the new object.
          */
-        object newInteger(int value);
+        object newInteger(long value);
 
         /*! Create a new Float object.
          *
