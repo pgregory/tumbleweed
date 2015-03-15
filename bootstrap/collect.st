@@ -577,9 +577,7 @@ Methods MetaString 'all'
 Methods String 'all'
     , value
         (value isMemberOf: String)
-            ifTrue: [ (self size + value size) > 2000
-                    ifTrue: [ 'string too large' print. ^ self ]
-                    ifFalse: [ ^ <24 self value> ] ]
+            ifTrue: [ ^ <24 self value> ] 
             ifFalse: [ ^ self , value asString ]
 |
     = value
