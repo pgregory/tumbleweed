@@ -96,9 +96,6 @@ if(WIN32)
     add_definitions(-DSO_EXT="dll" -D_CRT_SECURE_NO_WARNINGS)
 else(WIN32)
   add_definitions(-DSO_EXT="so")
-  find_library(TW_EDITLINE_LIBRARY "edit")
-  find_path(TW_EDITLINE_INCLUDE_DIR "editline/readline.h")
-  include_directories(${TW_EDITLINE_INCLUDE_DIR})
 endif(WIN32)
 
 function(prefix_sources prefix sources)
@@ -112,14 +109,13 @@ endfunction(prefix_sources)
 prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} image_srcs)
 #prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} server_image_srcs)
 
+add_subdirectory(thirdparty/linenoise)
+include_directories(thirdparty/linenoise)
+
 add_library(libtw ${shared_srcs} ${headers})
 set_target_properties(libtw PROPERTIES OUTPUT_NAME tw)
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
-
-if(NOT WIN32)
-  list(APPEND LIBS "dl" ${TW_EDITLINE_LIBRARY})
-endif(NOT WIN32)
 
 add_executable(initial ${shared_srcs} ${init_srcs} ${image_srcs})
 source_group(Bootstrap FILES ${image_srcs})
@@ -137,13 +133,13 @@ add_custom_command(
 
 add_executable(tw ${shared_srcs} ${headers} ${tw_srcs} systemImage)
 if(NOT MSVC)
-  set_target_properties(tw PROPERTIES LINK_FLAGS "-Wl,-Map=tw.map")
+  set_target_properties(tw PROPERTIES LINK_FLAGS "-Wl")
 endif(NOT MSVC)
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
-target_link_libraries(initial ${LIBS})
-target_link_libraries(tw ${LIBS})
+target_link_libraries(initial ${LIBS} linenoise)
+target_link_libraries(tw ${LIBS} linenoise)
 
 
 install(TARGETS tw RUNTIME DESTINATION .)
@@ -164,13 +160,13 @@ if(TW_BUILD_TESTS)
 endif(TW_BUILD_TESTS)
 
 # Modules.
-add_subdirectory(ffi_test)
-add_subdirectory(sockets)
-add_subdirectory(sfml)
+#add_subdirectory(ffi_test)
+#add_subdirectory(sockets)
+#add_subdirectory(sfml)
 #add_subdirectory(linenoise)
 #add_subdirectory(trex)
-if(NOT WIN32)
-  add_subdirectory(events)
-endif(NOT WIN32)
+#if(NOT WIN32)
+#  add_subdirectory(events)
+#endif(NOT WIN32)
 
 
