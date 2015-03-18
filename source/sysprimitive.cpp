@@ -60,10 +60,13 @@ object sysPrimitive(int number, object* arguments)
 
     case 1: /* editline, with history support */
       {
-        char* command = linenoise(objectRef(arguments[0]).charPtr());
+        char* command = linenoise_nb(objectRef(arguments[0]).charPtr());
         returnedObject = MemoryManager::Instance()->newStString(command);
-        linenoiseHistoryAdd(command);
-        free(command);
+        if(command) 
+        {
+          linenoiseHistoryAdd(command);
+          free(command);
+        }
       }
       break;
 
