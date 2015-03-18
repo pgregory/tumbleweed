@@ -595,7 +595,11 @@ inline char* ObjectStruct::charPtr()
 inline void ObjectStruct::basicAtPut(int i, object v)
 {
     if((i <= 0) || (i > size))
-        sysError("index out of range", "basicAtPut");
+    {
+        char msg[255];
+        sprintf(msg, "index out of range : %d %d", i, size);
+        sysError(msg, "basicAtPut");
+    }
     else
         sysMemPtr()[i-1] = v;
 }
