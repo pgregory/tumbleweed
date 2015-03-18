@@ -45,49 +45,15 @@ set(init_srcs
   source/initial.cpp
 )
 
-set(common_image_srcs
-  bootstrap/basic.st
-  bootstrap/collect.st
-  bootstrap/file.st
-  bootstrap/mag.st
-  bootstrap/graphics.st
-  bootstrap/mult.st
-  bootstrap/queen.st
-  bootstrap/module.st
-  bootstrap/httprequest.st
-  bootstrap/exception.st
-  bootstrap/test.st
-  bootstrap/time.st
-  bootstrap/bench.st
-  bootstrap/morphic.st
-
-  bootstrap/test_collect.st
-  bootstrap/test_morphic.st
-)
 
 if(TW_ENABLE_FFI)
   find_package(LibFFI REQUIRED)
   set(shared_srcs ${shared_srcs} source/ffiprimitive.cpp)
-  set(ffi_image_srcs
-      bootstrap/ffi.st
-      bootstrap/iup.st
-      bootstrap/browser.st
-      bootstrap/workspace.st
-      )
   add_definitions(-DTW_ENABLE_FFI)
   if(WIN32)
     add_definitions(-DFFI_BUILDING)
   endif(WIN32)
 endif(TW_ENABLE_FFI)
-
-set(image_srcs ${common_image_srcs} ${ffi_image_srcs}
-  bootstrap/tty.st
-)
-
-#set(server_image_srcs ${common_image_srcs} ${ffi_image_srcs}
-#  bootstrap/server.st
-#)
-
 
 include_directories(${LIBFFI_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${LIBFFI_LIBRARIES})
@@ -120,16 +86,6 @@ source_group(Source FILES ${shared_srcs})
 add_executable(initial ${shared_srcs} ${init_srcs} ${image_srcs})
 source_group(Bootstrap FILES ${image_srcs})
 set_target_properties(initial PROPERTIES COMPILE_DEFINITIONS TW_IS_INITIAL=1)
-add_custom_command(
-  OUTPUT systemImage
-  COMMAND initial ${image_srcs}
-  DEPENDS initial ${image_srcs}
-)
-#add_custom_command(
-#  OUTPUT serverSystemImage
-#  COMMAND initial ${server_image_srcs}
-#  DEPENDS initial ${server_image_srcs}
-#)
 
 add_executable(tw ${shared_srcs} ${headers} ${tw_srcs} systemImage)
 if(NOT MSVC)
