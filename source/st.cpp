@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     initFFISymbols();
 #endif
 
-    runCode("ObjectMemory changed: #returnFromSnapshot");
+    /* runCode("ObjectMemory changed: #returnFromSnapshot"); */
     firstProcess = globalSymbol("systemProcess");
     if (firstProcess == nilobj) 
     {
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
     }
 
     /* execute the main system process loop repeatedly */
-    /*debugging = true;*/
+    /* debugging = true;*/
 
     while (execute(firstProcess, 15000)) ;
 
