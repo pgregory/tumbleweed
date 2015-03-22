@@ -690,20 +690,25 @@ object ffiPrimitive(int number, object* arguments)
 #if !defined WIN32
           {
         // \todo: Check type.
-        FFI_LibraryHandle lib = objectRef(arguments[0]).cPointerValue();
+        FFI_LibraryHandle lib = NULL;
+        if(arguments[0] != nilobj) {
+          lib = objectRef(arguments[0]).cPointerValue();
+        }
         char* p = objectRef(arguments[1]).charPtr();
-        if(NULL != lib)
+        FFI_FunctionHandle func;
+        if(NULL != lib) {
+          func = dlsym(lib, p);
+        } else {
+          func = dlsym(RTLD_SELF, p);
+        }
+        if(NULL != func)
+          returnedObject = MemoryManager::Instance()->newCPointer(func);
+        else
         {
-          FFI_FunctionHandle func = dlsym(lib, p);
-          if(NULL != func)
-            returnedObject = MemoryManager::Instance()->newCPointer(func);
-          else
-          {
-            std::stringstream err;
-            err << "function " << p << " not found in library";
-            sysWarn(err.str().c_str(), "ffiPrimitive");
-            returnedObject = nilobj;
-          }
+          std::stringstream err;
+          err << "function " << p << " not found in library";
+          sysWarn(err.str().c_str(), "ffiPrimitive");
+          returnedObject = nilobj;
         }
       }
 #else
@@ -767,7 +772,6 @@ object ffiPrimitive(int number, object* arguments)
               args[i] = dataValues[i].type;
             }
           }
-
           ffi_type* ret;
           ret = static_cast<ffi_type*>(ffiLSTTypes[retMap]); 
           ffi_type retVal;
