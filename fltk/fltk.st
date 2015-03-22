@@ -28,5 +28,11 @@ new
   result <- (FLTK fltkFFI) call: 'createWindow' returning: #cObject taking: #(int int) as: args.
   newWindow handle: (result at: 1).
   ^ newWindow 
+|
+handle
+  ^ handle
+|
+handle: aCPointer
+  handle <- aCPointer
 ]
 
