@@ -1,0 +1,110 @@
+"zeroary"
+3   - random integer
+4   - time in seconds
+5   - flip watch
+6   - new CPointer
+7   - seconds since start of day
+9   - exit
+
+"unary"
+11  - class of object
+12  - basic size
+13  - hash
+18  - block return
+19  - process execute
+
+"binary"
+21  - object identity test (same object)
+22  - set class
+24  - string cat
+25  - basicAt
+26  - byteAt
+27  - symbol set
+28  - block start
+29  - duplicate block (adding context)
+
+"trinary"
+31  - basicAt:Put:
+32  - byteAt:Put:
+33  - string copyFrom:To:
+39  - compile method
+
+"intUnary"
+51  - integer to float
+53  - set time slice (i)
+55  - seed random number generator
+56  - unroll to specific return point (i)
+58  - new object of given size
+59  - new byte object of given size
+
+"intBinary"
+60  - integer addition
+61  - integer subtraction
+62  - integer <
+63  - integer >
+(64)- integer <=
+(65)- integer >-
+(66)- integer == 
+(67)- integer != 
+68  - integer multiplcation
+69  - integer quo
+(70)- integer remainder
+71  - integer &=
+72  - integer ^=
+(73)- integer == 
+79  - integer >>/<<
+
+"strUnary"
+81  - length of string
+82  - string hash
+83  - string to symbol
+87  - value of symbol
+88  - system
+89  - fatal error with string
+
+"floatUnary"
+101 - float as string
+102 - log
+103 - exp
+106 - integer part of float
+
+"floatBinary"
+110 - float addition
+111 - float subtraction
+112 - float <
+(113)-float >
+(114)-float <= 
+(115)-float >=
+116 - float == 
+(117)-float !=
+118 - float multiplication
+119 - float division
+
+"io"
+120 - file open
+121 - file close
+123 - file size (not implemented)
+125 - file in (source)
+127 - get character (not implemented)
+128 - get string
+127 - write object image
+128 - print no return
+129 - print 
+
+"cPointerUnary"
+141 - CPointer as string
+
+"system"
+150 - system()
+151 - editline
+152 - get last error
+(153)-force garbage collect
+(154)-object count
+(155)-memory stats string
+
+"ffi"
+180 - dlopen
+181 - dlsym
+182 - cCall
+183 - cCallback
+184 - dlclose
