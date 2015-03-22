@@ -95,11 +95,11 @@ source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
 target_link_libraries(initial ${LIBS} linenoise)
+
 target_link_libraries(tw ${LIBS} linenoise)
 
-
 install(TARGETS tw RUNTIME DESTINATION .)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/systemImage DESTINATION .)
+install(FILES ${CMAKE_SOURCE_DIR}/systemImage DESTINATION .)
 #install(FILES ${CMAKE_CURRENT_BINARY_DIR}/serverSystemImage DESTINATION .)
 
 # Testing
@@ -125,4 +125,5 @@ endif(TW_BUILD_TESTS)
 #  add_subdirectory(events)
 #endif(NOT WIN32)
 
+add_subdirectory(fltk)
 
