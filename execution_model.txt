@@ -1,0 +1,21 @@
+Execution Model
+
+Stack behaviour
+
+	The stack contains a set of 'stack frames', each frame represents an
+	execution state:
+
+		 - Link to prev. stack frame.
+		 - Reference to the execution context, NIL to use the stack as the context.
+		 - Return point, the position on the stack to roll stack top back to on
+			 exiting the frame.
+		 - Method, object reference to the method being executed.
+		 - Byte offset within the bytecodes for the method.
+		 - [space for the temporaries, size determined by the method]
+
+	While executing, the stack frame us just used to track the position in the
+	bytecodes.
+	When a message is sent to an object, a new stack frame is created at the
+	stack top.
+
+
