@@ -11,29 +11,29 @@
     +-----------+
 5   |  method   |   method                                                                           byteOffset : 1 (psb[linkPointer+4])
     +-----------+
-6   |    1      |   bytePointer                                                                      method : psb[linkPointer+3]
+6   |    1      |   byteOffset                                                                       method : psb[5] (psb[linkPointer+3])
     +-----------+
-7   |           |                                                                                    contextObject : stack object
+7   |           |   temps                                                                            contextObject : stack object
     +-----------+
 8   |           |                                                                                    cntx : psb
     +-----------+
 9   |           |                                                                                    arg : psb[1] (cntx + returnPoint -1)
     +-----------+
-10  |           |  <------                  pst                                                      temps : psb[7] (cntx + linkPointer + 4)
+10  |           |                                                                                    temps : psb[7] (cntx + linkPointer + 4)
     +-----------+
-11  |           |                                                                                    rcv : NULL (arg[0].sysMemPtr())
+11  |     2     |  prevLink                 pst                                                      rcv : NULL (arg[0].sysMemPtr())
     +-----------+
-12  |           |
+12  |    NIL    |  context
     +-----------+
-13  |           |
+13  |    11     |  returnPoint
     +-----------+
-14  |           |
+14  |  method   |  method
     +-----------+
-15  |           |
+15  |    1      |  byteOffset
     +-----------+
-16  |           |
+16  |   NIL     |  temps
     +-----------+
-17  |           |
+17  |           |  <------                  pst
     +-----------+
 18  |           |
     +-----------+
