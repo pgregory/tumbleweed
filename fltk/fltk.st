@@ -10,11 +10,6 @@ fltkFFI
     fltkFFI <- FFI new: 'modules/fltk/fltk'
   ].
   ^ fltkFFI
-|
-Methods FFI
-  init: aString
-    self open: aString.
-    functions <- Dictionary new.
 ]
 
 
@@ -28,7 +23,10 @@ new
   result <- (FLTK fltkFFI) call: 'createWindow' returning: #cObject taking: #(int int) as: args.
   newWindow handle: (result at: 1).
   ^ newWindow 
-|
+]
+
+
+Methods FLTKWindow
 handle
   ^ handle
 |
