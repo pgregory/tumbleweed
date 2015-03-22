@@ -103,7 +103,7 @@ object ioPrimitive(int number, object* arguments)
       if (number == 8)
         fflush(fp[i]);
       else
-        fputc('\n', fp[i]);
+        fputs("\r\n", fp[i]);
       break;
 
     default:
