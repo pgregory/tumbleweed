@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     initFFISymbols();
 #endif
 
-    /* runCode("ObjectMemory changed: #returnFromSnapshot"); */
+    runCode("ObjectMemory changed: #returnFromSnapshot");
     firstProcess = globalSymbol("systemProcess");
     if (firstProcess == nilobj) 
     {

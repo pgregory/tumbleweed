@@ -1,5 +1,3 @@
-RawClass Class MetaClass Object name instanceSize methods superClass variables
-Class  nil
 RawClass MetaObject Class Class Dependencies
 Class Object 
 Class HTTPRequest Object request requestLine method uri version
@@ -64,8 +62,6 @@ Class Symbol Object
 Class String ByteArray
 Class Browser Object panels dialog currentClass currentMethod
 Class NavigationPanel Panel classList
-RawClass MetaFLTK Class MetaObject fltkFFI
-Class FLTK Object
 Class EmployeeRecord Object name idNumber position salary
 Class False Boolean
 Class Semaphore Object count processList
@@ -101,8 +97,6 @@ Class Module Object name root
 Class Queen Object row column neighbor
 Class Workspace Object dialog commands
 Class Point Magnitude x y
-RawClass MetaFLTKWindow Class MetaObject
-Class FLTKWindow Object handle
 Methods HTTPRequest
 
     version
@@ -1025,20 +1019,6 @@ Methods ListControl
     | result |
     result <- IUP instance IupGetAttribute: 'COUNT' on: handle.
     ^ result at: 1
-
-
-]
-Methods MetaFLTKWindow
-new 
-   | newWindow args result |
-  newWindow <- super new.
-  args <- Array new: 2.
-  args at: 1 put: 340; at: 2 put: 180.
-  result <- (FLTK fltkFFI) call: 'createWindow' returning: #cObject taking: #(int int) as: args.
-  newWindow handle: (result at: 1).
-  ^ newWindow 
-
-
 
 
 ]
@@ -2029,14 +2009,6 @@ Methods MetaModule
 
 
 ]
-Methods MetaFLTK
-fltkFFI
-  (fltkFFI isNil) ifTrue: [
-    fltkFFI <- FFI new: 'FLTK'
-  ].
-  ^ fltkFFI
-
-]
 Methods FFI
   init: aString
     self open: aString.
@@ -2209,6 +2181,10 @@ Methods MetaTime
     ^self millisecondClock - startTime
 
 
+]
+Methods MetaTime
+  doInit
+    ObjectMemory addDependent: self
 ]
 Methods MetaTime
   millisecondClock
@@ -7444,16 +7420,5 @@ Methods Point
     to: aPoint
         " return a rectangle with the given dimensions "
         ^ Rectangle new; upperLeft: self; bottomRight: aPoint
-
-
-]
-Methods FLTKWindow
-handle: aCPointer
-  handle <- aCPointer
-
-]
-Methods FLTKWindow
-handle
-  ^ handle
 
 ]
