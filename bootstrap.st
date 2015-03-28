@@ -1758,14 +1758,6 @@ Methods MetaModule
 
 
 ]
-Methods MetaFLTK
-fltkFFI
-  (fltkFFI isNil) ifTrue: [
-    fltkFFI <- FFI new: 'FLTK'
-  ].
-  ^ fltkFFI
-
-]
 Methods FFI
   init: aString
     self open: aString.
@@ -6148,15 +6140,5 @@ Methods Point
         " return a rectangle with the given dimensions "
         ^ Rectangle new; upperLeft: self; bottomRight: aPoint
 
-
-]
-Methods FLTKWindow
-handle: aCPointer
-  handle <- aCPointer
-
-]
-Methods FLTKWindow
-handle
-  ^ handle
 
 ]
