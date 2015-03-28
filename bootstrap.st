@@ -2427,11 +2427,13 @@ Methods Smalltalk
         scheduler critical: [
             " first get rid of our own process "
             scheduler removeProcess: scheduler currentProcess.
-        File new;
-            name: name;
-            open: 'wb';
-            saveImage;
-            close ]
+            " trigger a prepareForSnapshot message "
+            ObjectMemory changed: #prepareForSnapshot.
+            File new;
+                name: name;
+                open: 'wb';
+                saveImage;
+                close ]
 
 
 ]
