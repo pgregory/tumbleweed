@@ -1,17 +1,10 @@
 RawClass MetaObject Class Class Dependencies
 Class Object 
 Class HTTPRequest Object request requestLine method uri version
-Class Widget Object handle
-Class WidgetContainer Widget children
 Class CPointer Object
-Class Panel Object browser widget
-RawClass MetaNode Class MetaObject errorException
-Class Node Object parent children name
 Class Magnitude Object
 Class Method Object text message bytecodes literals stackSize temporarySize class watch protocol
-Class Menu WidgetContainer
 Class Number Magnitude
-Class ListControl Widget
 Class NullQueen Object
 Class Random Object
 Class Collection Magnitude
@@ -20,16 +13,12 @@ Class Dictionary IndexedCollection hashTable
 RawClass MetaTestCase Class MetaObject failedCheckSignal
 Class TestCase Object selector
 Class StringTest TestCase string emptyString subcollection3ElementsSorted nonEmpty5ElementsSorted unsortedCollection indexInNonEmptyArray arrayWithCharacters nonEmpty1element withoutEqualElements sameAtEndAndBegining elementInNonEmpty collectionNotIncluded notIn
-Class ButtonControl Widget
 Class TestResult Object startTime stopTime Time testName failures errors
-Class LabelControl Widget
-Class HBox WidgetContainer
 Class ObjectMemory Object
 Class Boolean Object
 Class Class Object name instanceSize methods superClass variables
 RawClass MetaFFI Class MetaObject libraries
 Class FFI Object handle name functions
-Class Dialog WidgetContainer
 Class List Collection links
 Class Set List
 Class Switch Object const notdone
@@ -39,51 +28,31 @@ Class ExternalData Object members
 Class EDTeset ExternalData
 Class Float Number
 Class Fraction Number top bottom
-Class DefinitionPanel Panel text commands
 Class Exception Object message
 Class Error Exception
 Class nil 
 Class SetTest TestCase
 Class Smalltalk Object
 Class ExceptionHandler Object handledException handlerBlock
-Class NodeException Exception
-Class AddSubClassDialog Object dialog parentClass nameControl ivnamesControl
-Class Fill Widget
-Class ItemControl Widget
 Class UndefinedObject Object
 Class TestSuite Object name testCases
 Class TestConversions TestCase
 Class Char Magnitude value
-Class VBox WidgetContainer
 Class Zebra Object
 Class ArrayTest TestCase
 Class Process Object stack stackTop linkPointer
 Class Symbol Object
 Class String ByteArray
-Class Browser Object panels dialog currentClass currentMethod
-Class NavigationPanel Panel classList
-RawClass MetaFLTK Class MetaObject fltkFFI
-Class FLTK Object
 Class EmployeeRecord Object name idNumber position salary
 Class False Boolean
 Class Semaphore Object count processList
 Class True Boolean
-Class Split WidgetContainer
 Class Rectangle Object top left bottom right
-RawClass MetaIUP Class MetaObject theInstance
-Class IUP Object iup
 Class Interval Collection lower upper step
-Class TextControl Widget
 Class Integer Number
 Class LongInteger Integer negative digits
-Class NodeTest TestCase nodeA nodeB
 Class Block Object context argCount argLoc bytePointer
-Class EDTest nil
-Class Morph Node bounds color alpha is
-Class Frame Morph
-Class World Frame
 Class File Object name number mode
-Class ButtonPanel Panel buttons
 Class FailedCheckSignal Exception
 RawClass MetaTime Class MetaMagnitude ClockAtStartup
 Class Time Magnitude
@@ -99,8 +68,6 @@ Class Module Object name root
 Class Queen Object row column neighbor
 Class Workspace Object dialog commands
 Class Point Magnitude x y
-RawClass MetaFLTKWindow Class MetaObject
-Class FLTKWindow Object handle
 Methods HTTPRequest
 
     version
@@ -154,30 +121,6 @@ Methods HTTPRequest
 
 
 ]
-Methods WidgetContainer
-
-  children
-    ^ children
-
-
-]
-Methods WidgetContainer
-
-  addChild: child
-    children add: child.
-    IUP instance IupAppend: (child handle) to: (self handle).
-    ^ self
-
-
-]
-Methods WidgetContainer
-  init
-    super new.
-    children <- List new.
-    ^ self 
-
-
-]
 Methods CPointer
 
   printString
@@ -201,70 +144,6 @@ Methods Panel
 
   widget
     ^ widget
-
-
-]
-Methods Node
-  init: aString
-    children <- Dictionary new.
-    parent <- nil.
-    name <- aString
-
-
-]
-Methods Node
-
-  children
-    ^ children
-
-
-]
-Methods Node
-
-  parent
-    ^ parent
-
-
-]
-Methods Node
-
-  addChild: aNode  
-    children at: (aNode name) put: aNode.
-    aNode setParent: self
-
-
-]
-Methods Node
-
-  errorException
-    ^ errorException
-
-
-]
-Methods Node
-
-  removeChild: aNode
-    ( children includesKey: (aNode name) ) ifFalse: [
-      errorException signalWith: ('Child "', (aNode name), '" is not a member')
-    ].
-    children removeKey: (aNode name)
-
-
-]
-Methods Node
-
-  setParent: aNode
-    (parent isNil) ifFalse: [
-      parent removeChild: self
-    ].
-    parent <- aNode
-
-
-]
-Methods Node
-
-  name
-    ^ name
 
 
 ]
@@ -692,16 +571,6 @@ Methods MetaChar
 
 
 ]
-Methods Menu
-  init
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupMenu.
-    super handle: (result at: 1).
-    ^self
-
-
-]
 Methods Number
 
     + value
@@ -1000,46 +869,6 @@ Methods Number
 
 
 ]
-Methods ListControl
-
-  setActionCallback: aBlock
-    ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject string int int)
-
-
-]
-Methods ListControl
-  init
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupList.
-    super handle: (result at: 1).
-    ^self
-
-
-]
-Methods ListControl
-
-  count
-    | result |
-    result <- IUP instance IupGetAttribute: 'COUNT' on: handle.
-    ^ result at: 1
-
-
-]
-Methods MetaFLTKWindow
-new 
-   | newWindow args result |
-  newWindow <- super new.
-  args <- Array new: 2.
-  args at: 1 put: 340; at: 2 put: 180.
-  result <- (FLTK fltkFFI) call: 'createWindow' returning: #cObject taking: #(int int) as: args.
-  newWindow handle: (result at: 1).
-  ^ newWindow 
-
-
-
-
-]
 Methods NullQueen
 
     checkRow: row column: column
@@ -1106,52 +935,6 @@ Methods Random
     set: value
         " set seed for random number generator "
         <55 value>
-
-
-]
-Methods Widget
- 
-  handle: h
-    handle <- h
-
-
-]
-Methods Widget
-
-  at: name
-    | result |
-    result <- IUP instance IupGetAttribute: name on: (self handle).
-    ^ result at: 1
-
-
-]
-Methods Widget
-
-  handle
-    ^ handle
-
-
-]
-Methods Widget
-
-  setCallbackFor: action as: aBlock returning: type taking: args
-  | cb |
-  cb <- <183 type args aBlock>.
-  ^ IUP instance IupSetCallbackOn: (self handle) for: (action asString) as: cb
-
-
-]
-Methods Widget
-  init
-    handle <- 0.
-    ^ self
-
-
-]
-Methods Widget
-
-  at: name put: value
-  IUP instance IupStoreAttribute: name on: (self handle) as: value
 
 
 ]
@@ -1380,30 +1163,6 @@ Methods StringTest
 
 
 ]
-Methods ButtonControl
-  init: aString
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupButton: aString.
-    super handle: (result at: 1).
-    ^ self
-
-
-]
-Methods ButtonControl
-
-  setActionCallback: aBlock
-    ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject)
-
-
-]
-Methods ButtonControl
-
-  init
-    ^ self init: 'UNNAMED'
-
-
-]
 Methods TestResult
 
         error: aString in: aTestCase
@@ -1467,34 +1226,6 @@ Methods TestResult
           testName <- aTest name.
           failures <- List new.
           errors <- List new
-
-
-]
-Methods LabelControl
-  init: aString
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupLabel: aString.
-    super handle: (result at: 1).
-    ^ self
-
-
-]
-Methods LabelControl
-
-  init
-    ^ self init: 'UNNAMED'
-
-
-]
-Methods HBox
-  init
-    | iup result |
-    super init.
-    iup <- IUP instance.
-    result <- iup IupHbox.
-    super handle: (result at: 1).
-    ^ self
 
 
 ]
@@ -2138,30 +1869,6 @@ open
 
 
 ]
-Methods Dialog
-  init: child
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupDialog: (child handle).
-    super handle: (result at: 1).
-    ^ self
-
-
-]
-Methods Dialog
-
-  show
-    IUP instance IupShow: handle.
-
-
-]
-Methods Dialog
-
-  hide
-    IUP instance IupHide: handle.
-
-
-]
 Methods Set
     add: value
         (self includes: value)
@@ -2663,155 +2370,6 @@ Methods MetaPanel
 
 
 ]
-Methods DefinitionPanel
-
-  buttons
-    | hbox |
-    hbox <- HBox new.
-    #(subclass) do: [ :name |
-      hbox addChild: ( ButtonControl new: (name asString); at: 'EXPAND' put: 'HORIZONTAL'; setActionCallback: [ :x | self processCommand: 837 ])
-    ].
-    ^ hbox
-
-
-]
-Methods DefinitionPanel
-  init: browser
-    | hbox vbox|
-    super init: browser.
-    widget <- VBox new; at: 'NMARGIN' put: '5x5'; at: 'GAP' put: '5'.
-    text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'; at: 'TABSIZE' put: '4'.
-    commands <- Dictionary new.
-    text setCallbackFor: 'K_ANY' as: [ :h :c | (self processCommand: c) ] returning: #int taking: #(cObject int).
-    widget addChild: self buttons.
-    vbox <- VBox new; at: 'EXPAND' put: 'VERTICAL'; at: 'NGAP' put: '5'.
-    hbox <- HBox new; at: 'NGAP' put: '5'.
-    vbox addChild: self acceptButton.
-    vbox addChild: self cancelButton.
-    hbox addChild: text.
-    hbox addChild: vbox.
-    widget addChild: hbox.
-    ^ self
-
-
-]
-Methods DefinitionPanel
-
-  showMethod: method on: class
-    self clearMethod.
-    commands at: 833 put: [ 
-      self saveMethod: method on: class 
-    ].
-    commands at: 835 put: [
-      self cancelMethod: method on: class
-    ].
-    text at: 'SELECTION' put: 'ALL'.
-    ((text at: 'SELECTION') isEmpty)
-      ifTrue: [
-        text insert: (method text)
-      ]
-      ifFalse: [
-        text at: 'SELECTEDTEXT' put: (method text)
-      ]
-
-
-]
-Methods DefinitionPanel
-
-  clearMethod
-    (commands includesKey: 833) ifTrue: [
-      commands removeKey: 833
-    ].
-    (commands includesKey: 835) ifTrue: [
-      commands removeKey: 835
-    ].
-    text at: 'SELECTION' put: 'ALL'.
-    ((text at: 'SELECTION') isEmpty)
-      ifFalse: [
-        text at: 'SELECTEDTEXT' put: '' 
-      ]
-
-
-]
-Methods DefinitionPanel
-
-  cancelButton
-    | button |
-    button <- ButtonControl new: 'Cancel'; at: 'EXPAND' put: 'HORIZONTAL'.
-    button setActionCallback: [ :x | self processCommand: 835 ].
-    ^ button
-
-
-]
-Methods DefinitionPanel
-
-  saveMethod: method on: class
-    | oldMethod |
-    oldMethod <- method text.
-    method text: (text at: 'VALUE').
-    (method compileWithClass: class)
-    ifTrue: [ 
-      ^ true 
-    ]
-    ifFalse: [ 
-      method text: oldMethod.
-      IUP instance IupMessage: (<152>) title: 'Error'
-    ].
-    ^ false
-
-
-]
-Methods DefinitionPanel
-
-  subclassOn: class
-    | dialog |
-    dialog <- AddSubClassDialog new: class.
-    dialog show. 
-
-
-]
-Methods DefinitionPanel
-
-  processCommand: c
-    ^ (commands includesKey: c) 
-      ifTrue: [
-        (commands at: c) value.
-        -1
-      ] 
-      ifFalse: [ 
-        ('Missing command ', c) print.
-        -2
-      ]
-
-
-]
-Methods DefinitionPanel
-
-  cancelMethod: method on: class
-    self showMethod: method on: class.
-    ^ true
-
-
-]
-Methods DefinitionPanel
-
-  acceptButton
-    | button |
-    button <- ButtonControl new: 'Accept'; at: 'EXPAND' put: 'HORIZONTAL'.
-    button setActionCallback: [ :x | self processCommand: 833 ]. 
-    ^ button
-
-
-]
-Methods DefinitionPanel
-
-  showClass: class
-    commands at: 837 put: [ 
-      self subclassOn: class 
-    ].
-
-
-]
 Methods ExternalData
 
   member: index
@@ -2847,27 +2405,9 @@ Methods ExternalData
 
 
 ]
-Methods MetaButtonControl
-  new: aString
-    | newButton |
-    newButton <- super new.
-    newButton init: aString.
-    ^ newButton
-
-
-]
 Methods MetaTestResult
         test: aTest
             ^ self new setTest: aTest
-
-
-]
-Methods MetaLabelControl
-  new: aString
-    | newLabel |
-    newLabel <- super new.
-    newLabel init: aString.
-    ^ newLabel
 
 
 ]
@@ -3027,120 +2567,9 @@ Methods ExceptionHandler
 
 
 ]
-Methods AddSubClassDialog
-
-  nameControls
-    | label editor container |
-    container <- HBox new.
-    label <- LabelControl new: 'Name'.
-    editor <- TextControl new.
-    nameControl <- editor.
-    container addChild: label; addChild: editor.
-    editor at: 'EXPAND' put: 'HORIZONTAL'.
-    container at: 'EXPAND' put: 'HORIZONTAL'; at: 'MARGIN' put: '5x5'; at: 'GAP' put: '5'.
-    ^ container 
-
-
-]
-Methods AddSubClassDialog
-
-  buttons
-    | container ok cancel vnames scname |
-    container <- HBox new.
-    ok <- ButtonControl new: 'Ok'.
-    cancel <- ButtonControl new: 'Cancel'.
-    container addChild: (Fill new); addChild: ok; addChild: cancel.
-    container at: 'EXPAND' put: 'HORIZONTAL'; at: 'MARGIN' put: '5x5'; at: 'GAP' put: '5'.
-    ok setActionCallback: [ :h | 
-      'Hello' print.
-      vnames <- (ivnamesControl at: 'VALUE').
-      scname <- (nameControl at: 'VALUE').
-      vnames <- (vnames words: [ :x | (x == $ ) not ]).
-      vnames <- (vnames collect: [ :x | x asSymbol ]).
-      parentClass subClass: (scname asSymbol) instanceVariableNames: vnames
-    ].
-    ^ container
-
-
-]
-Methods AddSubClassDialog
-  init: parent
-    | container |
-    parentClass <- parent.
-    container <- VBox new.
-    container addChild: self nameControls.
-    container addChild: self instanceVariableControls.
-    container addChild: (Fill new).
-    container addChild: self buttons.
-    container at: 'MARGIN' put: '5x25'.
-    dialog <- Dialog new: container; at: 'SHRINK' put: 'NO'; 
-                                     at: 'TITLE' put: ('Add Subclass of ', (parent name));
-                                     at: 'MINSIZE' put: '400x200';
-                                     at: 'MAXSIZE' put: '800x200'.
-    ^ self
-
-
-]
-Methods AddSubClassDialog
-
-  show
-    dialog show.
-
-
-]
-Methods AddSubClassDialog
-
-  instanceVariableControls
-    | label editor container |
-    container <- HBox new.
-    label <- LabelControl new: 'Instance Variables'.
-    editor <- TextControl new.
-    ivnamesControl <- editor.
-    container addChild: label; addChild: editor.
-    editor at: 'EXPAND' put: 'HORIZONTAL'.
-    container at: 'EXPAND' put: 'HORIZONTAL'; at: 'MARGIN' put: '5x5'; at: 'GAP' put: '5'.
-    ^ container 
-
-
-]
 Methods MetaString
   new: size
     ^ super new: size+1
-
-
-]
-Methods Fill
-  init
-    | iup result |
-    super init.
-    iup <- IUP instance.
-    result <- iup IupFill.
-    super handle: (result at: 1).
-    ^ self
-
-
-]
-Methods ItemControl
-  init: aString
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupItem: aString.
-    super handle: (result at: 1).
-    ^ self
-
-
-]
-Methods ItemControl
-
-  setActionCallback: aBlock
-    ^ super setCallbackFor: 'ACTION' as: aBlock returning: #int taking: #(cObject)
-
-
-]
-Methods ItemControl
-
-  init
-    ^ self init: 'UNNAMED'
 
 
 ]
@@ -3715,17 +3144,6 @@ Methods Char
 
 
 ]
-Methods VBox
-  init
-    | iup result |
-    super init.
-    iup <- IUP instance.
-    result <- iup IupVbox.
-    super handle: (result at: 1).
-    ^ self
-
-
-]
 Methods MetaTestCase
 
         failedCheckSignal
@@ -4290,200 +3708,6 @@ Methods String
 
 
 ]
-Methods MetaWidget
-  new
-    | newObj |
-    newObj <- super new.
-    newObj init.
-    ^newObj
-
-
-]
-Methods Browser
-
-  show
-    dialog show.
-
-
-]
-Methods Browser
-
-  showMethod: method on: class
-    | defPnl |
-    defPnl <- panels at: 3.
-    defPnl showMethod: method on: class
-
-
-]
-Methods Browser
-
-  clearMethod
-    | defPnl |
-    defPnl <- panels at: 3.
-    defPnl clearMethod
-
-
-]
-Methods Browser
-
-  panels: thePanels
-    panels <- thePanels.
-    ^self
-
-
-]
-Methods Browser
-
-  buttonPanel
-    ^ ButtonPanel new: self
-
-
-]
-Methods Browser
-
-  updateClassList
-    | navPnl |
-    navPnl <- panels at: 1.
-    navPnl updateClassList
-
-
-]
-Methods Browser
-
-  definitionPanel
-    ^ DefinitionPanel new: self
-
-
-]
-Methods Browser
-  init
-    | container |
-    container <- Split with: ((panels at: 1) widget) and: ((panels at: 3) widget); at: 'ORIENTATION' put: 'HORIZONTAL'. 
-    dialog <- Dialog new: container; at: 'SIZE' put: '400x200'; at: 'SHRINK' put: 'YES'; at: 'TITLE' put: 'Tumbleweed Browser v0.1'.
-    ^ self
-
-
-]
-Methods Browser
-
-  panels
-    ^ Array new: 3; at: 1 put: (self navigationPanel); 
-                    at: 2 put: (self buttonPanel); 
-                    at: 3 put: (self definitionPanel)
-
-
-]
-Methods Browser
-
-  navigationPanel
-    ^ NavigationPanel new: self
-
-
-]
-Methods Browser
-
-  showClass: class
-    | defPnl |
-    defPnl <- panels at: 3.
-    defPnl showClass: class
-
-
-]
-Methods NavigationPanel
-  init: browser
-    | protocolList methodList currentClass currentProtocol currentMethod |
-    super init: browser.
-    hbox <- HBox new; at: 'HOMOGENEOUS' put: 'YES'.
-    classList <- self listControl: 'Classes' on: hbox.
-    protocolList <- self listControl: 'Protocols' on: hbox.
-    methodList <- self listControl: 'Methods' on: hbox.
-    widget <- VBox new; at: 'NMARGIN' put: '5x5'; addChild: hbox.
-    classList setActionCallback: [ :h :className :item :state | 
-      (state = 1) ifTrue: [
-        currentClass <- (className asSymbol) value.
-        self clearList: methodList.
-        self updateProtocolList: protocolList on: currentClass.
-        browser showClass: currentClass
-      ]
-    ].
-    protocolList setActionCallback: [ :h :protocolName :item :state | 
-      (state = 1) ifTrue: [
-        currentProtocol <- protocolName asSymbol.
-        self clearList: methodList.
-        self updateMethodList: methodList with: currentProtocol on: currentClass 
-      ]
-    ].
-    methodList setActionCallback: [ :h :methodName :item :state | 
-      (state = 1) ifTrue: [
-        currentMethod <- (currentClass methodNamed: (methodName asSymbol)).
-        browser showMethod: currentMethod on: currentClass
-      ]
-    ].
-    self updateClassList.
-    ^ self
-
-
-]
-Methods NavigationPanel
-
-  listControl: name on: container
-    | list vbox |
-    list <- ListControl new; at: 'EXPAND' put: 'YES'; at: 'SIZE' put: '0x50'.
-    vbox <- VBox new.
-    vbox addChild: (LabelControl new: (name asString)).
-    vbox addChild: list.
-    container addChild: vbox.
-    ^ list
-
-
-]
-Methods NavigationPanel
-
-  updateClassList
-    | index |
-    " Initialise the class list "
-    self clearList: classList.
-    index <- 1.
-    ((classes select: [ :x | x isMeta not ]) sort: [ :x :y | (x asString) < (y asString) ] ) do: [ :x |
-      classList at: (index asString) put: (x asString). index <- index + 1 ].
-    ^ self
-
-
-]
-Methods NavigationPanel
-
-  updateProtocolList: list on: class
-    | index |
-    self clearList: list.
-    browser clearMethod.
-    index <- 1.
-    (class protocols) do: [ :x |
-      list at: (index asString) put: (x asString). index <- index + 1 ].
-    ^ self
-
-
-]
-Methods NavigationPanel
-
-  updateMethodList: list with: protocol on: class
-    | index |
-    self clearList: list.
-    browser clearMethod.
-    index <- 1.
-    (class methodsFor: (protocol asString)) binaryDo: [ :x :y |
-      list at: (index asString) put: (x asString). index <- index + 1 ].
-    ^ self
-
-
-]
-Methods NavigationPanel
-
-  clearList: list
-    list at: 'REMOVEITEM' put: (cPointer new).
-    ^ self
-
-
-]
 Methods EmployeeRecord
 salary: aFloat
   salary <- aFloat
@@ -4982,29 +4206,6 @@ Methods Semaphore
 
 
 ]
-Methods MetaNode
-
-  new
-    smalltalk error: 'Cannot create Node without a name'
-
-
-]
-Methods MetaNode
-
-  new: aString
-    | newObj |
-    newObj <- super new.
-    newObj init: aString.
-    ^ newObj
-
-
-]
-Methods MetaNode
-  doInit
-    errorException <- NodeException new
-
-
-]
 Methods True
 
     printString
@@ -5029,27 +4230,6 @@ Methods True
 Methods True
     ifTrue: trueBlock ifFalse: falseBlock
         ^ trueBlock value
-
-
-]
-Methods Split
-
-  left: child1 right: child2
-    | gripper |
-    iup <- IUP instance.
-    iup IupAppend: (child1 handle) to: (self handle).
-    iup IupAppend: (child2 handle) to: (self handle).
-
-
-]
-Methods Split
-  init
-    | iup result |
-    super init.
-    iup <- IUP instance.
-    result <- iup IupSplitWith: (CPointer new) and: (CPointer new).
-    super handle: (result at: 1).
-    ^ self
 
 
 ]
@@ -5145,266 +4325,6 @@ Methods Rectangle
 
     left
         ^ left
-
-
-]
-Methods IUP
-
-  IupInsert: child after: ref on: parent 
-    | args |
-    args <- Array new: 3.
-    args at: 1 put: parent.
-    args at: 2 put: ref.
-    args at: 3 put: child.
-    ^ iup call: 'IupInsert' returning: #cObject taking: #(cObject cObject cObect) as: args 
-
-
-]
-Methods IUP
-
-  IupGetColorRed: r Green: g Blue: b
-    ^ iup call: 'IupGetColor' returning: #int taking: #(int int charOut charOut charOut) as: #(10 10 r g b)
-
-
-]
-Methods IUP
-
-  IupShow: dialog
-    | args |
-    args <- Array new: 1.
-    args at: 1 put: dialog.
-    ^ iup call: #IupShow returning: #int taking: #(cObject) as: args
-
-
-]
-Methods IUP
-
-  IupSplitWith: child1 and: child2 
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: child1.
-    args at: 2 put: child2.
-    ^ iup call: 'IupSplit' returning: #cObject taking: #(cObject cObject) as: args
-
-
-]
-Methods IUP
-
-  IupPopup: child at: x and: y
-    | args |
-    args <- Array new: 3.
-    args at: 1 put: child.
-    args at: 2 put: x.
-    args at: 3 put: y.
-    ^ iup call: 'IupPopup' returning: #int taking: #(cObject int int) as: args
-
-
-]
-Methods IUP
-
-  IupDialog: child 
-    | args |
-    args <- Array new: 1.
-    args at: 1 put: child.
-    ^ iup call: 'IupDialog' returning: #cObject taking: #(cObject) as: args
-
-
-]
-Methods IUP
-
-  IupLabel: title
-    | args |
-    args <- Array new: 1.
-    args at: 1 put: title.
-    ^ iup call: #IupLabel returning: #cObject taking: #(string) as: args
-
-
-]
-Methods IUP
-
-  IupGetAttribute: name on: handle 
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: handle.
-    args at: 2 put: name.
-    ^ iup call: #IupGetAttribute returning: #string taking: #(cObject string) as: args
-
-
-]
-Methods IUP
-
-  IupHide: dialog
-    | args |
-    args <- Array new: 1.
-    args at: 1 put: dialog.
-    ^ iup call: #IupHide returning: #int taking: #(cObject) as: args
-
-
-]
-Methods IUP
-
-  IupAppend: child to: parent 
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: parent.
-    args at: 2 put: child.
-    ^ iup call: 'IupAppend' returning: #cObject taking: #(cObject cObject) as: args 
-
-
-]
-Methods IUP
-
-  IupVbox 
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: (CPointer new).
-    args at: 2 put: (CPointer new).
-    ^ iup call: 'IupVbox' returning: #cObject taking: #(cObject cObject) as: args
-
-
-]
-Methods IUP
-  init
-    iup <- FFI new: 'iup'.
-    iup call: 'IupOpen' returning: #int taking: #(int int) as: #(0 0).
-    ^self
-
-
-]
-Methods IUP
-
-  IupHbox 
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: (CPointer new).
-    args at: 2 put: (CPointer new).
-    ^ iup call: 'IupHbox' returning: #cObject taking: #(cObject cObject) as: args
-
-
-]
-Methods IUP
-
-  IupButton: title 
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: title.
-    args at: 2 put: 'DefaultButtonAction'.
-    ^ iup call: 'IupButton' returning: #cObject taking: #(string string) as: args 
-
-
-]
-Methods IUP
-
-  IupFill 
-    | args |
-    ^ iup call: 'IupFill' returning: #cObject taking: #() as: #()
-
-
-]
-Methods IUP
-
-  IupStoreAttribute: name on: handle as: value
-    | args |
-    args <- Array new: 3.
-    args at: 1 put: handle.
-    args at: 2 put: name.
-    args at: 3 put: value.
-    ^ iup call: #IupStoreAttribute returning: #void taking: #(cObject string string) as: args
-
-
-]
-Methods IUP
-
-  IupMenu
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: (CPointer new).
-    args at: 2 put: (CPointer new).
-    ^ iup call: 'IupMenu' returning: #cObject taking: #(cObject cObject) as: args
-
-
-]
-Methods IUP
-
-  IupLoopStep
-    | result |
-    result <- iup call: #IupLoopStep returning: #int taking: #() as: #().
-    ^ result at: 1
-
-
-]
-Methods IUP
-
-  IupMessage: m title: t
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: t.
-    args at: 2 put: m.
-    ^ iup call: 'IupMessage' returning: #void taking: #(string string) as: args 
-
-
-]
-Methods IUP
-
-  IupGetChildAt: pos on: parent
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: parent.
-    args at: 2 put: pos.
-    ^ iup call: 'IupGetChild' returning: #cObject taking: #(cObject int) as: args
-
-
-]
-Methods IUP
-
-  IupSetCallbackOn: handle for: action as: callback
-    | args |
-    args <- Array new: 3.
-    args at: 1 put: handle.
-    args at: 2 put: action.
-    args at: 3 put: callback.
-    ^ iup call: #IupSetCallback returning: #cObject taking: #(cObject string cObject) as: args
-
-
-]
-Methods IUP
-
-  IupText
-    ^ iup call: #IupText returning: #cObject taking: #(string) as: #('DefaultListAction')
-
-
-]
-Methods IUP
-
-  IupList
-    ^ iup call: #IupList returning: #cObject taking: #(string) as: #('DefaultListAction')
-
-
-]
-Methods IUP
-
-  IupMainLoop
-    ^ iup call: #IupMainLoop returning: #int taking: #() as: #()
-
-
-]
-Methods IUP
-
-  IupItem: title
-    | args |
-    args <- Array new: 2.
-    args at: 1 put: title.
-    args at: 2 put: 'DefaultMenuAction'.
-    ^ iup call: 'IupItem' returning: #cObject taking: #(string string) as: args 
-
-
-]
-Methods MetaDialog
-  new: child
-    | newDialog |
-    newDialog <- super new.
-    newDialog init: child.
-    ^ newDialog
 
 
 ]
@@ -5743,23 +4663,6 @@ Methods Interval
 
 
 ]
-Methods TextControl
-  init
-    | iup result |
-    iup <- IUP instance.
-    result <- iup IupText.
-    super handle: (result at: 1).
-    ^self
-
-
-]
-Methods TextControl
-
-  insert: aString
-    ^ super at: 'INSERT' put: (aString asString)
-
-
-]
 Methods MetaTestSuite
         named: aString
             ^ self new setName: aString
@@ -5985,24 +4888,6 @@ Methods LongInteger
             ifFalse: [ ^ super = n ].
         (negative == n negative) ifFalse: [ ^ false ].
         ^ digits = n digits
-
-
-]
-Methods NodeTest
-  setUp
-    nodeA <- Node new: 'A'.
-    nodeB <- Node new: 'B'
-
-
-]
-Methods NodeTest
-  testAddRemoveChild
-    "Test adding a child in good and bad conditions"
-    self should: [ nodeA addChild: nodeB. nodeB parent = nodeA ] description: 'addChild should set parent on child.'.
-    self should: [ (nodeA children) size = 1 ] description: 'After adding a child, count should be one'.
-    self should: [ [ nodeA removeChild: nodeA ] on: Exception do: [ :ex | false ]. true ] description: 'Should not except when removing valid child'.
-    self should: [ (nodeA removeChild: nodeB) = nodeA ] description: 'Should not except when removing valid child'.
-    self should: [ (nodeA children) size = 0 ] description: 'After removing a child, count should be zero'.
 
 
 ]
@@ -6523,61 +5408,6 @@ Methods Integer
 
 
 ]
-Methods MetaAddSubClassDialog
-  new: parent
-    | newDialog |
-    newDialog <- super new.
-    newDialog init: parent.
-    ^ newDialog
-
-
-]
-Methods MetaItemControl
-  new: aString
-    | newItem |
-    newItem <- super new.
-    newItem init: aString.
-    ^ newItem
-
-
-]
-Methods MetaIUP
-
-  test
-    | btn vbox dialog done e |
-    iup <- IUP instance.
-    btn <- ButtonControl new: 'Test'.
-    stderr print: (btn handle asString).
-    vbox <- VBox new.
-    vbox addChild: btn.
-    btn setActionCallback: [ :x | stderr print: ('Hello: ', (x asString)). -3 ].
-    dialog <- Dialog new: vbox.
-    dialog show.
-    done <- false.
-    [ done ] whileFalse: [ 
-      e <- iup IupLoopStep.
-      [ e = -3 ] whileFalse: [ e <- iup IupLoopStep ].
-      stderr print: (e asString).
-      done <- true
-    ]
-
-
-]
-Methods MetaIUP
-  new
-    ^ self instance.
-
-
-]
-Methods MetaIUP
-
-  instance
-    theInstance isNil ifTrue: [ stderr print: 'Loading IUP'].
-    theInstance isNil ifTrue: [ theInstance <- super new. theInstance init ].
-    ^ theInstance
-
-
-]
 Methods File
 
     exists
@@ -6741,110 +5571,6 @@ Methods File
 
 
 ]
-Methods MetaBrowser
-  new
-    | newObj |
-    newObj <- super new.
-    newObj panels: newObj panels.
-    newObj init.
-    ^ newObj
-
-
-]
-Methods MetaBrowser
-
-  open
-    self openOnClass: nil
-
-
-]
-Methods MetaBrowser
-
-  openOnClass: class showing: method
-    Browser new; show. IUP instance IupMainLoop
-
-
-]
-Methods MetaBrowser
-
-  openOnClass: class
-    self openOnClass: class showing: nil
-
-
-]
-Methods ButtonPanel
-  init: browser
-    | button |
-    super init: browser.
-    widget <- HBox new.
-    #(browse hierarchy variables implementors inheritance senders versions view) do: [ :name |
-      button <- ButtonControl new: (name asString).
-      widget addChild: button
-    ].
-    ^ self
-
-
-]
-Methods Morph
-  drawOn: aSurface
-  (shape isNil) ifTrue: [
-    shape <- SFMLRectangleShape new
-  ].
-  shape setPositionX: (bounds left) Y: (bounds top).
-  shape setSizeX: (bounds width) Y: (bounds height).
-  aSurface draw: shape
-
-
-]
-Methods Morph
-  init: aString
-    super init: aString.
-    bounds <- Rectangle new.
-    self setPositionX: 0 Y: 0; setWidth: 0 height: 0
-
-
-]
-Methods Morph
-
-  setWidth: width height: height
-    bounds bottomRight: ((self left+width)@(self top+height)) 
-
-
-]
-Methods Morph
-
-  bottom
-    ^ bounds bottom
-
-
-]
-Methods Morph
-
-  right
-    ^ bounds right
-
-
-]
-Methods Morph
-
-  setPositionX: xpos Y: ypos
-    bounds upperLeft: (xpos@ypos) 
-
-
-]
-Methods Morph
-
-  top
-    ^ bounds top
-
-
-]
-Methods Morph
-  left
-    ^ bounds left
-
-
-]
 Methods Test
     queen       | lastQueen |
         lastQueen <- NullQueen new.
@@ -6925,15 +5651,6 @@ Methods Circle
 
     radius: r
         radius <- r
-
-
-]
-Methods MetaSplit
-  with: child1 and: child2
-    | newControl |
-    newControl <- super new.
-    newControl left: child1 right: child2.
-    ^ newControl
 
 
 ]
@@ -7326,22 +6043,6 @@ processCommand: c
     ifFalse: [ 
       -2
     ]
-
-
-]
-Methods Workspace
-init
-  | container text doit buttons |
-  commands <- Dictionary new.
-  commands at: 833 put: [ 
-    self saveMethod: method on: class 
-  ].
-  text <- TextControl new; at: 'EXPAND' put: 'YES'; at: 'MULTILINE' put: 'YES'; at: 'TABSIZE' put: '4'.
-  doit <- ButtonControl new: 'doit'; setActionCallback: [ :x | self runSelectedText: text ]. 
-  buttons <- HBox new; addChild: doit.
-  container <- VBox new; addChild: text; addChild: buttons.
-  dialog <- Dialog new: container; at: 'SIZE' put: '400x200'; at: 'SHRINK' put: 'YES'; at: 'TITLE' put: 'Tumbleweed Workspace v0.1'.
-  ^ self
 
 
 ]
