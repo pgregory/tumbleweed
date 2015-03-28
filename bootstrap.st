@@ -2021,30 +2021,19 @@ Methods MetaFFI
 
 ]
 Methods MetaFFI
-
-  returnFromSnapshot
-    libraries isNil ifFalse: [
-    libraries binaryDo: [ :x :ffi |
-      ffi open ]
-    ]      
-
-
-]
-Methods MetaFFI
-
-  prepareForSnapshot
-    libraries isNil ifFalse: [
-    libraries binaryDo: [ :x :ffi |
-      ffi close ]
+  update: aspect
+    (aspect == #returnFromSnapshot) ifTrue: [
+        'Returning FFI from snapshot' print.
+        libraries isNil ifFalse: [
+        libraries binaryDo: [ :x :ffi |
+          ffi open ]
+        ]      
     ]
-
-
 ]
 Methods MetaFFI
   doInit
-    libraries <- Dictionary new
-
-
+    libraries <- Dictionary new.
+    ObjectMemory addDependent: self
 ]
 Methods Float
     + value
