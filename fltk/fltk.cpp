@@ -22,8 +22,16 @@ EXPORT Fl_Window* createWindow(int width, int height) {
   return window;
 }
 
-EXPORT void show(Fl_Window* window) {
-  window->show();
+EXPORT void Fl_widget_show(Fl_Widget* widget) {
+  widget->show();
+}
+
+EXPORT void Fl_widget_hide(Fl_Widget* widget) {
+  widget->hide();
+}
+
+EXPORT int Fl_widget_visible(Fl_Widget* widget) {
+  return widget->visible();
 }
 
 EXPORT Fl_Button* createButton(int x, int y, int w, int h, const char* label)

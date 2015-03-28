@@ -1,6 +1,6 @@
 RawClass MetaFLTK Class MetaObject fltkFFI
 Class FLTK Object
-Class FLTKWidget Object handle
+Class FLTKWidget Object handle status
 Class FLTKWindow FLTKWidget
 Class FLTKButton FLTKWidget
 Class FLTKInput FLTKWidget
@@ -20,21 +20,21 @@ wait
 ]
 
 
-
-Methods MetaFLTKWindow
-new 
-   | newWindow result |
-  newWindow <- super new.
-  result <- (FLTK fltkFFI) call: 'createWindow' returning: #cObject taking: #(int int) as: 
-      ((Array new: 2) at: 1 put: 340; at: 2 put: 180).
-  newWindow handle: (result at: 1).
-  ^ newWindow 
-]
-
-
 Methods FLTKWidget
+new 
+  | newWidget |
+  newWidget <- super new.
+  newWidget status: (Dictionary new).
+  ^ newWidget
+|
 handle
   ^ handle
+|
+status
+  ^ status
+|
+status: anObject
+  status <- anObject
 |
 handle: aCPointer
   handle <- aCPointer
@@ -45,12 +45,49 @@ setCallback: aBlock
   cb <- <183 #void #(cObject) aBlock >.
   args at: 1 put: handle; at: 2 put: cb. 
   (FLTK fltkFFI) call: 'Fl_setCallback' returning: #void taking: #(cObject cObject) as: args
+|
+show
+  (FLTK fltkFFI) call: 'Fl_widget_show' returning: #void taking: #(cObject) as: ((Array new: 1) at: 1 put: handle)
+|
+hide
+  (FLTK fltkFFI) call: 'Fl_widget_hide' returning: #void taking: #(cObject) as: ((Array new: 1) at: 1 put: handle)
+|
+update: aspect
+  (aspect = #returnFromSnapshot) ifTrue: [
+    self create.
+    ((status at: #visible ifAbsent: [ 0 ]) ~= 0) ifTrue: [
+      self show
+    ]
+  ] ifFalse: [
+    (aspect = #prepareForSnapshot) ifTrue: [
+      status at: #visible put: (self visible)
+    ]
+  ]
+|
+visible
+  | result |
+  result <- (FLTK fltkFFI) call: 'Fl_widget_visible' returning: #int taking: #(cObject) as: ((Array new: 1) at: 1 put: handle).
+  ^ (result at: 1)
+]
+
+
+Methods MetaFLTKWindow
+new 
+   | newWindow |
+  newWindow <- super new.
+  newWindow create.
+  ObjectMemory addDependent: newWindow.
+  ^ newWindow 
 ]
 
 Methods FLTKWindow
-show
-  (FLTK fltkFFI) call: 'show' returning: #void taking: #(cObject) as: ((Array new: 1) at: 1 put: handle)
+create
+  | result |
+  result <- (FLTK fltkFFI) call: 'createWindow' returning: #cObject taking: #(int int) as: 
+      ((Array new: 2) at: 1 put: 340; at: 2 put: 180).
+  self handle: (result at: 1).
 ]
+
 
 
 Methods MetaFLTKButton
