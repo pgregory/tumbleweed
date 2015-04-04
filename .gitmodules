@@ -1,0 +1,6 @@
+[submodule "thirdparty/nanovg"]
+	path = thirdparty/nanovg
+	url = https://github.com/memononen/nanovg.git
+[submodule "thirdparty/glfw"]
+	path = thirdparty/glfw
+	url = https://github.com/glfw/glfw.git

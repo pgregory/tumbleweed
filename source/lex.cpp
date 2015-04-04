@@ -198,7 +198,8 @@ tokentype Lexer::nextToken()
                 if (m_cc) pushBack(m_cc);
                 m_currentToken = floatconst;
                 strToken.push_back('\0');
-                m_tokenFloat = atof(m_tokenString.c_str());
+                m_tokenFloat = atof(strToken.c_str());
+                printf("lex: %s\n", strToken.c_str());
             }
             else 
             {
@@ -232,7 +233,7 @@ tokentype Lexer::nextToken()
                 if (m_cc) 
                     pushBack(m_cc);
                 m_currentToken = floatconst;
-                m_tokenFloat = atof(m_tokenString.c_str());
+                m_tokenFloat = atof(strToken.c_str());
             }
             else 
             {  /* nope, wrong again */
