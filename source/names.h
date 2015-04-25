@@ -64,7 +64,7 @@
 extern void initCommonSymbols();    /* common symbols */
 
 
-enum ClassSymbols {
+enum ClassSymbols_t {
     kArray = 0,
     kBlock,
     kByteArray,
@@ -84,13 +84,16 @@ enum ClassSymbols {
     k__lastClass,
 };
 
-#if defined TW_IS_INITIAL
-# define CLASSOBJECT(cname) (globalSymbol(#cname))
-#else
-# define CLASSOBJECT(cname) (classSyms[k##cname])
-#endif
+struct ClassRef { 
+    const char* name; 
+    int index; 
+}; 
 
-extern std::vector<ObjectHandle> unSyms, binSyms, classSyms;
+extern struct ClassRef classStrs[];
+
+
+extern ObjectHandle classSyms[];
+extern std::vector<ObjectHandle> unSyms, binSyms;
 
 # define booleanTrue 0
 # define booleanFalse 1
@@ -103,5 +106,14 @@ extern object globalKey ( const char* );
 extern object nameTableLookup ( object, const char* );
 # define globalSymbol(s) nameTableLookup(symbols, s)
 object hashEachElement(object dict, register int hash, int(*fun)(object));
+
+inline object classObject(ClassSymbols_t cname) {
+    object cached = classSyms[cname];
+    if(cached != nilobj) {
+        return cached;
+    } else {
+        return globalSymbol(classStrs[cname].name);
+    }
+}
 
 #endif

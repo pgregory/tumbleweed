@@ -150,7 +150,7 @@ object nameTableLookup(object dict, const char* str)
 std::vector<ObjectHandle> booleanSyms;
 std::vector<ObjectHandle> unSyms;
 std::vector<ObjectHandle> binSyms;
-std::vector<ObjectHandle> classSyms;
+ObjectHandle classSyms[k__lastClass+1];
 
 const char *unStrs[] = {"isNil", "notNil", "value", "new", "class", "size",
 "basicSize", "print", "printString", 0};
@@ -161,10 +161,7 @@ const char *binStrs[] = {"+", "-", "<", ">", "<=", ">=", "=", "~=", "*",
 "isMemberOf:", "new:", "to:", "value:", "whileTrue:", "addFirst:", "addLast:",
 0};
 
-const struct { 
-    const char* name; 
-    int index; 
-} classStrs[] = {
+struct ClassRef classStrs[] = {
     { "Array", kArray },
     { "Block", kBlock },
     { "ByteArray", kByteArray },
@@ -195,7 +192,7 @@ void initCommonSymbols()
         unSyms.push_back(MemoryManager::Instance()->newSymbol(unStrs[i]));
     for (i = 0; binStrs[i]; ++i)
         binSyms.push_back(MemoryManager::Instance()->newSymbol(binStrs[i]));
-    classSyms.resize(k__lastClass);
+    //classSyms.resize(k__lastClass);
     for (i = 0; classStrs[i].index != k__lastClass; ++i)
     {
         ObjectHandle h = globalSymbol(classStrs[i].name);

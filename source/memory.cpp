@@ -376,7 +376,7 @@ object MemoryManager::newArray(int size)
     object newObj;
 
     newObj = allocObject(size);
-    objectRef(newObj)._class = CLASSOBJECT(Array);
+    objectRef(newObj)._class = classObject(kArray);
     return newObj;
 }
 
@@ -385,7 +385,7 @@ object MemoryManager::newBlock()
     object newObj;
 
     newObj = allocObject(blockSize);
-    objectRef(newObj)._class = CLASSOBJECT(Block);
+    objectRef(newObj)._class = classObject(kBlock);
     return newObj;
 }
 
@@ -394,7 +394,7 @@ object MemoryManager::newByteArray(int size)
     object newobj;
 
     newobj = allocByte(size);
-    objectRef(newobj)._class = CLASSOBJECT(ByteArray);
+    objectRef(newobj)._class = classObject(kByteArray);
     return newobj;
 }
 
@@ -404,7 +404,7 @@ object MemoryManager::newChar(int value)
 
     newobj = allocObject(1);
     objectRef(newobj).basicAtPut(1, newInteger(value));
-    objectRef(newobj)._class = CLASSOBJECT(Char);
+    objectRef(newobj)._class = classObject(kChar);
     return(newobj);
 }
 
@@ -413,7 +413,7 @@ object MemoryManager::newClass(const char* name)
     object newObj, nameObj, methTable;
 
     newObj = allocObject(classSize);
-    objectRef(newObj)._class = CLASSOBJECT(Class);
+    objectRef(newObj)._class = classObject(kClass);
 
     /* now make name */
     nameObj = newSymbol(name);
@@ -432,7 +432,7 @@ object MemoryManager::newContext(int link, object method, object args, object te
     object newObj;
 
     newObj = allocObject(contextSize);
-    objectRef(newObj)._class = CLASSOBJECT(Context);
+    objectRef(newObj)._class = classObject(kContext);
     objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
     objectRef(newObj).basicAtPut(methodInContext, method);
     objectRef(newObj).basicAtPut(argumentsInContext, args);
@@ -445,7 +445,7 @@ object MemoryManager::newDictionary(int size)
     object newObj;
 
     newObj = allocObject(dictionarySize);
-    objectRef(newObj)._class = CLASSOBJECT(Dictionary);
+    objectRef(newObj)._class = classObject(kDictionary);
     objectRef(newObj).basicAtPut(tableInDictionary, newArray(size));
     return newObj;
 }
@@ -456,7 +456,7 @@ object MemoryManager::newFloat(double d)
 
     newObj = allocByte((int) sizeof (double));
     ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
-    objectRef(newObj)._class = CLASSOBJECT(Float);
+    objectRef(newObj)._class = classObject(kFloat);
     return newObj;
 }
 
@@ -467,7 +467,7 @@ object MemoryManager::newInteger(long i)
 
     newObj = allocByte((int) sizeof (int));
     ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
-    objectRef(newObj)._class = CLASSOBJECT(Integer);
+    objectRef(newObj)._class = classObject(kInteger);
     return newObj;
 #else
     return (i << 1) + 1;
@@ -481,7 +481,7 @@ object MemoryManager::newCPointer(void* l)
     int s = sizeof(void*);
     newObj = allocByte((int) sizeof (void*));
     ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
-    objectRef(newObj)._class = CLASSOBJECT(CPointer);
+    objectRef(newObj)._class = classObject(kCPointer);
     return newObj;
 }
 
@@ -490,7 +490,7 @@ object MemoryManager::newLink(object key, object value)
     object newObj;
 
     newObj = allocObject(linkSize);
-    objectRef(newObj)._class = CLASSOBJECT(Link);
+    objectRef(newObj)._class = classObject(kLink);
     objectRef(newObj).basicAtPut(keyInLink, key);
     objectRef(newObj).basicAtPut(valueInLink, value);
     return newObj;
@@ -500,7 +500,7 @@ object MemoryManager::newMethod()
 {   object newObj;
 
     newObj = allocObject(methodSize);
-    objectRef(newObj)._class = CLASSOBJECT(Method);
+    objectRef(newObj)._class = classObject(kMethod);
     return newObj;
 }
 
@@ -509,7 +509,7 @@ object MemoryManager::newStString(const char* value)
   object newObj;
 
     newObj = allocStr(value);
-    objectRef(newObj)._class = CLASSOBJECT(String);
+    objectRef(newObj)._class = classObject(kString);
     return(newObj);
 }
 
@@ -524,7 +524,7 @@ object MemoryManager::newSymbol(const char* str)
 
     /* not found, must make */
     newObj = allocStr(str);
-    objectRef(newObj)._class = CLASSOBJECT(Symbol);
+    objectRef(newObj)._class = classObject(kSymbol);
     nameTableInsert(symbols, strHash(str), newObj, nilobj);
     return newObj;
 }

@@ -416,8 +416,8 @@ doFindMessage:
         /* and overflow does not occur */
         primargs = pst - 1;
         if ((! watching) && (low <= 12) &&
-            (getClass(primargs[0]) == CLASSOBJECT(Integer) && 
-              getClass(primargs[1]) == CLASSOBJECT(Integer))) {
+            (getClass(primargs[0]) == classObject(kInteger) && 
+              getClass(primargs[1]) == classObject(kInteger))) {
           returnedObject = primitive(low+60, primargs);
           if (returnedObject != nilobj) {
             // pop arguments off stack , push on result 
