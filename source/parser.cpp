@@ -339,11 +339,13 @@ bool Parser::term()
     {
         m_lexer.nextToken();
         expression();
-        if (parseok)
-            if ((m_lexer.currentToken() != closing) || m_lexer.strToken().compare(")"))
+        if (parseok) {
+            if ((m_lexer.currentToken() != closing) || m_lexer.strToken().compare(")")) {
                 compilError(selector,"Missing Right Parenthesis","");
-            else
+            } else {
                 m_lexer.nextToken();
+            }
+        }
     }
     else if ((token == binary) && m_lexer.strToken().compare("<") == 0)
         parsePrimitive();
