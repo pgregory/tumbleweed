@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "interp.h"
 #include "names.h"
 
@@ -53,16 +53,6 @@ ObjectHandle* ObjectHandle::tail = NULL;
 */
 
 MemoryManager* MemoryManager::m_pInstance = NULL;
-
-
-//
-// ncopy - copy exactly n bytes from place to place 
-// 
-void ncopy(register char* p, register char* q, register int n)      
-{   
-    for (; n>0; n--)
-        *p++ = *q++;
-}
 
 
 void MemoryManager::Initialise(size_t initialSize, size_t growCount)
@@ -371,178 +361,6 @@ std::string MemoryManager::statsString()
 }
 
 
-object MemoryManager::newArray(int size)
-{   
-    object newObj;
-
-    newObj = allocObject(size);
-    objectRef(newObj)._class = classObject(kArray);
-    return newObj;
-}
-
-object MemoryManager::newBlock()
-{   
-    object newObj;
-
-    newObj = allocObject(blockSize);
-    objectRef(newObj)._class = classObject(kBlock);
-    return newObj;
-}
-
-object MemoryManager::newByteArray(int size)
-{   
-    object newobj;
-
-    newobj = allocByte(size);
-    objectRef(newobj)._class = classObject(kByteArray);
-    return newobj;
-}
-
-object MemoryManager::newChar(int value)
-{   
-    object newobj;
-
-    newobj = allocObject(1);
-    objectRef(newobj).basicAtPut(1, newInteger(value));
-    objectRef(newobj)._class = classObject(kChar);
-    return(newobj);
-}
-
-object MemoryManager::newClass(const char* name)
-{   
-    object newObj, nameObj, methTable;
-
-    newObj = allocObject(classSize);
-    objectRef(newObj)._class = classObject(kClass);
-
-    /* now make name */
-    nameObj = newSymbol(name);
-    objectRef(newObj).basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
-    objectRef(newObj).basicAtPut(methodsInClass, methTable);
-    objectRef(newObj).basicAtPut(sizeInClass, newInteger(classSize));
-
-    /* now put in global symbols table */
-    nameTableInsert(symbols, strHash(name), nameObj, newObj);
-
-    return newObj;
-}
-
-object MemoryManager::newContext(int link, object method, object args, object temp)
-{   
-    object newObj;
-
-    newObj = allocObject(contextSize);
-    objectRef(newObj)._class = classObject(kContext);
-    objectRef(newObj).basicAtPut(linkPtrInContext, newInteger(link));
-    objectRef(newObj).basicAtPut(methodInContext, method);
-    objectRef(newObj).basicAtPut(argumentsInContext, args);
-    objectRef(newObj).basicAtPut(temporariesInContext, temp);
-    return newObj;
-}
-
-object MemoryManager::newDictionary(int size)
-{   
-    object newObj;
-
-    newObj = allocObject(dictionarySize);
-    objectRef(newObj)._class = classObject(kDictionary);
-    objectRef(newObj).basicAtPut(tableInDictionary, newArray(size));
-    return newObj;
-}
-
-object MemoryManager::newFloat(double d)
-{   
-    object newObj;
-
-    newObj = allocByte((int) sizeof (double));
-    ncopy(objectRef(newObj).charPtr(), (char *) &d, (int) sizeof (double));
-    objectRef(newObj)._class = classObject(kFloat);
-    return newObj;
-}
-
-object MemoryManager::newInteger(long i)
-{   
-#if defined TW_SMALLINTEGER_AS_OBJECT
-    object newObj;
-
-    newObj = allocByte((int) sizeof (int));
-    ncopy(objectRef(newObj).charPtr(), (char *) &i, (int) sizeof (int));
-    objectRef(newObj)._class = classObject(kInteger);
-    return newObj;
-#else
-    return (i << 1) + 1;
-#endif
-}
-
-object MemoryManager::newCPointer(void* l)
-{   
-    object newObj;
-
-    int s = sizeof(void*);
-    newObj = allocByte((int) sizeof (void*));
-    ncopy(objectRef(newObj).charPtr(), (char *) &l, (int) sizeof (void*));
-    objectRef(newObj)._class = classObject(kCPointer);
-    return newObj;
-}
-
-object MemoryManager::newLink(object key, object value)
-{   
-    object newObj;
-
-    newObj = allocObject(linkSize);
-    objectRef(newObj)._class = classObject(kLink);
-    objectRef(newObj).basicAtPut(keyInLink, key);
-    objectRef(newObj).basicAtPut(valueInLink, value);
-    return newObj;
-}
-
-object MemoryManager::newMethod()
-{   object newObj;
-
-    newObj = allocObject(methodSize);
-    objectRef(newObj)._class = classObject(kMethod);
-    return newObj;
-}
-
-object MemoryManager::newStString(const char* value)
-{   
-  object newObj;
-
-    newObj = allocStr(value);
-    objectRef(newObj)._class = classObject(kString);
-    return(newObj);
-}
-
-object MemoryManager::newSymbol(const char* str)
-{    
-    object newObj;
-
-    /* first see if it is already there */
-    newObj = globalKey(str);
-    if (newObj) 
-        return newObj;
-
-    /* not found, must make */
-    newObj = allocStr(str);
-    objectRef(newObj)._class = classObject(kSymbol);
-    nameTableInsert(symbols, strHash(str), newObj, nilobj);
-    return newObj;
-}
-
-
-object MemoryManager::copyFrom(object obj, int start, int size)
-{   
-    object newObj;
-    int i;
-
-    newObj = newArray(size);
-    for (i = 1; i <= size; i++) 
-    {
-        objectRef(newObj).basicAtPut(i, objectRef(obj).basicAt(start));
-        start++;
-    }
-    return newObj;
-}
 
 
 static struct 
@@ -725,7 +543,7 @@ double ObjectStruct::floatValue()
 {   
     double d;
 
-    ncopy((char *) &d, charPtr(), (int) sizeof(double));
+    memcpy((char *) &d, charPtr(), (int) sizeof(double));
     return d;
 }
 
@@ -735,7 +553,7 @@ int ObjectStruct::intValue()
 
     if(this == &objectRef(nilobj))
         return 0;
-    ncopy((char *) &d, charPtr(), (int) sizeof(int));
+    memcpy((char *) &d, charPtr(), (int) sizeof(int));
     return d;
 }
 
@@ -747,7 +565,7 @@ void* ObjectStruct::cPointerValue()
     void* l;
 
     int s = sizeof(void*);
-    ncopy((char *) &l, charPtr(), (int) sizeof(void*));
+    memcpy((char *) &l, charPtr(), (int) sizeof(void*));
     return l;
 }
 

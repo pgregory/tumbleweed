@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "names.h"
 #include "interp.h"
 
@@ -68,32 +68,32 @@ void makeInitialImage()
   objectRef(symbols).basicAtPut(tableInDictionary, hashTable);
 
   /* next create #Symbol, Symbol and Class */
-  symbolObj = MemoryManager::Instance()->newSymbol("Symbol");
-  symbolClass = MemoryManager::Instance()->newClass("Symbol");
-  integerClass = MemoryManager::Instance()->newClass("Integer");
+  symbolObj = createSymbol("Symbol");
+  symbolClass = createAndRegisterNewClass("Symbol");
+  integerClass = createAndRegisterNewClass("Integer");
   symbolObj->_class = symbolClass;
-  classClass = MemoryManager::Instance()->newClass("Class");
+  classClass = createAndRegisterNewClass("Class");
   symbolClass->_class = classClass;
   integerClass->_class = classClass;
-  metaClassClass = MemoryManager::Instance()->newClass("MetaClass");
+  metaClassClass = createAndRegisterNewClass("MetaClass");
   classClass->_class = metaClassClass;
 
   /* now fix up classes for symbol table */
   /* and make a couple common classes, just to hold their places */
-  MemoryManager::Instance()->newClass("Link");
-  MemoryManager::Instance()->newClass("ByteArray");
-  hashTable->_class = MemoryManager::Instance()->newClass("Array");
-  objectRef(symbols)._class = MemoryManager::Instance()->newClass("Dictionary");
-  objectRef(nilobj)._class = MemoryManager::Instance()->newClass("UndefinedObject");
-  MemoryManager::Instance()->newClass("String");
-  nameTableInsert(symbols, strHash("symbols"), MemoryManager::Instance()->newSymbol("symbols"), symbols);
+  createAndRegisterNewClass("Link");
+  createAndRegisterNewClass("ByteArray");
+  hashTable->_class = createAndRegisterNewClass("Array");
+  objectRef(symbols)._class = createAndRegisterNewClass("Dictionary");
+  objectRef(nilobj)._class = createAndRegisterNewClass("UndefinedObject");
+  createAndRegisterNewClass("String");
+  nameTableInsert(symbols, strHash("symbols"), createSymbol("symbols"), symbols);
 
-  classClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
-  metaClassClass->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+  classClass->basicAtPut(methodsInClass, newDictionary(39));
+  metaClassClass->basicAtPut(methodsInClass, newDictionary(39));
 
   /* finally at least make true and false to be distinct */
-  ObjectHandle trueobj = MemoryManager::Instance()->newSymbol("true");
+  ObjectHandle trueobj = createSymbol("true");
   nameTableInsert(symbols, strHash("true"), trueobj, trueobj);
-  ObjectHandle falseobj = MemoryManager::Instance()->newSymbol("false");
+  ObjectHandle falseobj = createSymbol("false");
   nameTableInsert(symbols, strHash("false"), falseobj, falseobj);
 }

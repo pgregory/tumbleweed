@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "names.h"
 
 void fileIn(FILE* fd, bool printit);
@@ -53,7 +53,7 @@ object ioPrimitive(int number, object* arguments)
         if (fp[i] == NULL)
           returnedObject = nilobj;
         else
-          returnedObject = MemoryManager::Instance()->newInteger(i);
+          returnedObject = newInteger(i);
       }
       break;
 
@@ -88,7 +88,7 @@ object ioPrimitive(int number, object* arguments)
           break;
         /* else we loop again */
       }
-      returnedObject = MemoryManager::Instance()->newStString(buffer);
+      returnedObject = newStString(buffer);
       break;
 
     case 7:     /* write an object image */

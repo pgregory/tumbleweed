@@ -1,4 +1,4 @@
-#include "memory.h"
+#include "objmemory.h"
 #include "names.h"
 #include "interp.h"
 #include "lex.h"

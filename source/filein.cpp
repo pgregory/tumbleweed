@@ -15,7 +15,7 @@
 #include "lex.h"
 #include "interp.h"
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "parser.h"
 #include "names.h"
 
@@ -42,16 +42,17 @@ static Lexer ll;
 */
 static ObjectHandle findClass(const char* name)
 {   
-    ObjectHandle newobj;
+    ObjectHandle newObj;
 
-    newobj = globalSymbol(name);
-    if (newobj == nilobj)
-        newobj = MemoryManager::Instance()->newClass(name);
-    if (newobj->basicAt(sizeInClass) == nilobj) 
-    {
-        newobj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(0));
+    newObj = globalSymbol(name);
+    if (newObj == nilobj) {
+        newObj = createAndRegisterNewClass(name);
     }
-    return newobj;
+    if (newObj->basicAt(sizeInClass) == nilobj) 
+    {
+        newObj->basicAtPut(sizeInClass, newInteger(0));
+    }
+    return newObj;
 }
 
 static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
@@ -67,11 +68,11 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
         newObj->_class = metaObj;
 
         /* now make name */
-        nameObj = MemoryManager::Instance()->newSymbol(name);
+        nameObj = createSymbol(name);
         newObj->basicAtPut(nameInClass, nameObj);
-        methTable = MemoryManager::Instance()->newDictionary(39);
+        methTable = newDictionary(39);
         newObj->basicAtPut(methodsInClass, methTable);
-        newObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
+        newObj->basicAtPut(sizeInClass, newInteger(size));
 
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
@@ -142,19 +143,19 @@ static void readRawClassDeclaration()
         instanceTop = 0;
         while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            instanceVariables[instanceTop++] = createSymbol(ll.strToken().c_str());
             size++;
             ll.nextToken();
         }
-        vars = MemoryManager::Instance()->newArray(instanceTop);
+        vars = newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
         {
             vars->basicAtPut(i+1, instanceVariables[i]);
         }
         classObj->basicAtPut(variablesInClass, vars);
     }
-    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-    classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    classObj->basicAtPut(sizeInClass, newInteger(size));
+    classObj->basicAtPut(methodsInClass, newDictionary(39));
 }
 
 /*
@@ -199,19 +200,19 @@ static void readClassDeclaration()
         instanceTop = 0;
         while (ll.currentToken() == nameconst) 
         {
-            instanceVariables[instanceTop++] = MemoryManager::Instance()->newSymbol(ll.strToken().c_str());
+            instanceVariables[instanceTop++] = createSymbol(ll.strToken().c_str());
             size++;
             ll.nextToken();
         }
-        vars = MemoryManager::Instance()->newArray(instanceTop);
+        vars = newArray(instanceTop);
         for (i = 0; i < instanceTop; i++) 
         {
             vars->basicAtPut(i+1, instanceVariables[i]);
         }
         classObj->basicAtPut(variablesInClass, vars);
     }
-    classObj->basicAtPut(sizeInClass, MemoryManager::Instance()->newInteger(size));
-    classObj->basicAtPut(methodsInClass, MemoryManager::Instance()->newDictionary(39));
+    classObj->basicAtPut(sizeInClass, newInteger(size));
+    classObj->basicAtPut(methodsInClass, newDictionary(39));
 }
 
 /*
@@ -238,13 +239,13 @@ static void readMethods(FILE* fd, bool printit)
     methTable = classObj->basicAt(methodsInClass);
     if (methTable == nilobj) 
     {  /* must make */
-        methTable = MemoryManager::Instance()->newDictionary(MethodTableSize);
+        methTable = newDictionary(MethodTableSize);
         classObj->basicAtPut(methodsInClass, methTable);
     }
 
     if(ll.nextToken() == strconst) 
     {
-        protocol = MemoryManager::Instance()->newStString(ll.strToken().c_str());
+        protocol = newStString(ll.strToken().c_str());
     }
 
     /* now go read the methods */
@@ -264,7 +265,7 @@ static void readMethods(FILE* fd, bool printit)
         }
 
         /* now we have a method */
-        theMethod = MemoryManager::Instance()->newMethod();
+        theMethod = newMethod();
         pp.setLexer(Lexer(textBuffer));
         if (pp.parseMessageHandler(theMethod, savetext)) {
             selector = theMethod->basicAt(messageInMethod);

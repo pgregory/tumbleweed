@@ -8,7 +8,7 @@
 # undef NOARGS
 # include <stdio.h>
 # include "env.h"
-# include "memory.h"
+# include "objmemory.h"
 # include "names.h"
 
 extern object booleanSyms[booleanTrue], booleanSyms[booleanFalse];

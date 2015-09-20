@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 # include "env.h"
-# include "memory.h"
+# include "objmemory.h"
 # include "lex.h"
 
 

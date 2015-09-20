@@ -107,6 +107,9 @@ extern object nameTableLookup ( object, const char* );
 # define globalSymbol(s) nameTableLookup(symbols, s)
 object hashEachElement(object dict, register int hash, int(*fun)(object));
 
+extern object createSymbol(const char* name);
+extern object createAndRegisterNewClass(const char* name);
+
 inline object classObject(ClassSymbols_t cname) {
     object cached = classSyms[cname];
     if(cached != nilobj) {
@@ -115,5 +118,21 @@ inline object classObject(ClassSymbols_t cname) {
         return globalSymbol(classStrs[cname].name);
     }
 }
+
+object newArray(int size);
+object newBlock();
+object newByteArray(int size);
+object newChar(int value);
+object newClass(const char* name);
+object newContext(int link, object method, object args, object temp);
+object newDictionary(int size);
+object newFloat(double d);
+object newInteger(long i);
+object newCPointer(void* l);
+object newLink(object key, object value);
+object newMethod();
+object newStString(const char* value);
+object newSymbol(const char* str);
+object copyFrom(object obj, int start, int size);
 
 #endif

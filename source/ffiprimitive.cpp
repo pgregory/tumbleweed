@@ -24,7 +24,7 @@ extern "C" {
 #include <limits.h>
 
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "names.h"
 #include "interp.h"
 
@@ -214,7 +214,7 @@ void initFFISymbols()
   ffiSyms = static_cast<object*>(calloc(ffiNumStrs, sizeof(object)));
   int i;
   for(i = 0; i < ffiNumStrs; ++i)
-    ffiSyms[i] = MemoryManager::Instance()->newSymbol(ffiStrs[i]);
+    ffiSyms[i] = createSymbol(ffiStrs[i]);
 }
 
 void cleanupFFISymbols()
@@ -352,7 +352,7 @@ void valueOut(object value, FFI_DataType* data)
         // Check the argument, see if it's a type of ExternalData  
         // Initially, check just for responding to 'fields'
         ObjectHandle args[1];
-        args[0] = MemoryManager::Instance()->newSymbol("fields");
+        args[0] = createSymbol("fields");
         ObjectHandle result = sendMessageToObject(value, "respondsTo:", args, 1);
         if(result == booleanSyms[booleanTrue])
         {
@@ -386,7 +386,7 @@ void valueOut(object value, FFI_DataType* data)
             ObjectHandle name = type->basicAt(1);
             ObjectHandle basetype = type->basicAt(2);
             ObjectHandle args[1];
-            args[0] = MemoryManager::Instance()->newInteger(i+1);
+            args[0] = newInteger(i+1);
             ObjectHandle memberval = sendMessageToObject(value, "member:", args, 1); 
             int argmap = mapType(basetype);
             members[i].typemap = argmap;
@@ -500,34 +500,34 @@ object valueIn(int retMap, FFI_DataType* data)
     case FFI_ULONG_OUT:
     case FFI_CHAR_OUT:
     case FFI_WCHAR_OUT:
-      return MemoryManager::Instance()->newInteger(data->outInteger.integer);
+      return newInteger(data->outInteger.integer);
       break;
 
     case FFI_CHAR:
-      return MemoryManager::Instance()->newChar(data->integer);
+      return newChar(data->integer);
       break;
 
     case FFI_STRING:
-      return MemoryManager::Instance()->newStString(data->charPtr);
+      return newStString(data->charPtr);
       break;
 
     case FFI_INT:
     case FFI_UINT:
     case FFI_LONG:
     case FFI_ULONG:
-      return MemoryManager::Instance()->newInteger(data->integer);
+      return newInteger(data->integer);
       break;
 
     case FFI_FLOAT:
-      return MemoryManager::Instance()->newFloat(data->_float);
+      return newFloat(data->_float);
       break;
 
     case FFI_DOUBLE:
-      return MemoryManager::Instance()->newFloat(data->_double);
+      return newFloat(data->_double);
       break;
 
     case FFI_COBJECT:
-      return MemoryManager::Instance()->newCPointer(data->cPointer);
+      return newCPointer(data->cPointer);
       break;
 
     case FFI_VOID:
@@ -539,13 +539,13 @@ object valueIn(int retMap, FFI_DataType* data)
         ObjectHandle edclass = data->externalData._class;
         int csize = edclass->basicAt(sizeInClass);
         ObjectHandle ed = MemoryManager::Instance()->allocObject(csize);
-        ed->basicAtPut(1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
+        ed->basicAtPut(1, newArray(data->externalData.numMembers));
         ed->_class = edclass;
         // Now fill in the values using recursive marshalling.
         ObjectHandle args[2];
         for(int i = 0; i < data->externalData.numMembers; ++i)
         {
-          args[0] = MemoryManager::Instance()->newInteger(i+1);
+          args[0] = newInteger(i+1);
           args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
           sendMessageToObject(ed, "setMember:to:", args, 2);
         }
@@ -558,14 +558,14 @@ object valueIn(int retMap, FFI_DataType* data)
         ObjectHandle edclass = data->externalData._class;
         int csize = edclass->basicAt(sizeInClass);
         ObjectHandle ed = MemoryManager::Instance()->allocObject(csize);
-        ed->basicAtPut(1, MemoryManager::Instance()->newArray(data->externalData.numMembers));
+        ed->basicAtPut(1, newArray(data->externalData.numMembers));
         ed->_class = edclass;
         // Now fill in the values using recursive marshalling.
         ObjectHandle args[2];
         char* structStorage = static_cast<char*>(data->externalData.pointer);
         for(int i = 0; i < data->externalData.numMembers; ++i)
         {
-          args[0] = MemoryManager::Instance()->newInteger(i+1);
+          args[0] = newInteger(i+1);
           structStorage += readFromStorage(structStorage, &(data->externalData.members[i]));
           args[1] = valueIn(data->externalData.members[i].typemap, &(data->externalData.members[i]));
           sendMessageToObject(ed, "setMember:to:", args, 2);
@@ -612,12 +612,12 @@ void callBack(ffi_cif* cif, void* ret, void* args[], void* ud)
 
   object processClass = globalSymbol("Process");
   ObjectHandle process = MemoryManager::Instance()->allocObject(processSize);
-  ObjectHandle stack = MemoryManager::Instance()->newArray(50);
+  ObjectHandle stack = newArray(50);
   process->basicAtPut(stackInProcess, stack);
-  process->basicAtPut(stackTopInProcess, MemoryManager::Instance()->newInteger(10));
-  process->basicAtPut(linkPtrInProcess, MemoryManager::Instance()->newInteger(2));
+  process->basicAtPut(stackTopInProcess, newInteger(10));
+  process->basicAtPut(linkPtrInProcess, newInteger(2));
   stack->basicAtPut(contextInStack, context);
-  stack->basicAtPut(returnpointInStack, MemoryManager::Instance()->newInteger(1));
+  stack->basicAtPut(returnpointInStack, newInteger(1));
   stack->basicAtPut(bytepointerInStack, bytePointer);
 
   /* change context and byte pointer */
@@ -661,7 +661,7 @@ object ffiPrimitive(int number, object* arguments)
         libName << p << "." << SO_EXT;
         FFI_LibraryHandle handle = dlopen(libName.str().c_str(), RTLD_LAZY);
         if(NULL != handle)
-          returnedObject = MemoryManager::Instance()->newCPointer(handle);
+          returnedObject = newCPointer(handle);
         else 
         {
           const char* msg = dlerror();
@@ -675,7 +675,7 @@ object ffiPrimitive(int number, object* arguments)
         libName << p << "." << SO_EXT;
         FFI_LibraryHandle handle = LoadLibrary(libName.str().c_str());
         if(NULL != handle)
-          returnedObject = MemoryManager::Instance()->newCPointer(handle);
+          returnedObject = newCPointer(handle);
         else 
         {
           // \todo: GetLastError() etc.
@@ -702,7 +702,7 @@ object ffiPrimitive(int number, object* arguments)
           func = dlsym(RTLD_SELF, p);
         }
         if(NULL != func)
-          returnedObject = MemoryManager::Instance()->newCPointer(func);
+          returnedObject = newCPointer(func);
         else
         {
           std::stringstream err;
@@ -720,7 +720,7 @@ object ffiPrimitive(int number, object* arguments)
         {
           FFI_FunctionHandle func = GetProcAddress((HINSTANCE)lib, p);
           if(NULL != func)
-            returnedObject = MemoryManager::Instance()->newCPointer(func);
+            returnedObject = newCPointer(func);
           else
           {
             std::stringstream err;
@@ -780,7 +780,7 @@ object ffiPrimitive(int number, object* arguments)
           ffi_cif cif;
           if(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, cargTypes, ret, args) == FFI_OK)
           {
-            returnedObject = MemoryManager::Instance()->newArray(cargTypes + 1);
+            returnedObject = newArray(cargTypes + 1);
 
             ffi_call(&cif, reinterpret_cast<void(*)()>(func), retData, values);
             FFI_DataType ret;
@@ -859,7 +859,7 @@ object ffiPrimitive(int number, object* arguments)
             /* Initialize the closure, setting stream to stdout */
             if(ffi_prep_closure_loc(closure, cif, callBack, data, callback) == FFI_OK)
             {
-              returnedObject = MemoryManager::Instance()->newCPointer(callback);
+              returnedObject = newCPointer(callback);
             }
           }
         }
@@ -878,7 +878,7 @@ object ffiPrimitive(int number, object* arguments)
         if(NULL != lib)
         {
           int result = dlclose(lib);
-          returnedObject = MemoryManager::Instance()->newInteger(result);
+          returnedObject = newInteger(result);
         }
       }
 #else
@@ -889,7 +889,7 @@ object ffiPrimitive(int number, object* arguments)
         if(NULL != lib)
         {
           int result = FreeLibrary((HINSTANCE)lib);
-          returnedObject = MemoryManager::Instance()->newInteger(result);
+          returnedObject = newInteger(result);
         }
       }
 #endif

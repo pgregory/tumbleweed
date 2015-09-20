@@ -12,7 +12,7 @@
 #include <stdlib.h>
 
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "names.h"
 #include "parser.h"
 
@@ -54,14 +54,14 @@ object sysPrimitive(int number, object* arguments)
   /* someday there will be more here */
   switch(number - 150) {
     case 0:     /* do a system() call */
-      returnedObject = MemoryManager::Instance()->newInteger(system(
+      returnedObject = newInteger(system(
             objectRef(arguments[0]).charPtr()));
       break;
 
     case 1: /* editline, with history support */
       {
         char* command = linenoise_nb(objectRef(arguments[0]).charPtr());
-        returnedObject = MemoryManager::Instance()->newStString(command);
+        returnedObject = newStString(command);
         if(command) 
         {
           linenoiseHistoryAdd(command);
@@ -72,7 +72,7 @@ object sysPrimitive(int number, object* arguments)
 
     case 2: /* get last error */ 
       {
-        returnedObject = MemoryManager::Instance()->newStString(gLastError);
+        returnedObject = newStString(gLastError);
       }
       break;
 
@@ -84,13 +84,13 @@ object sysPrimitive(int number, object* arguments)
 
     case 4:
       {
-        returnedObject = MemoryManager::Instance()->newInteger(MemoryManager::Instance()->objectCount());
+        returnedObject = newInteger(MemoryManager::Instance()->objectCount());
       }
       break;
 
     case 5:
       {
-        returnedObject = MemoryManager::Instance()->newStString(MemoryManager::Instance()->statsString().c_str());
+        returnedObject = newStString(MemoryManager::Instance()->statsString().c_str());
       }
       break;
 

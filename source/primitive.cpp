@@ -39,7 +39,7 @@
 #endif
 
 #include "env.h"
-#include "memory.h"
+#include "objmemory.h"
 #include "names.h"
 #include "interp.h"
 #include "parser.h"
@@ -76,7 +76,7 @@ static object zeroaryPrims(int number)
       /* of integers as shorts */
       i = rand() >> 8;  /* strip off lower bits */
       if (i < 0) i = - i;
-      returnedObject = MemoryManager::Instance()->newInteger(i>>1);
+      returnedObject = newInteger(i>>1);
       break;
 
     case 4:     /* return time in seconds */
@@ -92,14 +92,14 @@ static object zeroaryPrims(int number)
         i = static_cast<unsigned long>(unix_time);
       }
 #endif
-      returnedObject = MemoryManager::Instance()->newInteger(i);
+      returnedObject = newInteger(i);
       break;
 
     case 5:     /* flip watch - done in interp */
       break;
 
     case 6:
-      returnedObject = MemoryManager::Instance()->newCPointer(NULL);
+      returnedObject = newCPointer(NULL);
       break;
     
     case 7:
@@ -116,12 +116,12 @@ static object zeroaryPrims(int number)
 
         mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
 
-        returnedObject = MemoryManager::Instance()->newInteger(seconds%86400);
+        returnedObject = newInteger(seconds%86400);
 #else
         SYSTEMTIME st_now;
         GetSystemTime(&st_now);
         long ms_now = ((st_now.wHour * 60 * 60) + (st_now.wMinute * 60) + (st_now.wSecond)) * 1000 + st_now.wMilliseconds;
-        returnedObject = MemoryManager::Instance()->newInteger(ms_now);
+        returnedObject = newInteger(ms_now);
 #endif
       }
       break;
@@ -152,7 +152,7 @@ static int unaryPrims(int number, object firstarg)
       i = objectRef(firstarg).size;
       /* byte objects have negative size */
       if (i < 0) i = (-i);
-      returnedObject = MemoryManager::Instance()->newInteger(i);
+      returnedObject = newInteger(i);
       break;
 
     case 3:     /* hash value of object */
@@ -160,9 +160,9 @@ static int unaryPrims(int number, object firstarg)
       // This specialises the hash for integers, to ensure values are used, not objects,
       // but there are other cases where the value should be considered, like float.
       if(getClass(firstarg) == globalSymbol("Integer"))
-        returnedObject = MemoryManager::Instance()->newInteger(getInteger(firstarg));
+        returnedObject = newInteger(getInteger(firstarg));
       else
-        returnedObject = MemoryManager::Instance()->newInteger(firstarg);
+        returnedObject = newInteger(firstarg);
       break;
 
     case 4:     /* debugging print */
@@ -265,7 +265,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
         buffer = new char[strlen(s1) + strlen(s2) + 1];
         strcpy(buffer, objectRef(firstarg).charPtr());
         strcat(buffer, objectRef(secondarg).charPtr());
-        returnedObject = MemoryManager::Instance()->newStString(buffer);
+        returnedObject = newStString(buffer);
         delete buffer;
       }
       break;
@@ -277,7 +277,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
     case 6:     /* byteAt: */
       i = objectRef(firstarg).byteAt(getInteger(secondarg));
       if (i < 0) i += 256;
-      returnedObject = MemoryManager::Instance()->newInteger(i);
+      returnedObject = newInteger(i);
       break;
 
     case 7:     /* symbol set */
@@ -294,7 +294,7 @@ static int binaryPrims(int number, object firstarg, object secondarg)
       break;
 
     case 9:     /* duplicate a block, adding a new context to it */
-      returnedObject = MemoryManager::Instance()->newBlock();
+      returnedObject = newBlock();
       objectRef(returnedObject).basicAtPut(contextInBlock, secondarg);
       objectRef(returnedObject).basicAtPut(argumentCountInBlock, objectRef(firstarg).basicAt(2));
       objectRef(returnedObject).basicAtPut(argumentLocationInBlock, objectRef(firstarg).basicAt(3));
@@ -337,7 +337,7 @@ static int trinaryPrims(int number, object firstarg, object secondarg, object th
         for ( ; (i <= j) && bp[i-1]; i++)
           *tp++ = bp[i-1];
       *tp = '\0';
-      returnedObject = MemoryManager::Instance()->newStString(buffer);
+      returnedObject = newStString(buffer);
       delete buffer;
       break;
 
@@ -369,7 +369,7 @@ static int intUnary(int number, object firstarg)
   switch(number) 
   {
     case 1:     /* float equiv of integer */
-      returnedObject = MemoryManager::Instance()->newFloat((double) firstarg);
+      returnedObject = newFloat((double) firstarg);
       break;
 
     case 2:     /* print - for debugging purposes */
@@ -472,7 +472,7 @@ static object intBinary(register int number, register int firstarg, int secondar
     else
       returnedObject = booleanSyms[booleanFalse];
   else
-    returnedObject = MemoryManager::Instance()->newInteger(firstarg);
+    returnedObject = newInteger(firstarg);
   return(returnedObject);
 
   /* on overflow, return nil and let smalltalk code */
@@ -489,15 +489,15 @@ static int strUnary(int number, char* firstargument)
   switch(number) 
   {
     case 1:     /* length of string */
-      returnedObject = MemoryManager::Instance()->newInteger(strlen(firstargument));
+      returnedObject = newInteger(strlen(firstargument));
       break;
 
     case 2:     /* hash value of symbol */
-      returnedObject = MemoryManager::Instance()->newInteger(strHash(firstargument));
+      returnedObject = newInteger(strHash(firstargument));
       break;
 
     case 3:     /* string as symbol */
-      returnedObject = MemoryManager::Instance()->newSymbol(firstargument);
+      returnedObject = createSymbol(firstargument);
       break;
 
     case 7:     /* value of symbol */
@@ -506,7 +506,7 @@ static int strUnary(int number, char* firstargument)
 
     case 8:
 # ifndef NOSYSTEM
-      returnedObject = MemoryManager::Instance()->newInteger(system(firstargument));
+      returnedObject = newInteger(system(firstargument));
 # endif
       break;
 
@@ -533,15 +533,15 @@ static int floatUnary(int number, double firstarg)
   {
     case 1:     /* floating value asString */
       sprintf(buffer,"%g", firstarg);
-      returnedObject = MemoryManager::Instance()->newStString(buffer);
+      returnedObject = newStString(buffer);
       break;
 
     case 2:     /* log */
-      returnedObject = MemoryManager::Instance()->newFloat(log(firstarg));
+      returnedObject = newFloat(log(firstarg));
       break;
 
     case 3:     /* exp */
-      returnedObject = MemoryManager::Instance()->newFloat(exp(firstarg));
+      returnedObject = newFloat(exp(firstarg));
       break;
 
     case 6:     /* integer part */
@@ -552,9 +552,9 @@ static int floatUnary(int number, double firstarg)
       if ((i >= 0)&&(i <= ndif)) {temp=ldexp(temp, i); i=0;}
       else { i -= ndif; temp = ldexp(temp, ndif); }
       j = (int) temp;
-      returnedObject = MemoryManager::Instance()->newArray(2);
-      returnedObject->basicAtPut(1, MemoryManager::Instance()->newInteger(j));
-      returnedObject->basicAtPut(2, MemoryManager::Instance()->newInteger(i));
+      returnedObject = newArray(2);
+      returnedObject->basicAtPut(1, newInteger(j));
+      returnedObject->basicAtPut(2, newInteger(i));
 # ifdef trynew
       /* if number is too big it can't be integer anyway */
       if (firstarg > 2e9)
@@ -563,9 +563,9 @@ static int floatUnary(int number, double firstarg)
         modf(firstarg, &temp);
         ltemp = (long) temp;
         if (longCanBeInt(ltemp))
-          returnedObject = MemoryManager::Instance()->newInteger((int) temp);
+          returnedObject = newInteger((int) temp);
         else
-          returnedObject = MemoryManager::Instance()->newFloat(temp);
+          returnedObject = newFloat(temp);
       }
 # endif
       break;
@@ -607,7 +607,7 @@ static object floatBinary(int number, double first, double second)
     else
       returnedObject = booleanSyms[booleanFalse];
   else
-    returnedObject = MemoryManager::Instance()->newFloat(first);
+    returnedObject = newFloat(first);
   return(returnedObject);
 }
 
@@ -622,7 +622,7 @@ static int cPointerUnary(int number, void* firstarg)
       {
         std::stringstream ss;
         ss << firstarg;
-        returnedObject = MemoryManager::Instance()->newStString(ss.str().c_str());
+        returnedObject = newStString(ss.str().c_str());
       }
       break;
     default:
@@ -640,7 +640,7 @@ object exceptionPrimitive(int number, object* arguments)
   switch(number)
   {
     case 1:     // 201 on:do:
-      returnedObject = MemoryManager::Instance()->newStString("on:do:");
+      returnedObject = newStString("on:do:");
       break;
 
     case 2:     // signal

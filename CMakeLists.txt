@@ -20,7 +20,7 @@ set(shared_srcs
   source/filein.cpp
   source/interp.cpp
   source/lex.cpp
-  source/memory.cpp
+  source/objmemory.cpp
   source/names.cpp
   source/parser.cpp
   source/parser.cpp
@@ -33,7 +33,7 @@ set(headers
   source/env.h
   source/interp.h
   source/lex.h
-  source/memory.h
+  source/objmemory.h
   source/names.h
 )
   
@@ -104,15 +104,64 @@ install(FILES ${CMAKE_SOURCE_DIR}/systemImage DESTINATION .)
 
 # Testing
 if(TW_BUILD_TESTS)
+  # Enable ExternalProject CMake module
+  include(ExternalProject)
+
+  # Download and install GoogleTest
+  ExternalProject_Add(
+      gtest
+      URL https://googletest.googlecode.com/files/gtest-1.7.0.zip
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
+      # Disable install step
+      INSTALL_COMMAND ""
+  )
+
+  # Create a libgtest target to be used as a dependency by test programs
+  add_library(libgtest IMPORTED STATIC GLOBAL)
+  add_dependencies(libgtest gtest)
+
+  # Set gtest properties
+  ExternalProject_Get_Property(gtest source_dir binary_dir)
+  set_target_properties(libgtest PROPERTIES
+      "IMPORTED_LOCATION" "${binary_dir}/libgtest.a"
+      "IMPORTED_LINK_INTERFACE_LIBRARIES" "${CMAKE_THREAD_LIBS_INIT}"
+  #    "INTERFACE_INCLUDE_DIRECTORIES" "${source_dir}/include"
+  )
+  # I couldn't make it work with INTERFACE_INCLUDE_DIRECTORIES
+  include_directories("${source_dir}/include")
+
+  # Download and install GoogleMock
+  ExternalProject_Add(
+      gmock
+      URL https://googlemock.googlecode.com/files/gmock-1.7.0.zip
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gmock
+      # Disable install step
+      INSTALL_COMMAND ""
+  )
+
+  # Create a libgmock target to be used as a dependency by test programs
+  add_library(libgmock IMPORTED STATIC GLOBAL)
+  add_dependencies(libgmock gmock)
+
+  # Set gmock properties
+  ExternalProject_Get_Property(gmock source_dir binary_dir)
+  set_target_properties(libgmock PROPERTIES
+      "IMPORTED_LOCATION" "${binary_dir}/libgmock.a"
+      "IMPORTED_LINK_INTERFACE_LIBRARIES" "${CMAKE_THREAD_LIBS_INIT}"
+  #    "INTERFACE_INCLUDE_DIRECTORIES" "${source_dir}/include"
+  )
+  # I couldn't make it work with INTERFACE_INCLUDE_DIRECTORIES
+  include_directories("${source_dir}/include")
+
   enable_testing()
-  find_package(GTest REQUIRED)
+  #find_package(GTest REQUIRED)
   include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/source)
   add_definitions(-DTW_UNIT_TESTS)
-  add_executable(memory_manager_test
-    test/memory_test.cpp)
-  target_link_libraries(memory_manager_test libtw ${GTEST_BOTH_LIBRARIES} ${LIBS})
+  add_executable(memory_manager_test test/memory_test.cpp test/main.cpp source/objmemory.cpp)
+  target_link_libraries(memory_manager_test libgtest)
   set(memory_manager_test_args "")
-  GTEST_ADD_TESTS(memory_manager_test "${memory_manager_test_args}" test/memory_test.cpp)
+  add_test(memory_manager_test memory_manager_test)
+  #GTEST_ADD_TESTS(memory_manager_test "${memory_manager_test_args}" test/memory_test.cpp)
 endif(TW_BUILD_TESTS)
 
 # Modules.

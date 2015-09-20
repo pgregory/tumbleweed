@@ -6,7 +6,7 @@
     symbolic definitions for the bytecodes
 */
 
-#include "memory.h"
+#include "objmemory.h"
 
 # define Extended 0
 # define PushInstance 1

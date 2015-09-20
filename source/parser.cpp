@@ -99,7 +99,7 @@ void Parser::genInteger(int val)    /* generate an integer push */
         genInstruction(PushConstant, val);
     else
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newInteger(val)));
+                genLiteral(newInteger(val)));
 }
 
 const char *glbsyms[] = 
@@ -179,8 +179,8 @@ bool Parser::nameTerm(const char *name)
     /* must look it up at run time */
     if (! done) 
     {
-        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name)));
-        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
+        genInstruction(PushLiteral, genLiteral(createSymbol(name)));
+        genMessage(false, 0, createSymbol("value"));
     }
 
     return(isSuper);
@@ -202,17 +202,17 @@ int Parser::parseArray()
                 break;
 
             case intconst:
-                genLiteral(MemoryManager::Instance()->newInteger(m_lexer.intToken()));
+                genLiteral(newInteger(m_lexer.intToken()));
                 m_lexer.nextToken();
                 break;
 
             case floatconst:
-                genLiteral(MemoryManager::Instance()->newFloat(m_lexer.floatToken()));
+                genLiteral(newFloat(m_lexer.floatToken()));
                 m_lexer.nextToken();
                 break;
 
             case nameconst: case namecolon: case symconst:
-                genLiteral(MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str()));
+                genLiteral(createSymbol(m_lexer.strToken().c_str()));
                 m_lexer.nextToken();
                 break;
 
@@ -226,27 +226,27 @@ int Parser::parseArray()
                 {
                     m_lexer.nextToken();
                     if (m_lexer.currentToken() == intconst)
-                        genLiteral(MemoryManager::Instance()->newInteger(-m_lexer.intToken()));
+                        genLiteral(newInteger(-m_lexer.intToken()));
                     else if (m_lexer.currentToken() == floatconst) 
                     {
-                        genLiteral(MemoryManager::Instance()->newFloat(-m_lexer.floatToken()));
+                        genLiteral(newFloat(-m_lexer.floatToken()));
                     }
                     else
                         compilError(selector,"negation not followed", "by number");
                     m_lexer.nextToken();
                     break;
                 }
-                genLiteral(MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str()));
+                genLiteral(createSymbol(m_lexer.strToken().c_str()));
                 m_lexer.nextToken();
                 break;
 
             case charconst:
-                genLiteral(MemoryManager::Instance()->newChar( m_lexer.intToken()));
+                genLiteral(newChar( m_lexer.intToken()));
                 m_lexer.nextToken();
                 break;
 
             case strconst:
-                genLiteral(MemoryManager::Instance()->newStString(m_lexer.strToken().c_str()));
+                genLiteral(newStString(m_lexer.strToken().c_str()));
                 m_lexer.nextToken();
                 break;
 
@@ -268,7 +268,7 @@ int Parser::parseArray()
     }
 
     size = literalArray.size() - base;
-    newLit = MemoryManager::Instance()->newArray(size);
+    newLit = newArray(size);
     for (i = size; i >= 1; i--) 
     {
         obj = literalArray.back();
@@ -295,7 +295,7 @@ bool Parser::term()
     }
     else if (token == floatconst) 
     {
-        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newFloat(m_lexer.floatToken())));
+        genInstruction(PushLiteral, genLiteral(newFloat(m_lexer.floatToken())));
         m_lexer.nextToken();
     }
     else if ((token == binary) && m_lexer.strToken().compare("-") == 0) 
@@ -306,7 +306,7 @@ bool Parser::term()
         else if (token == floatconst) 
         {
             genInstruction(PushLiteral,
-                    genLiteral(MemoryManager::Instance()->newFloat(-m_lexer.floatToken())));
+                    genLiteral(newFloat(-m_lexer.floatToken())));
         }
         else
             compilError(selector,"negation not followed",
@@ -316,19 +316,19 @@ bool Parser::term()
     else if (token == charconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newChar(m_lexer.intToken())));
+                genLiteral(newChar(m_lexer.intToken())));
         m_lexer.nextToken();
     }
     else if (token == symconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str())));
+                genLiteral(createSymbol(m_lexer.strToken().c_str())));
         m_lexer.nextToken();
     }
     else if (token == strconst) 
     {
         genInstruction(PushLiteral,
-                genLiteral(MemoryManager::Instance()->newStString(m_lexer.strToken().c_str())));
+                genLiteral(newStString(m_lexer.strToken().c_str())));
         m_lexer.nextToken();
     }
     else if (token == arraybegin) 
@@ -447,7 +447,7 @@ bool Parser::unaryContinuation(bool superReceiver)
 
         if (! sent) 
         {
-            genMessage(superReceiver, 0, MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str()));
+            genMessage(superReceiver, 0, createSymbol(m_lexer.strToken().c_str()));
         }
         /* once a message is sent to super, reciever is not super */
         superReceiver = false;
@@ -464,7 +464,7 @@ bool Parser::binaryContinuation(bool superReceiver)
     superReceiver = unaryContinuation(superReceiver);
     while (parseok && (m_lexer.currentToken() == binary)) 
     {
-        messagesym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
+        messagesym = createSymbol(m_lexer.strToken().c_str());
         m_lexer.nextToken();
         superTerm = term();
         unaryContinuation(superTerm);
@@ -499,7 +499,7 @@ int Parser::optimizeBlock(int instruction, bool dopop)
     else 
     {
         binaryContinuation(term());
-        genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
+        genMessage(false, 0, createSymbol("value"));
     }
     codeArray[location] = codeTop+1;
     blockstat = savebstat;
@@ -538,7 +538,7 @@ bool Parser::keyContinuation(bool superReceiver)
         {
             j = codeTop;
             genInstruction(DoSpecial, Duplicate);
-            genMessage(false, 0, MemoryManager::Instance()->newSymbol("value"));
+            genMessage(false, 0, createSymbol("value"));
             i = optimizeBlock(BranchIfFalse, false);
             genInstruction(DoSpecial, PopTop);
             genInstruction(DoSpecial, Branch);
@@ -565,7 +565,7 @@ bool Parser::keyContinuation(bool superReceiver)
             sent = false;
 
             /* check for predefined messages */
-            messagesym = MemoryManager::Instance()->newSymbol(pattern);
+            messagesym = createSymbol(pattern);
 
             if (! sent) 
             {
@@ -650,9 +650,9 @@ void Parser::assignment(char* name)
     if (! done) 
     {   /* not known, handle at run time */
         genInstruction(PushArgument, 0);
-        genInstruction(PushLiteral, genLiteral(MemoryManager::Instance()->newSymbol(name)));
+        genInstruction(PushLiteral, genLiteral(createSymbol(name)));
         expression();
-        genMessage(false, 2, MemoryManager::Instance()->newSymbol("assign:value:"));
+        genMessage(false, 2, createSymbol("assign:value:"));
     }
 }
 
@@ -667,7 +667,7 @@ void Parser::statement()
         {
             /* change return point before returning */
             genInstruction(PushConstant, contextConst);
-            genMessage(false, 0, MemoryManager::Instance()->newSymbol("blockReturn"));
+            genMessage(false, 0, createSymbol("blockReturn"));
             genInstruction(DoSpecial, PopTop);
         }
         genInstruction(DoSpecial, StackReturn);
@@ -742,7 +742,7 @@ void Parser::block()
                 compilError(selector,"too many temporaries in method","");
             else 
             {
-                tempsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
+                tempsym = createSymbol(m_lexer.strToken().c_str());
                 temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
             }
             m_lexer.nextToken();
@@ -752,10 +752,10 @@ void Parser::block()
                     "by |");
         m_lexer.nextToken();
     }
-    newBlk = MemoryManager::Instance()->newBlock();
-    newBlk->basicAtPut(argumentCountInBlock, MemoryManager::Instance()->newInteger(argumentCount));
+    newBlk = newBlock();
+    newBlk->basicAtPut(argumentCountInBlock, newInteger(argumentCount));
     newBlk->basicAtPut(argumentLocationInBlock, 
-            MemoryManager::Instance()->newInteger(saveTemporary + 1));
+            newInteger(saveTemporary + 1));
     genInstruction(PushLiteral, genLiteral(newBlk));
     genInstruction(PushConstant, contextConst);
     genInstruction(DoPrimitive, 2);
@@ -764,7 +764,7 @@ void Parser::block()
     fixLocation = codeTop;
     genCode(0);
     /*genInstruction(DoSpecial, PopTop);*/
-    newBlk->basicAtPut(bytecountPositionInBlock, MemoryManager::Instance()->newInteger(codeTop+1));
+    newBlk->basicAtPut(bytecountPositionInBlock, newInteger(codeTop+1));
     blockstat = InBlock;
     body();
     if ((m_lexer.currentToken() == closing) && m_lexer.strToken().compare("]") == 0)
@@ -793,7 +793,7 @@ void Parser::temporaries()
                 compilError(selector,"too many temporaries in method","");
             else 
             {
-                tempsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
+                tempsym = createSymbol(m_lexer.strToken().c_str());
                 temporaryName[temporaryTop] = objectRef(tempsym).charPtr();
             }
             m_lexer.nextToken();
@@ -818,7 +818,7 @@ void Parser::messagePattern()
         m_lexer.nextToken();
         if (m_lexer.currentToken() != nameconst) 
             compilError(selector,"binary message pattern not followed by name",selector);
-        argsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
+        argsym = createSymbol(m_lexer.strToken().c_str());
         argumentName[++argumentTop] = objectRef(argsym).charPtr();
         m_lexer.nextToken();
     }
@@ -834,7 +834,7 @@ void Parser::messagePattern()
                         "not followed by a name");
             if (++argumentTop > argumentLimit)
                 compilError(selector,"too many arguments in method","");
-            argsym = MemoryManager::Instance()->newSymbol(m_lexer.strToken().c_str());
+            argsym = createSymbol(m_lexer.strToken().c_str());
             argumentName[argumentTop] = objectRef(argsym).charPtr();
             m_lexer.nextToken();
         }
@@ -896,17 +896,17 @@ bool Parser::recordMethodBytecode(object method, bool savetext)
     }
     else 
     {
-        bytecodes = MemoryManager::Instance()->newByteArray(codeTop);
+        bytecodes = newByteArray(codeTop);
         bp = objectRef(bytecodes).bytePtr();
         for (i = 0; i < codeTop; i++) 
         {
             bp[i] = codeArray[i];
         }
-        objectRef(method).basicAtPut(messageInMethod, MemoryManager::Instance()->newSymbol(selector));
+        objectRef(method).basicAtPut(messageInMethod, createSymbol(selector));
         objectRef(method).basicAtPut(bytecodesInMethod, bytecodes);
         if (!literalArray.empty()) 
         {
-            theLiterals = MemoryManager::Instance()->newArray(literalArray.size());
+            theLiterals = newArray(literalArray.size());
             for (i = 1; i <= literalArray.size(); i++) 
             {
                 objectRef(theLiterals).basicAtPut(i, literalArray[i-1]);
@@ -917,12 +917,12 @@ bool Parser::recordMethodBytecode(object method, bool savetext)
         {
             objectRef(method).basicAtPut(literalsInMethod, nilobj);
         }
-        objectRef(method).basicAtPut(stackSizeInMethod, MemoryManager::Instance()->newInteger(6));
+        objectRef(method).basicAtPut(stackSizeInMethod, newInteger(6));
         objectRef(method).basicAtPut(temporarySizeInMethod,
-                MemoryManager::Instance()->newInteger(1 + maxTemporary));
+                newInteger(1 + maxTemporary));
         if (savetext) 
         {
-            objectRef(method).basicAtPut(textInMethod, MemoryManager::Instance()->newStString(m_lexer.source()));
+            objectRef(method).basicAtPut(textInMethod, newStString(m_lexer.source()));
         }
         return(true);
     }

@@ -1,6 +1,13 @@
 #include <gtest/gtest.h>
-#include "memory.h"
+#include "objmemory.h"
 
+/* report a fatal system error */
+void sysError(const char* s1, const char* s2)
+{
+  fprintf(stderr,"%s\n%s\n", s1, s2);
+  //_snprintf(gLastError, 1024, "%s\n%s\n", s1, s2);
+  abort();
+}
 
 class MemoryManagerTest : public ::testing::Test
 {
