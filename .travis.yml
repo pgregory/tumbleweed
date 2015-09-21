@@ -1,0 +1,14 @@
+language: c++
+
+compiler: 
+  - clang
+
+before_install:
+  - brew update
+  - brew install libffi
+
+script:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
