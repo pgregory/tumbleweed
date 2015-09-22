@@ -9,9 +9,9 @@ compiler:
 before_install:
   - brew update
   - brew install libffi
-  - export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opt/libffi/lib/pkgconfig
 
 script:
+  - export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/opt/libffi/lib/pkgconfig
   - mkdir build
   - cd build
   - cmake ..
