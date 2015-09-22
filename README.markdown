@@ -1,12 +1,10 @@
-Tumbleweed
-==========
+# Tumbleweed
 
 A lightweight, image based, encapsulated development
 environment based around Smalltalk, specifically,
 "A Little Smalltalk" version 3.0 by Timothy A. Budd.
 
-Why Version 3?
---------------
+## Why Version 3?
 
 The reason for basing on the 3.0 version of the LST
 system, and not the more recent 4.x version, is that 
@@ -18,8 +16,7 @@ start from was more important than the optmisations
 and other improvements that came about with the
 rewrite to version 4.
 
-Status
-------
+## Status
 
 Work is underway to update and improve the system as
 a whole, focusing in the following areas.
@@ -39,9 +36,12 @@ a whole, focusing in the following areas.
  * Various optimisations to the language interpreter to
    improve message throughput.
 
+### Travis Build
 
-Building and Getting Started
-----------------------------
+[![Build Status](https://travis-ci.org/pgregory/tumbleweed.svg)](https://travis-ci.org/pgregory/tumbleweed)
+
+
+## Building and Getting Started
 
 Tumbleweed currently has very little in the way of 
 dependencies. Build is via CMake, you should build out
