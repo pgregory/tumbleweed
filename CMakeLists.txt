@@ -72,31 +72,35 @@ function(prefix_sources prefix sources)
   set(${sources} ${_TMP} PARENT_SCOPE)
 endfunction(prefix_sources)
 
-prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} image_srcs)
-#prefix_sources(${CMAKE_CURRENT_SOURCE_DIR} server_image_srcs)
+add_subdirectory(thirdparty/glfw)
+include_directories(thirdparty/glfw/include)
 
 add_subdirectory(thirdparty/linenoise)
 include_directories(thirdparty/linenoise)
 
-add_library(libtw ${shared_srcs} ${headers})
-set_target_properties(libtw PROPERTIES OUTPUT_NAME tw)
+set(nanovg_srcs
+  thirdparty/nanovg/src/nanovg.c
+)
+
+include_directories(thirdparty/nanovg/src)
+add_library(nanovg STATIC ${nanovg_srcs})
+
+add_library(tumbleweed ${shared_srcs} ${headers})
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
-add_executable(initial ${shared_srcs} ${init_srcs} ${image_srcs})
+add_executable(initial ${init_srcs} ${image_srcs})
 source_group(Bootstrap FILES ${image_srcs})
-set_target_properties(initial PROPERTIES COMPILE_DEFINITIONS TW_IS_INITIAL=1)
 
-add_executable(tw ${shared_srcs} ${headers} ${tw_srcs} systemImage)
+add_executable(tw ${tw_srcs} systemImage)
 if(NOT MSVC)
   set_target_properties(tw PROPERTIES LINK_FLAGS "-Wl")
 endif(NOT MSVC)
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
-target_link_libraries(initial ${LIBS} linenoise)
-
-target_link_libraries(tw ${LIBS} linenoise)
+target_link_libraries(initial ${LIBS} linenoise glfw tumbleweed ${GLFW_LIBRARIES} nanovg)
+target_link_libraries(tw ${LIBS} linenoise glfw tumbleweed ${GLFW_LIBRARIES} nanovg)
 
 install(TARGETS tw RUNTIME DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/systemImage DESTINATION .)
