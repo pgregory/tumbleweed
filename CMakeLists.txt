@@ -174,5 +174,5 @@ endif(TW_BUILD_TESTS)
 #  add_subdirectory(events)
 #endif(NOT WIN32)
 
-add_subdirectory(fltk)
+#add_subdirectory(fltk)
 
