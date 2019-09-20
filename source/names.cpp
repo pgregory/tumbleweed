@@ -222,6 +222,8 @@ object createAndRegisterNewClass(const char* name)
     /* now put in global symbols table */
     object nameObj = newSymbol(name);
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
+    
+    return newObj;
 }
 
 
@@ -270,7 +272,7 @@ object newClass(const char* name)
     objectRef(newObj)._class = classObject(kClass);
 
     /* now make name */
-    //nameObj = newSymbol(name);
+    nameObj = newSymbol(name);
     objectRef(newObj).basicAtPut(nameInClass, nameObj); methTable = newDictionary(39);
     objectRef(newObj).basicAtPut(methodsInClass, methTable);
     objectRef(newObj).basicAtPut(sizeInClass, newInteger(classSize));

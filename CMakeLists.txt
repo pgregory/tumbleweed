@@ -11,11 +11,6 @@ if(TW_SMALLINTEGER_AS_OBJECT)
   add_definitions(-DTW_SMALLINTEGER_AS_OBJECT)
 endif(TW_SMALLINTEGER_AS_OBJECT)
 
-#find_package( Boost 1.36.0 )
-#if(Boost_FOUND)
-#   include_directories(${Boost_INCLUDE_DIRS})
-#endif()
-
 set(shared_srcs 
   source/filein.cpp
   source/interp.cpp
@@ -72,18 +67,8 @@ function(prefix_sources prefix sources)
   set(${sources} ${_TMP} PARENT_SCOPE)
 endfunction(prefix_sources)
 
-add_subdirectory(thirdparty/glfw)
-include_directories(thirdparty/glfw/include)
-
 add_subdirectory(thirdparty/linenoise)
 include_directories(thirdparty/linenoise)
-
-set(nanovg_srcs
-  thirdparty/nanovg/src/nanovg.c
-)
-
-include_directories(thirdparty/nanovg/src)
-add_library(nanovg STATIC ${nanovg_srcs})
 
 add_library(tumbleweed ${shared_srcs} ${headers})
 source_group(Headers FILES ${headers})
@@ -99,8 +84,8 @@ endif(NOT MSVC)
 source_group(Headers FILES ${headers})
 source_group(Source FILES ${shared_srcs})
 
-target_link_libraries(initial ${LIBS} linenoise glfw tumbleweed ${GLFW_LIBRARIES} nanovg)
-target_link_libraries(tw ${LIBS} linenoise glfw tumbleweed ${GLFW_LIBRARIES} nanovg)
+target_link_libraries(initial ${LIBS} linenoise tumbleweed)
+target_link_libraries(tw ${LIBS} linenoise tumbleweed)
 
 install(TARGETS tw RUNTIME DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/systemImage DESTINATION .)
@@ -169,14 +154,6 @@ if(TW_BUILD_TESTS)
 endif(TW_BUILD_TESTS)
 
 # Modules.
-#add_subdirectory(ffi_test)
-#add_subdirectory(sockets)
-#add_subdirectory(sfml)
-#add_subdirectory(linenoise)
-#add_subdirectory(trex)
-#if(NOT WIN32)
-#  add_subdirectory(events)
-#endif(NOT WIN32)
-
-#add_subdirectory(fltk)
+add_subdirectory(ffi_test)
+add_subdirectory(sockets)
 

@@ -196,7 +196,7 @@ readMethodInfo:
       if(NULL != rcv)
         fprintf(stdout,"on %s ", objectRef(objectRef(getClass(argumentsAt(0))).basicAt(nameInClass)).charPtr());
       fprintf(stdout,"stack %p %ld ",pst, *pst);
-      fprintf(stdout,"executing %d %d\n", high, low);
+      fprintf(stdout,"executing %d %d ", high, low);
       fflush(stdout);
     }
     switch(high) {
@@ -246,6 +246,10 @@ readMethodInfo:
                 /* save byte pointer then restore things properly */
                 ObjectHandle temp2(newInteger(byteOffset));
                 processStack->basicAtPut(linkPointer+4, temp2);
+								if(debugging) {
+									fprintf(stdout, "\n");
+									fflush(stdout);
+								}
                 goto readLinkageBlock;
 
               }
@@ -293,6 +297,7 @@ doSendMessage:
 #endif
           rcv = objectRef(argumentsAt(0)).sysMemPtr();
         methodClass = getClass(argumentsAt(0));
+				printf("methodClass: %ld\n", methodClass);
 
 doFindMessage:
         /* look up method in cache */
@@ -318,7 +323,8 @@ doFindMessage:
               argarray->basicAtPut(j+1, returnedObject);
             }
             //printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-//            printf("Failed to find %s\n", messageToSend->charPtr());
+            printf("Failed to find %s (%ld)\n", objectRef(messageToSend).charPtr(), methodClass);
+            //printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
             ObjectHandle originalMessage = messageToSend;
             ipush(messageToSend);
@@ -394,6 +400,10 @@ doFindMessage:
         pst += methodTempSize(method);
         /* break if we are too big and probably looping */
         if (processStack->size > 1800) timeSliceCounter = 0;
+				if(debugging) {
+					fprintf(stdout, "\n");
+					fflush(stdout);
+				}
         goto readMethodInfo;
 
       case SendUnary:
@@ -437,6 +447,9 @@ doFindMessage:
         primargs = (pst - low) + 1;
         /* next byte gives primitive number */
         i = nextByte();
+				if(debugging) {
+					fprintf(stdout, " %d ", i);
+				}
         /* a few primitives are so common, and so easy, that
            they deserve special treatment */
         switch(i) {
@@ -483,6 +496,10 @@ doFindMessage:
               }
               ipush(returnedObject);
               /* now go restart old routine */
+							if(debugging) {
+								fprintf(stdout, "\n");
+								fflush(stdout);
+							}
               if (linkPointer != 0)
                 goto readLinkageBlock;
               else
@@ -514,6 +531,10 @@ doReturn:
         }
         ipush(returnedObject);
         /* now go restart old routine */
+				if(debugging) {
+					fprintf(stdout, "\n");
+					fflush(stdout);
+				}
         if (linkPointer != 0)
           goto readLinkageBlock;
         else
@@ -611,6 +632,10 @@ doReturn:
         sysError("invalid bytecode","");
         break;
     }
+		if(debugging) {
+			fprintf(stdout, "\n");
+			fflush(stdout);
+		}
   }
 
   /* before returning we put back the values in the current process */

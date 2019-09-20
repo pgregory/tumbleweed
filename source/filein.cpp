@@ -44,9 +44,16 @@ static ObjectHandle findClass(const char* name)
 {   
     ObjectHandle newObj;
 
+    printf("Searching for class %s without meta\n", name);
+
     newObj = globalSymbol(name);
-    if (newObj == nilobj) {
+    if (newObj == nilobj) 
+    {
         newObj = createAndRegisterNewClass(name);
+    }
+    else
+    {
+        printf("...already defined\n");
     }
     if (newObj->basicAt(sizeInClass) == nilobj) 
     {
@@ -59,6 +66,8 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
 {   
     ObjectHandle newObj, nameObj, methTable;
     int size;
+
+    printf("Searching for class %s with meta\n", name);
 
     newObj = globalSymbol(name);
     if (newObj == nilobj)
@@ -76,6 +85,10 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
 
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
+    }
+    else
+    {
+        printf("...already defined\n");
     }
     return newObj;
 }
@@ -309,7 +322,7 @@ void fileIn(FILE* fd, bool printit)
             readMethods(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);
-        MemoryManager::Instance()->garbageCollect();
+        //MemoryManager::Instance()->garbageCollect();
     }
     delete[](textBuffer);
 }

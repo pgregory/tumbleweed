@@ -33,9 +33,10 @@ int main(int argc, char** argv)
     initFFISymbols();
 #endif
 
+    debugging = true;
     for (i = 1; i < argc; i++) {
         std::stringstream methbuf;
-        //fprintf(stderr,"%s:\n", argv[i]);
+        fprintf(stderr,"%s:\n", argv[i]);
         methbuf << "<120 1 '" << argv[i] << "' 'r'>. <123 1>. <121 1>";
         runCode(methbuf.str().c_str());
 
@@ -43,7 +44,6 @@ int main(int argc, char** argv)
 
     /* when we are all done looking at the arguments, do initialization */
     fprintf(stderr,"initialization\n");
-    //debugging = true;
     runCode("nil initialize\n");
     fprintf(stderr,"finished\n");
 
@@ -61,6 +61,7 @@ void makeInitialImage()
   ObjectHandle integerClass;
   ObjectHandle symbolObj, symbolClass, classClass, metaClassClass;
   ObjectHandle objectClass, metaObjectClass;
+	ObjectHandle arrayClass, dictionaryClass, byteArrayClass, undefinedClass, stringClass, linkClass;
 
   /* first create the table, without class links */
   symbols = MemoryManager::Instance()->allocObject(dictionarySize);
@@ -80,12 +81,22 @@ void makeInitialImage()
 
   /* now fix up classes for symbol table */
   /* and make a couple common classes, just to hold their places */
-  createAndRegisterNewClass("Link");
-  createAndRegisterNewClass("ByteArray");
-  hashTable->_class = createAndRegisterNewClass("Array");
-  objectRef(symbols)._class = createAndRegisterNewClass("Dictionary");
-  objectRef(nilobj)._class = createAndRegisterNewClass("UndefinedObject");
-  createAndRegisterNewClass("String");
+  linkClass = createAndRegisterNewClass("Link");
+	linkClass->_class = classClass;
+  byteArrayClass = createAndRegisterNewClass("ByteArray");
+	byteArrayClass->_class = classClass;
+  stringClass = createAndRegisterNewClass("String");
+	stringClass->_class = classClass;
+	arrayClass = createAndRegisterNewClass("Array");
+	arrayClass->_class = classClass;
+	dictionaryClass = createAndRegisterNewClass("Dictionary");
+	dictionaryClass->_class = classClass;
+	undefinedClass = createAndRegisterNewClass("UndefinedObject");
+	undefinedClass->_class = classClass;
+
+  hashTable->_class = arrayClass;
+  objectRef(symbols)._class = dictionaryClass;
+  objectRef(nilobj)._class = undefinedClass;
   nameTableInsert(symbols, strHash("symbols"), createSymbol("symbols"), symbols);
 
   classClass->basicAtPut(methodsInClass, newDictionary(39));
