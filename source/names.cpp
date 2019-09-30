@@ -220,7 +220,10 @@ object createAndRegisterNewClass(const char* name)
 {
     object newObj = newClass(name);
     /* now put in global symbols table */
-    object nameObj = newSymbol(name);
+    object nameObj = globalKey(name);
+    if (!nameObj) 
+        nameObj = newSymbol(name);
+    //printf("createAndRegisterNewClass: %s obj: %ld sym: %ld\n", name, newObj, nameObj);
     nameTableInsert(symbols, strHash(name), nameObj, newObj);
     
     return newObj;

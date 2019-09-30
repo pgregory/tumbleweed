@@ -33,13 +33,13 @@ int main(int argc, char** argv)
     initFFISymbols();
 #endif
 
-    debugging = true;
-    for (i = 1; i < argc; i++) {
+    //debugging = true;
+    for (i = 1; i < argc; i++) 
+    {
         std::stringstream methbuf;
         fprintf(stderr,"%s:\n", argv[i]);
         methbuf << "<120 1 '" << argv[i] << "' 'r'>. <123 1>. <121 1>";
         runCode(methbuf.str().c_str());
-
     }
 
     /* when we are all done looking at the arguments, do initialization */
@@ -101,6 +101,18 @@ void makeInitialImage()
 
   classClass->basicAtPut(methodsInClass, newDictionary(39));
   metaClassClass->basicAtPut(methodsInClass, newDictionary(39));
+
+//  printf("symbolObj: %ld\n", symbolObj.handle());
+//  printf("symbolClass: %ld\n", symbolClass.handle());
+//  printf("integerClass: %ld\n", integerClass.handle());
+//  printf("classClass: %ld\n", classClass.handle());
+//  printf("metaClassClass: %ld\n", metaClassClass.handle());
+//  printf("linkClass: %ld\n", linkClass.handle());
+//  printf("byteArrayClass: %ld\n", byteArrayClass.handle());
+//  printf("stringClass: %ld\n", stringClass.handle());
+//  printf("arrayClass: %ld\n", arrayClass.handle());
+//  printf("dictionaryClass: %ld\n", dictionaryClass.handle());
+//  printf("undefinedClass: %ld\n", undefinedClass.handle());
 
   /* finally at least make true and false to be distinct */
   ObjectHandle trueobj = createSymbol("true");

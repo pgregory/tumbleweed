@@ -212,6 +212,7 @@ extern object symbols;
 */
 extern void sysError(const char*, const char*);
 extern void dspMethod(char*, char*);
+extern void disassembleMethod(object);
 extern void initMemoryManager();
 extern bool debugging;
 void givepause();
@@ -550,6 +551,9 @@ inline int ObjectHandle::hash() const
 inline void ObjectHandle::appendToList()
 {
     // Register the handle with the global list.
+    if(this == (void*)0x00007ffeefbfb1d0) {
+        printf("Here and now!\n");
+    }
     if(NULL == ObjectHandle::tail)
         ObjectHandle::head = ObjectHandle::tail = this;
     else

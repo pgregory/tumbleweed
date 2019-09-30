@@ -199,7 +199,7 @@ tokentype Lexer::nextToken()
                 m_currentToken = floatconst;
                 strToken.push_back('\0');
                 m_tokenFloat = atof(strToken.c_str());
-                printf("lex: %s\n", strToken.c_str());
+                //printf("lex: %s\n", strToken.c_str());
             }
             else 
             {

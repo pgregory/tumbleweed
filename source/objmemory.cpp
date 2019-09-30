@@ -268,31 +268,13 @@ void MemoryManager::visit(register object x)
             /* then it's the first time we've visited it, so: */
             ObjectStruct& obj = objectFromID(x);
             ObjectStruct& thisClass = objectFromID(obj._class);
-            if(debugging) {
-                if(obj.size > 0)
-                {
-                    printf("Visiting object @ [%ld][%p] of class %s\n", x, &obj, objectFromID(thisClass.basicAt(nameInClass)).charPtr());
-                }
-                else
-                {
-                    printf("Visiting binary object @ [%ld][%p]\n", x, &obj);
-                }
-            }
-visit(objectFromID(x)._class);
-            if(debugging) {
-                if(obj.size > 0)
-                {
-                    printf("...processing memory for @ [%ld][%p] of class %s\n", x, &obj, objectFromID(thisClass.basicAt(nameInClass)).charPtr());
-                }
-            }
+            visit(objectFromID(x)._class);
             s = objectRef(x).size;
             if (s>0) 
             {
                 p = objectFromID(x).memory;
                 for (i=s; i; --i)
                 {
-                    if(debugging) 
-                        printf("......%d [%ld][%p] on [%ld]\n", i, *p, &objectFromID(*p), x);
                     visit(*p++);
                 }
             }

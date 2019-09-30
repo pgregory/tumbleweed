@@ -44,16 +44,10 @@ static ObjectHandle findClass(const char* name)
 {   
     ObjectHandle newObj;
 
-    printf("Searching for class %s without meta\n", name);
-
     newObj = globalSymbol(name);
     if (newObj == nilobj) 
     {
         newObj = createAndRegisterNewClass(name);
-    }
-    else
-    {
-        printf("...already defined\n");
     }
     if (newObj->basicAt(sizeInClass) == nilobj) 
     {
@@ -62,17 +56,18 @@ static ObjectHandle findClass(const char* name)
     return newObj;
 }
 
-static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
+static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj, ObjectHandle superObj)
 {   
     ObjectHandle newObj, nameObj, methTable;
     int size;
-
-    printf("Searching for class %s with meta\n", name);
 
     newObj = globalSymbol(name);
     if (newObj == nilobj)
     {
         size = getInteger(metaObj->basicAt(sizeInClass));
+	if(superObj != nilobj) {
+		size += getInteger(superObj->basicAt(sizeInClass));
+	}
         newObj = MemoryManager::Instance()->allocObject(size);
         newObj->_class = metaObj;
 
@@ -86,10 +81,6 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
         /* now put in global symbols table */
         nameTableInsert(symbols, strHash(name), nameObj, newObj);
     }
-    else
-    {
-        printf("...already defined\n");
-    }
     return newObj;
 }
 
@@ -100,22 +91,19 @@ static ObjectHandle findClassWithMeta(const char* name, ObjectHandle metaObj)
 static ObjectHandle createRawClass(const char* _class, const char* metaclass, const char* superclass)
 {
     ObjectHandle classObj, superObj, metaObj;
-    int size;
 
     metaObj = findClass(metaclass);
-    classObj = findClassWithMeta(_class, metaObj);
-    classObj->_class = metaObj;
-
-    //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
-
-    size = 0;
     superObj = nilobj;
     if(NULL != superclass)
     {
         superObj = findClass(superclass);
-        classObj->basicAtPut(superClassInClass, superObj);
-        size = getInteger(superObj->basicAt(sizeInClass));
     }
+    classObj = findClassWithMeta(_class, metaObj, superObj);
+    classObj->_class = metaObj;
+    classObj->basicAtPut(superClassInClass, superObj);
+
+    //printf("RAWCLASS %s %s %s\n", class, metaclass, superclass);
+
     return classObj;
 }
 
@@ -285,7 +273,10 @@ static void readMethods(FILE* fd, bool printit)
             theMethod->basicAtPut(methodClassInMethod, classObj);
             theMethod->basicAtPut(protocolInMethod, protocol);
             if (printit)
+            {
                 dspMethod(cp, selector->charPtr());
+                //disassembleMethod(theMethod);
+            }
             nameTableInsert(methTable, selector.hash(), selector, theMethod);
         }
         else {
@@ -322,7 +313,7 @@ void fileIn(FILE* fd, bool printit)
             readMethods(fd, printit);
         else 
             sysError("unrecognized line", textBuffer);
-        //MemoryManager::Instance()->garbageCollect();
+        MemoryManager::Instance()->garbageCollect();
     }
     delete[](textBuffer);
 }

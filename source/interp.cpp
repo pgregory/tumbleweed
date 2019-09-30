@@ -210,10 +210,15 @@ readMethodInfo:
         break;
 
       case PushTemporary:
+        //printf("PushTemporary: %ld [Class: %ld (%s)]\n", temporaryAt(low), getClass(temporaryAt(low)), 
+        //        objectRef(objectRef(getClass(temporaryAt(low))).basicAt(nameInClass)).charPtr());
         ipush(temporaryAt(low));
         break;
 
       case PushLiteral:
+        //printf("PushLiteral: %ld [Class: %ld (%s)]\n", literalsAt(low), getClass(literalsAt(low)), 
+        //        objectRef(objectRef(getClass(literalsAt(low))).basicAt(nameInClass)).charPtr());
+        //printf("PushLiteral: %ld [Class: %ld]\n", literalsAt(low), getClass(literalsAt(low)));
         ipush(literalsAt(low));
         break;
 
@@ -297,7 +302,6 @@ doSendMessage:
 #endif
           rcv = objectRef(argumentsAt(0)).sysMemPtr();
         methodClass = getClass(argumentsAt(0));
-				printf("methodClass: %ld\n", methodClass);
 
 doFindMessage:
         /* look up method in cache */
@@ -323,7 +327,10 @@ doFindMessage:
               argarray->basicAtPut(j+1, returnedObject);
             }
             //printf("Failed to find %s (%s)\n", objectRef(messageToSend).charPtr(), objectRef(objectRef(methodClass).basicAt(nameInClass)).charPtr());
-            printf("Failed to find %s (%ld)\n", objectRef(messageToSend).charPtr(), methodClass);
+	    ObjectStruct& obj = objectRef(methodClass);
+	    ObjectStruct& objClass = objectRef(obj._class);
+	    const char* className = objectRef(objClass.basicAt(nameInClass)).charPtr();
+            //printf("Failed to find %s (%ld)\n", objectRef(messageToSend).charPtr(), methodClass);
             //printf("Failed to find %s\n", messageToSend->charPtr());
             ipush(argarray->basicAt(1)); /* push receiver back */
             ObjectHandle originalMessage = messageToSend;
